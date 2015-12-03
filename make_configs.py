@@ -6,6 +6,18 @@ from fermipy.roi_model import ROIModel
 import sys
 import time, os, stat
 
+import argparse
+
+usage = "usage: %(prog)s [config file]"
+description = "Run fermipy analysis chain."
+parser = argparse.ArgumentParser(usage=usage,description=description)
+
+parser.add_argument('--basedir', default = None, required=True)
+parser.add_argument('--source_list', default = None, required=True)
+parser.add_argument('configs', nargs='+', default = None)
+
+args = parser.parse_args()
+
 def file_age_in_seconds(pathname):
     return time.time() - os.stat(pathname)[stat.ST_MTIME]
 
@@ -20,12 +32,12 @@ def check_log(logfile, string='Successfully', exists=True):
         return not exists
     return string in open(logfile).read()
 
+config = {}
+for c in args.configs:
+    config.update(yaml.load(open(c)))
 
-config = yaml.load(open(sys.argv[1]))
-config.update(yaml.load(open(sys.argv[2])))
-
-src_list = yaml.load(open(sys.argv[3]))
-basedir = sys.argv[4]
+src_list = yaml.load(open(args.source_list))
+basedir = args.basedir
 
 roi = ROIModel(config['model'])
 roi.load()

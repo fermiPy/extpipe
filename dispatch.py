@@ -11,7 +11,7 @@ import time, os, stat
 def file_age_in_seconds(pathname):
     return time.time() - os.stat(pathname)[stat.ST_MTIME]
 
-def check_log(logfile, string='Successfully', exists=True):
+def check_log(logfile, exited='Exited with exit code', successful='Successfully completed', exists=True):
     """ Often logfile doesn't exist because the job hasn't begun
     to run. It is unclear what you want to do in that case...
     logfile : String with path to logfile
@@ -20,10 +20,17 @@ def check_log(logfile, string='Successfully', exists=True):
     """
     if not os.path.exists(logfile):
 	return not exists
-    return string in open(logfile).read()
+
+    if exited in open(logfile).read():
+        return 'Exited'
+    elif successful in open(logfile).read():
+        return 'Successful'
+    else:
+        return 'None' 
+    #return string in open(logfile).read()
 
 
-overwrite = True
+overwrite = False
 
 
 dirs = glob.glob(sys.argv[1] + '/*')
@@ -35,23 +42,27 @@ for dirname in dirs:
     cfgfile = os.path.join(dirname,'config.yaml')
     logfile = os.path.join(dirname,'lsf.log')
 
+    if not os.path.isfile(cfgfile): continue
+
     config = yaml.load(open(cfgfile))
 
     srcname = config['selection']['target'].replace(' ','').lower()
     
-    cmd = 'bsub -W 800 -o %s python %s --config=%s --source=%s'%(logfile,script,cfgfile,
+    cmd = 'bsub -W 800 -oo %s python %s --config=%s --source=%s'%(logfile,script,cfgfile,
                                                                  srcname)
 
-    print cmd
-    
     age = 1000
     if os.path.isfile(logfile):
         age = file_age_in_seconds(logfile)/60.
-    
 
-#    print age/60., check_log(logfile)
+    print check_log(logfile), age
     
-    if overwrite or (not check_log(logfile) and age > 60):
+    if overwrite or (check_log(logfile)=='Exited'): # and age > 60
+        print "Job Exited, resending command:"
+        print cmd
+        os.system(cmd)
+    elif (check_log(logfile)=='None') and age > 60:
+        print "Job did not exit, but no activity on log file for > 60 min. Resending command:"
         print cmd
         os.system(cmd)
     else:
