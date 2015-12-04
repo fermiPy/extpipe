@@ -65,6 +65,9 @@ for dirname in dirs:
         print "Job did not exit, but no activity on log file for > 60 min. Resending command:"
         print cmd
         os.system(cmd)
+    elif not check_log(logfile):
+        print cmd
+        os.system(cmd)
     else:
         print 'Skipping ', dirname, age
 
