@@ -20,7 +20,7 @@ gta.extension(args.source)
 gta.sed(args.source)
 
 # Baseline Fit
-gta.write_roi('fit0',make_residuals=True)
+gta.write_roi('fit0',make_residuals=True,make_tsmap=True)
 
 newname = args.source.replace(' ','').lower() + '_reloc'
 gta.localize(args.source,update=True,newname=newname,nstep=6)
@@ -30,7 +30,7 @@ gta.extension(newname)
 gta.sed(newname)
 
 # Pot-Relocalization Fit
-gta.write_roi('fit1',make_residuals=True)
+gta.write_roi('fit1',make_residuals=True,make_tsmap=True)
 
 skydir = gta.roi.get_source_by_name(newname)[0].skydir
 
@@ -61,6 +61,6 @@ for i,w in enumerate(halo_width):
     gta.free_norm('isodiff')
     gta.fit()
     gta.sed(halo_source_name)    
-    gta.write_roi('halo_fit_%02i'%i,make_residuals=True)
+    gta.write_roi('halo_fit_%02i'%i)
     gta.delete_source(halo_source_name)    
     gta.load_roi('fit1')

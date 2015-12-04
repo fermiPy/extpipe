@@ -11,7 +11,8 @@ import time, os, stat
 def file_age_in_seconds(pathname):
     return time.time() - os.stat(pathname)[stat.ST_MTIME]
 
-def check_log(logfile, exited='Exited with exit code', successful='Successfully completed', exists=True):
+def check_log(logfile, exited='Exited with exit code',
+              successful='Successfully completed', exists=True):
     """ Often logfile doesn't exist because the job hasn't begun
     to run. It is unclear what you want to do in that case...
     logfile : String with path to logfile
@@ -35,21 +36,19 @@ overwrite = False
 
 dirs = glob.glob(sys.argv[1] + '/*')
 
-script = os.path.abspath(sys.argv[2])
-
 for dirname in dirs:
 
     cfgfile = os.path.join(dirname,'config.yaml')
     logfile = os.path.join(dirname,'lsf.log')
-
+    runscript = os.path.join(dirname,'run.sh')
+    
     if not os.path.isfile(cfgfile): continue
 
     config = yaml.load(open(cfgfile))
 
     srcname = config['selection']['target'].replace(' ','').lower()
     
-    cmd = 'bsub -W 800 -oo %s python %s --config=%s --source=%s'%(logfile,script,cfgfile,
-                                                                 srcname)
+    cmd = 'bsub -W 800 -oo %s bash %s'%(logfile,runscript)
 
     age = 1000
     if os.path.isfile(logfile):

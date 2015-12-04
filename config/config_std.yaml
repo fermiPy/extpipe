@@ -57,7 +57,7 @@ model:
 
   # List of catalogs to be used in the model.
   catalogs : 
-    - 'gll_psc_v14.fit'
+    - '3FGL'
 
 components: null
 
@@ -72,9 +72,13 @@ plotting:
 
 residmap:
   models : 
-   - { Index : 2.0, SpatialModel : 'Gaussian', SpatialWidth : 0.1000 }
-   - { Index : 2.0, SpatialModel : 'Gaussian', SpatialWidth : 0.1778 }
-   - { Index : 2.0, SpatialModel : 'Gaussian', SpatialWidth : 0.3162 }
-   - { Index : 1.5, SpatialModel : 'PointSource' }
-   - { Index : 2.0, SpatialModel : 'PointSource' }
-   - { Index : 2.5, SpatialModel : 'PointSource' }
+    - { Index : 2.0, SpatialModel : 'Gaussian', SpatialWidth : 0.1000 }
+    - { Index : 2.0, SpatialModel : 'Gaussian', SpatialWidth : 0.1778 }
+    - { Index : 2.0, SpatialModel : 'Gaussian', SpatialWidth : 0.3162 }
+    - { Index : 2.0, SpatialModel : 'PointSource' }
+
+tsmap :
+  models :
+    - { Index : 2.5, SpatialModel : 'PointSource' }
+    - { Index : 2.0, SpatialModel : 'PointSource' }
+    - { Index : 1.5, SpatialModel : 'PointSource' }
