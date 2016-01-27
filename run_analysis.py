@@ -1,7 +1,9 @@
+import os
 import sys
+import copy
 from fermipy.gtanalysis import GTAnalysis
 import numpy as np
-
+import itertools
 import argparse
 
 usage = "usage: %(prog)s [config file]"
@@ -48,7 +50,8 @@ gta.residmap('fit0',model=model)
 # Pass 1 - Source at Localized Position
 # -------------------------------------
 
-gta.localize(args.source,update=True,nstep=6)
+if gta.roi[args.source]['ts'] > 25.:
+    gta.localize(args.source,update=True)
 
 #gta.optimize()
 
@@ -80,12 +83,18 @@ halo_source_dict = {
     }
 
 
-halo_width = np.logspace(-1,0,17)
+halo_width = np.logspace(-1,0,9)
 #[0.1,0.316,1.0]
 
-for i,w in enumerate(halo_width):
-    halo_source_dict['SpatialWidth'] = w
+halo_index = np.array([1.5,2.0,2.5,3.0])
 
+halo_data = []
+
+#for i,w in enumerate(halo_width):
+for i, (w,idx) in enumerate(itertools.product(halo_width,halo_index)):
+    halo_source_dict['SpatialWidth'] = w
+    halo_source_dict['Index'] = idx
+    
     halo_source_name = 'halo_gauss'
     
     gta.add_source(halo_source_name,halo_source_dict)
@@ -97,5 +106,10 @@ for i,w in enumerate(halo_width):
     gta.sed(halo_source_name)    
     gta.write_roi('halo_gauss_%02i'%i,make_plots=False,
                   save_model_map=False)
+    halo_data += [copy.deepcopy(gta.roi['halo_gauss'])]
+    
     gta.delete_source(halo_source_name,save_template=False)    
     gta.load_roi('fit1')
+
+
+np.save(os.path.join(gta._savedir,'halo_data.npy'),halo_data)
