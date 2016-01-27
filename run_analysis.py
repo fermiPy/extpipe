@@ -1,5 +1,6 @@
 import sys
 from fermipy.gtanalysis import GTAnalysis
+import numpy as np
 
 import argparse
 
@@ -15,24 +16,57 @@ args = parser.parse_args()
 gta = GTAnalysis(args.config,logging={'verbosity' : 3})
 
 gta.setup()
+
+# Get a reasonable starting point for the spectral model
+gta.free_source(args.source)
+gta.fit()
+gta.free_source(args.source,False)
+
+# -----------------------------------
+# Pass 0 - Source at Nominal Position
+# -----------------------------------
+
 gta.optimize()
+
+gta.free_source(args.source)
+gta.free_source('galdiff',pars='norm')
+gta.free_source('isodiff',pars='norm')
+gta.fit()
+gta.free_sources(free=False)
+
 gta.extension(args.source)
 gta.sed(args.source)
 
+model = { 'SpatialModel' : 'PointSource', 'Index' : 2.0 }
+
 # Baseline Fit
-gta.write_roi('fit0',make_residuals=True,make_tsmap=True)
+gta.write_roi('fit0')
+gta.tsmap('fit0',model=model)
+gta.residmap('fit0',model=model)
 
-newname = args.source.replace(' ','').lower() + '_reloc'
-gta.localize(args.source,update=True,newname=newname,nstep=6)
+# -------------------------------------
+# Pass 1 - Source at Localized Position
+# -------------------------------------
 
-gta.optimize()
-gta.extension(newname)
-gta.sed(newname)
+gta.localize(args.source,update=True,nstep=6)
 
-# Pot-Relocalization Fit
-gta.write_roi('fit1',make_residuals=True,make_tsmap=True)
+#gta.optimize()
 
-skydir = gta.roi.get_source_by_name(newname)[0].skydir
+gta.free_source(args.source)
+gta.free_source('galdiff',pars='norm')
+gta.free_source('isodiff',pars='norm')
+gta.fit()
+gta.free_sources(free=False)
+
+gta.extension(args.source)
+gta.sed(args.source)
+
+# Post-Relocalization Fit
+gta.write_roi('fit1')
+gta.tsmap('fit1',model=model)
+gta.residmap('fit1',model=model)
+
+skydir = gta.roi.get_source_by_name(args.source)[0].skydir
 
 halo_source_dict = {
     'ra' : skydir.ra.deg,
@@ -46,21 +80,22 @@ halo_source_dict = {
     }
 
 
-halo_width = [0.1,0.316,1.0]
-
+halo_width = np.logspace(-1,0,17)
+#[0.1,0.316,1.0]
 
 for i,w in enumerate(halo_width):
     halo_source_dict['SpatialWidth'] = w
 
-    halo_source_name = 'halo_%06.3f'%w
+    halo_source_name = 'halo_gauss'
     
     gta.add_source(halo_source_name,halo_source_dict)
     gta.free_norm(halo_source_name)
-    gta.free_norm(newname)
+    gta.free_norm(args.source)
     gta.free_norm('galdiff')
     gta.free_norm('isodiff')
     gta.fit()
     gta.sed(halo_source_name)    
-    gta.write_roi('halo_fit_%02i'%i)
-    gta.delete_source(halo_source_name)    
+    gta.write_roi('halo_gauss_%02i'%i,make_plots=False,
+                  save_model_map=False)
+    gta.delete_source(halo_source_name,save_template=False)    
     gta.load_roi('fit1')

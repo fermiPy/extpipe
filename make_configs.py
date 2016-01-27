@@ -1,11 +1,6 @@
+import os
 import yaml
-from fermipy.utils import *
-
-from fermipy.roi_model import ROIModel
-
-import sys
-import time, os, stat
-
+import fermipy.utils as utils
 import argparse
 
 usage = "usage: %(prog)s [config files]"
@@ -24,20 +19,6 @@ parser.add_argument('configs', nargs='+', default = None,
 
 args = parser.parse_args()
 
-def file_age_in_seconds(pathname):
-    return time.time() - os.stat(pathname)[stat.ST_MTIME]
-
-def check_log(logfile, string='Successfully', exists=True):
-    """ Often logfile doesn't exist because the job hasn't begun
-    to run. It is unclear what you want to do in that case...
-    logfile : String with path to logfile
-    exists  : Is the logfile required to exist
-    string  : Value to check for in existing logfile
-    """
-    if not os.path.exists(logfile):
-        return not exists
-    return string in open(logfile).read()
-
 config = {}
 for c in args.configs:
     config.update(yaml.load(open(c)))
@@ -45,24 +26,19 @@ for c in args.configs:
 src_list = yaml.load(open(args.source_list))
 basedir = args.basedir
 
-roi = ROIModel(config['model'])
-roi.load()
-
 bash_script = """
 cat $0
 python {script} --config={config} --source="{source}"
 """
 
-for k in src_list:
+for name in src_list:
 
-    s = roi.get_source_by_name(k,True)
-    dirname = os.path.join(basedir,s.name.lower().replace(' ','_'))
-    
-    mkdir(dirname)
+    dirname = os.path.join(basedir,name.lower().replace(' ','_'))    
+    utils.mkdir(dirname)
 
-    config['selection']['target'] = s.name    
+    config['selection']['target'] = name    
     cfgfile = os.path.abspath(os.path.join(dirname,'config.yaml'))
-    yaml.dump(config,open(cfgfile,'w'),default_flow_style=False)
+    yaml.dump(utils.tolist(config),open(cfgfile,'w'),default_flow_style=False)
 
     script = os.path.basename(args.script)
     scriptpath = os.path.abspath(os.path.join(dirname,script))
@@ -70,6 +46,6 @@ for k in src_list:
     os.system('cp %s %s'%(args.script,scriptpath))
     
     with open(os.path.join(dirname,'run.sh'),'wt') as f:
-        f.write(bash_script.format(source=s.name,config=cfgfile,
+        f.write(bash_script.format(source=name,config=cfgfile,
                                    script=scriptpath))
     

@@ -58,6 +58,7 @@ model:
   # List of catalogs to be used in the model.
   catalogs : 
     - '3FGL'
+    - '2FHL'
 
 components: null
 
