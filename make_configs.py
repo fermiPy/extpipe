@@ -1,5 +1,7 @@
 import os
 import yaml
+import numpy as np
+import healpy as hp
 import fermipy.utils as utils
 import argparse
 
@@ -31,21 +33,40 @@ cat $0
 python {script} --config={config} --source="{source}"
 """
 
-for name in src_list:
+scriptdir = os.path.join(basedir,'scripts')
+utils.mkdir(scriptdir)
+os.system('cp %s %s'%(args.script,scriptdir))
 
+for target in src_list:
+
+    if isinstance(target,dict):
+        name = 'hp_region_%03i_%04i'%(target['nside'],target['pix'])
+
+        theta, phi = hp.pix2ang(target['nside'],target['pix'])        
+        config['selection']['glat'] = np.degrees(np.pi/2.-theta)
+        config['selection']['glon'] = np.degrees(phi)
+    else:
+        name = target
+        config['selection']['target'] = name 
+        
+    print name
+    
     dirname = os.path.join(basedir,name.lower().replace(' ','_'))    
     utils.mkdir(dirname)
+    
 
-    config['selection']['target'] = name    
     cfgfile = os.path.abspath(os.path.join(dirname,'config.yaml'))
     yaml.dump(utils.tolist(config),open(cfgfile,'w'),default_flow_style=False)
 
     script = os.path.basename(args.script)
     scriptpath = os.path.abspath(os.path.join(dirname,script))
     
-    os.system('cp %s %s'%(args.script,scriptpath))
+    os.system('ln -sf %s %s'%(os.path.abspath(os.path.join(scriptdir,script)),
+                             scriptpath))
+
+    runscript = os.path.abspath(os.path.join(dirname,os.path.splitext(script)[0] + '.sh'))
     
-    with open(os.path.join(dirname,'run.sh'),'wt') as f:
+    with open(os.path.join(runscript),'wt') as f:
         f.write(bash_script.format(source=name,config=cfgfile,
                                    script=scriptpath))
     

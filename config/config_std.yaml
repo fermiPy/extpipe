@@ -34,6 +34,9 @@ selection:
   tmin    : 239557414
   tmax    : 428903014 # 6 years
 
+fileio : 
+  usescratch : True
+
 gtlike:
   # IRFs
   edisp : True
@@ -49,8 +52,8 @@ model:
   # Include catalog sources within a box of width roisrc.
   src_roiwidth : 10.0
 
-  galdiff  : '/nfs/slac/g/ki/ki20/cta/mdwood/fermi/diffuse/v5r0/gll_iem_v06.fits'
-  isodiff  : '/nfs/slac/g/ki/ki20/cta/mdwood/fermi/diffuse/v5r0/iso_P8R2_SOURCE_V6_v06.txt'
+  galdiff  : '$FERMI_DIFFUSE_DIR/gll_iem_v06.fits'
+  isodiff  : 'iso_P8R2_SOURCE_V6_v06.txt'
   limbdiff : null
 
   merge_sources : False
@@ -63,10 +66,13 @@ components: null
 
 extension:
   width_min : 0.00316227766
-  width_max : 0.316227766
-  width_nstep : 21
+  width_max : 1.0
+  width_nstep : 26
   spatial_model : 'GaussianSource'
 
 plotting:
   erange: [[3.5,5.5],[4.0,5.5]]
 
+localize:
+  dtheta_max : 0.20
+  nstep : 10
