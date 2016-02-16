@@ -4,7 +4,8 @@ import yaml
 from fermipy.utils import *
 
 from fermipy.roi_model import ROIModel
-from batch import *
+from haloanalysis.batch import *
+from haloanalysis.utils import *
 
 import sys
 import time, os, stat
@@ -17,67 +18,8 @@ def check_num_jobs():
 def file_age_in_seconds(pathname):
     return time.time() - os.stat(pathname)[stat.ST_MTIME]
 
-def check_log(logfile, exited='Exited with exit code',
-              successful='Successfully completed', exists=True):
-    """ Often logfile doesn't exist because the job hasn't begun
-    to run. It is unclear what you want to do in that case...
-    logfile : String with path to logfile
-    exists  : Is the logfile required to exist
-    string  : Value to check for in existing logfile
-    """
-    if not os.path.exists(logfile):
-	return not exists
-
-    if exited in open(logfile).read():
-        return 'Exited'
-    elif successful in open(logfile).read():
-        return 'Successful'
-    else:
-        return 'None' 
     #return string in open(logfile).read()
 
-usage = "usage: %(prog)s [config file]"
-description = "Dispatch analysis jobs."
-parser = argparse.ArgumentParser(usage=usage,description=description)
-
-parser.add_argument('--config', default = 'sample_config.yaml')
-parser.add_argument('--max_jobs', default = 500, type=int)
-parser.add_argument('--jobs_per_cycle', default = 20, type=int)
-parser.add_argument('--time_per_cycle', default = 15, type=float,
-                    help='Time per submission cycle in seconds.')
-parser.add_argument('--max_job_age', default = 90, type=float,
-                    help='Max job age in minutes.')
-parser.add_argument('--dry_run', default = False, action='store_true')
-parser.add_argument('--overwrite', default = False, action='store_true')
-parser.add_argument('--runscript', default = None, required=True)
-
-parser.add_argument('dirs', nargs='+', default = None,
-                    help='Run analyses in all subdirectories of this '
-                    'directory.')
-
-args = parser.parse_args()
-    
-dirs = []
-for d in args.dirs:
-
-    if not os.path.isdir(d):
-        continue
-
-    #subdirs = glob.glob(d + '/*')
-    
-    for subdir in os.listdir(d):
-        
-        subdir = os.path.join(d,subdir)
-        
-        if not os.path.isdir(subdir):
-            continue
-         
-        dirs += [subdir]
-         
-    dirs += [d]
-
-
-    
 def collect_jobs(dirs,runscript,overwrite=False): 
 
     jobs = []
@@ -112,6 +54,29 @@ def collect_jobs(dirs,runscript,overwrite=False):
             jobs.append(o)
 
     return jobs
+
+usage = "usage: %(prog)s [config file]"
+description = "Dispatch analysis jobs."
+parser = argparse.ArgumentParser(usage=usage,description=description)
+
+parser.add_argument('--config', default = 'sample_config.yaml')
+parser.add_argument('--max_jobs', default = 500, type=int)
+parser.add_argument('--jobs_per_cycle', default = 20, type=int)
+parser.add_argument('--time_per_cycle', default = 15, type=float,
+                    help='Time per submission cycle in seconds.')
+parser.add_argument('--max_job_age', default = 90, type=float,
+                    help='Max job age in minutes.')
+parser.add_argument('--dry_run', default = False, action='store_true')
+parser.add_argument('--overwrite', default = False, action='store_true')
+parser.add_argument('--runscript', default = None, required=True)
+
+parser.add_argument('dirs', nargs='+', default = None,
+                    help='Run analyses in all subdirectories of this '
+                    'directory.')
+
+args = parser.parse_args()
+    
+dirs = collect_dirs(args.dirs)
 
 jobs = collect_jobs(dirs,args.runscript,args.overwrite)
 
