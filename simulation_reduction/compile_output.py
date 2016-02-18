@@ -66,7 +66,7 @@ def handle_directory(directory):
     Return:
         list: A list of build_row rows, one for each energy in the contained "halo" file
         """
-    print '\t', directory
+    print '\n', directory
     profiles = {}
     phys_param = None
     for filename in os.listdir(directory):
@@ -79,10 +79,7 @@ def handle_directory(directory):
         elif filename == 'phys_param.pkl':
             with open(os.path.join(directory, filename), 'rb') as param_file:
                 phys_param = pickle.load(param_file)
-            print phys_param.strength
-            print phys_param.redshift
-            print phys_param.power_law_index
-            print phys_param.image_index
+                
 
 
     rows = []

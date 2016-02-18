@@ -206,7 +206,6 @@ class Histogram(object):
 
             """
 
-        Uses the containment cache, if it contains enough values to 
         if containment < self._min_containment[1]:
             self._min_containment = self._step_containment(self._min_containment[0],0,containment,-.1, done=lambda x,y: x<y)
             self._setup_containment_fcn()      
