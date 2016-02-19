@@ -32,14 +32,29 @@ cols = [Column([], name='name', dtype='S20', format='%s',description='Source Nam
         Column([], name='glat', dtype='f8', format='%.3f',unit='deg'),
         Column([], name='ts', dtype='f8', format='%.2f'),
         Column([], name='npred', dtype='f8', format='%.2f'),
+        #block added by RC
+        Column([], name='dfde1000', dtype='f8', format='%.2f'),
+        Column([], name='dfde1000_err', dtype='f8', format='%.2f'),
+        Column([], name='dfde1000_index', dtype='f8', format='%.2f'),
+        Column([], name='dfde1000_index_err', dtype='f8', format='%.2f'),
+        Column([], name='eflux1000', dtype='f8', format='%.2f'),
+        Column([], name='eflux1000_err', dtype='f8', format='%.2f'),
+        Column([], name='spectrum_type', dtype='S20', format='%s'),
+        #Column([], name='lnlprofile', dtype='f8', format='%.2f'),
         Column([], name='ext0_ts', dtype='f8', format='%.2f'),
         Column([], name='ext0_mle', dtype='f8', format='%.3f',unit='deg'),
         Column([], name='ext0_err', dtype='f8', format='%.3f',unit='deg'),
         Column([], name='ext0_ul95', dtype='f8', format='%.3f',unit='deg',description='Extension 95% CL UL (pre-localization)'),
+        #block added by RC
+        #Column([], name='ext0_dlogLike', dtype='f8', format='%.2f'),
+        #Column([], name='ext0_width', dtype='f8', format='%.3f',unit='deg'),
         Column([], name='ext1_ts', dtype='f8', format='%.2f'),
         Column([], name='ext1_mle', dtype='f8', format='%.3f',unit='deg'),
         Column([], name='ext1_err', dtype='f8', format='%.3f',unit='deg'),
         Column([], name='ext1_ul95', dtype='f8', format='%.3f',unit='deg',description='Extension 95% CL UL (post-localization)'),
+        #block added by RC
+        #Column([], name='ext1_dlogLike', dtype='f8', format='%.2f'),
+        #Column([], name='ext1_width', dtype='f8', format='%.3f',unit='deg'),
         ]
 
 
@@ -76,7 +91,9 @@ for d in dirs:
 
     row = [src0['assoc']['ASSOC1'],src0['class'],
            src0['ra'],src0['dec'],src0['glon'],src0['glat'],
-           src0['ts'],src0['Npred'],
+           src0['ts'],src0['Npred'],src0['dfde1000'][0],src0['dfde1000'][1],
+           src0['dfde1000_index'][0],src0['dfde1000_index'][1],
+           src0['eflux1000'][0],src0['eflux1000'][1],src0['SpectrumType'],
            max(ext0['ts_ext'],0),ext0['ext'],ext0['ext_err'],ext0['ext_ul95'],
            max(ext1['ts_ext'],0),ext1['ext'],ext1['ext_err'],ext1['ext_ul95'],]
 
