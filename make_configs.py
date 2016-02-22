@@ -56,7 +56,7 @@ for name, v in src_list.items():
     utils.mkdir(dirname)
 
     c = copy.deepcopy(config)
-    c = utils.merge_dict(v,c,add_new_keys=True)
+    c = utils.merge_dict(c,v,add_new_keys=True)
     
     cfgfile = os.path.abspath(os.path.join(dirname,'config.yaml'))
     yaml.dump(utils.tolist(c),open(cfgfile,'w'),default_flow_style=False)
