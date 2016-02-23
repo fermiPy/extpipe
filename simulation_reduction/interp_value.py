@@ -257,10 +257,9 @@ def parse_options(input=None):
     Return:
         Options: Options object with the relevant options present
         """
-    parser = ArgumentParser(description='A file to run many instances of the simulation for the given parameters')
+    parser = ArgumentParser(description='Interpolate to find the containment values at the given input point')
     # General Arguments
-
-
+    parser.add_argument('-f', '--filename', default='image_reduction.npy', help='The filename of the data object')
 
     # Simulation parameters
     parser.add_argument('--redshift', type=float, default=0.1, help='Desired redshift')
@@ -279,5 +278,5 @@ if __name__ == '__main__':
     options = parse_options()
     p = Point(options.redshift, options.strength, options.power_law_index, options.boost, options.correlation_length, options.angle)
 
-    ds = DataStore('image_reduction.npy')
+    ds = DataStore(options.filename)
     print ds(p)
