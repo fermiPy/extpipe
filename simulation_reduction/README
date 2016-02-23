@@ -3,3 +3,5 @@ General usage:
 Place images from simulation/image combination in "images" directory. Run:
 
 > python compile_output.py
+
+To get an interpolated output run interp_output.py
