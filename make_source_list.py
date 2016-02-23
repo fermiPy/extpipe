@@ -1,10 +1,8 @@
 import yaml
+import sys
 from fermipy.utils import *
 
 from fermipy.roi_model import ROIModel
-
-
-
 
 roi = ROIModel({'catalogs' : ['3FGL']})
 
@@ -16,20 +14,27 @@ cuts1 = [('GLAT',-90.,-5.)]
 
 srcs = roi.get_sources(cuts0) + roi.get_sources(cuts1)
 
-srcs_dict = {}
+config = {
+    'selection' : {},
+    }
 
+configs = {}
 for s in srcs:
 
     if s.extended:
         continue
-    srcs_dict[s.name] = s
+
+    c = copy.deepcopy(config)
+    c['selection']['target'] = s.name
+    configs[s.name.lower().replace(' ','_')] = c
     
-print 'found ', len(srcs_dict), ' sources'
+#    srcs_dict[s.name] = s
+    
+print 'found ', len(configs), ' sources'
 
-src_names = []
+#src_names = []
+#for k,s in sorted(srcs_dict.items()):
+#    src_names += [k]
 
-for k,s in sorted(srcs_dict.items()):
-    src_names += [k]
-
-yaml.dump(tolist(src_names),open(sys.argv[1],'w'))
+yaml.dump(tolist(configs),open(sys.argv[1],'w'))
 
