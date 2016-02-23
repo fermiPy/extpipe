@@ -31,6 +31,8 @@ class Histogram(object):
         hist, xedges, yedges = np.histogram2d(x_values,  y_values, 
                                 bins=[self._x_bin_max, self._y_bin_max], range=[[-2,2],[-2,2]])
 
+        self.empty_hist = False
+
         self.setup(hist, xedges, yedges)
 
     def setup(self, hist, xedges, yedges):
@@ -50,21 +52,27 @@ class Histogram(object):
         self._yedges = yedges
 
         self._total = np.sum(self._hist)
-        self._x_del = self._xedges[1] - self._xedges[0]
-        self._y_del = self._yedges[1] - self._yedges[0]
-        self._search_radius = np.sqrt(self._x_del**2 + self._y_del**2) * 2
-        
-        self._pixels = []
-        self._middle_rad = []
-        for i,x in enumerate(self._xedges[:-1]):
-            for j,y in enumerate(self._yedges[:-1]):
-                v = self._hist[i][j]
-                self._pixels.append((Pixel(x,y,self._x_del, self._y_del, v), np.sqrt((x+self._x_del/2.)**2 + (y+self._y_del/2.)**2), v))
-                
-        self._containment_cache = {}
-        self._min_containment = None
-        self._max_containment = None
-        self._build_containment_cache()
+        if self._total == 0:
+            self._empty_hist = True
+
+        else:
+            self._empty_hist = False
+
+            self._x_del = self._xedges[1] - self._xedges[0]
+            self._y_del = self._yedges[1] - self._yedges[0]
+            self._search_radius = np.sqrt(self._x_del**2 + self._y_del**2) * 2
+
+            self._pixels = []
+            self._middle_rad = []
+            for i,x in enumerate(self._xedges[:-1]):
+                for j,y in enumerate(self._yedges[:-1]):
+                    v = self._hist[i][j]
+                    self._pixels.append((Pixel(x,y,self._x_del, self._y_del, v), np.sqrt((x+self._x_del/2.)**2 + (y+self._y_del/2.)**2), v))
+
+            self._containment_cache = {}
+            self._min_containment = None
+            self._max_containment = None
+            self._build_containment_cache()
 
 
     def _value(self,pixel_set, radius):
@@ -91,7 +99,10 @@ class Histogram(object):
         return pixel_set[0].value(radius)    
         
 
-    #@do_profile(['Histogram._get_integral'])        
+        return pixel_set[0].value(radius)
+
+
+    #@do_profile(['Histogram._get_integral'])
     def _get_integral(self,radius):
         """ Integrates over all the pixels from 0 to the specified radius
 
@@ -127,13 +138,21 @@ class Histogram(object):
             Return:
                 float: The containment fraction for this radius
                 """
+
+        if self._empty_hist:
+            return 1.
+
         if radius in self._containment_cache:
             return self._containment_cache[radius]
         else:
-            int = self._get_integral(radius)
-            containment = int/self._total
+            integral = self._get_integral(radius)
+            if self._total > 0:
+                containment = integral/self._total
+            else:
+                containment = 1.
             self._containment_cache[radius] = containment
-            
+
+            assert not np.isnan(containment)
             return containment
         
     def containment(self, radius):
@@ -146,8 +165,8 @@ class Histogram(object):
             numpy array: A 1d array of containment fractions corresponding to the radius array
             """
         f_vec = np.vectorize(self._containment_single)
-        return f_vec(radius)  
-        
+        return f_vec(radius)
+
     def _step_containment(self, start, stop, check_value, step, done):
         """Identify and cache the containments for a series of radii to build a
             cdf curve. 
@@ -180,10 +199,10 @@ class Histogram(object):
             
         containment_curve.sort(key=lambda x:x[0])
         y,x = zip(*containment_curve)
-        
-        self._contain_fcn = self._containment_fcn = interp.interp1d(x,y)
-            
-        
+
+        self._contain_fcn = interp.interp1d(x,y)
+
+
     def _build_containment_cache(self):
         """ Creates the initial containment cache values from containment = (0.34, 0.95) 
             or radius=(0, 2.1), whichever is smaller."""
@@ -205,18 +224,17 @@ class Histogram(object):
             float: The radius corresponding to the desired containment
 
             """
+        if self._empty_hist:
+            return 0.
 
         if containment < self._min_containment[1]:
             self._min_containment = self._step_containment(self._min_containment[0],0,containment,-.1, done=lambda x,y: x<y)
             self._setup_containment_fcn()      
         elif containment > self._max_containment[1]:
             self._max_containment = self._step_containment(self._max_containment[0],2.1, containment,.1, done=lambda x,y: x>y)
-            self._setup_containment_fcn()            
-        
-        try:
-            radius = self._contain_fcn(containment)
-        except ValueError:
-            return self._max_containment[0]
+            self._setup_containment_fcn()
+
+        radius = self._contain_fcn(containment)
         return radius
         
     def radius(self, containment):
@@ -229,9 +247,11 @@ class Histogram(object):
             numpy array: A 1d array of radius fractions corresponding to the containment array
             """
         f_vec = np.vectorize(self._radius_single)
-        return f_vec(containment)  
-            
-            
+        value = f_vec(containment)
+        assert not np.any(np.isnan(value)), 'Value is nan, '+str(value)
+        return value
+
+
 
 #def test_radius():
 #    dist = Distribution()
