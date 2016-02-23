@@ -19,12 +19,14 @@ gta = GTAnalysis(args.config,logging={'verbosity' : 3})
 
 gta.setup()
 
-gta.update_source_map(args.source)
+src_name = gta.roi.sources[0].name
+
+gta.update_source_map(src_name)
 
 # Get a reasonable starting point for the spectral model
-gta.free_source(args.source)
+gta.free_source(src_name)
 gta.fit()
-gta.free_source(args.source,False)
+gta.free_source(src_name,False)
 
 # -----------------------------------
 # Pass 0 - Source at Nominal Position
@@ -32,48 +34,48 @@ gta.free_source(args.source,False)
 
 gta.optimize()
 
-gta.free_source(args.source)
+gta.free_source(src_name)
 gta.free_source('galdiff',pars='norm')
 gta.free_source('isodiff',pars='norm')
 gta.fit()
 gta.free_sources(free=False)
 
-gta.extension(args.source)
-gta.sed(args.source)
+gta.extension(src_name)
+gta.sed(src_name)
 
 model = { 'SpatialModel' : 'PointSource', 'Index' : 2.0 }
 
 # Baseline Fit
 gta.write_roi('fit0')
 gta.tsmap('fit0',model=model)
-gta.tsmap('fit0_nosource',model=model,exclude=[args.source])
+gta.tsmap('fit0_nosource',model=model,exclude=[src_name])
 gta.residmap('fit0',model=model)
 
 # -------------------------------------
 # Pass 1 - Source at Localized Position
 # -------------------------------------
 
-if gta.roi[args.source]['ts'] > 25.:
-    gta.localize(args.source,update=True)
+if gta.roi[src_name]['ts'] > 25.:
+    gta.localize(src_name,update=True)
 
 #gta.optimize()
 
-gta.free_source(args.source)
+gta.free_source(src_name)
 gta.free_source('galdiff',pars='norm')
 gta.free_source('isodiff',pars='norm')
 gta.fit()
 gta.free_sources(free=False)
 
-gta.extension(args.source)
-gta.sed(args.source)
+gta.extension(src_name)
+gta.sed(src_name)
 
 # Post-Relocalization Fit
 gta.write_roi('fit1')
 gta.tsmap('fit1',model=model)
-gta.tsmap('fit1_nosource',model=model,exclude=[args.source])
+gta.tsmap('fit1_nosource',model=model,exclude=[src_name])
 gta.residmap('fit1',model=model)
 
-skydir = gta.roi.get_source_by_name(args.source)[0].skydir
+skydir = gta.roi.get_source_by_name(src_name)[0].skydir
 
 halo_source_dict = {
     'ra' : skydir.ra.deg,
@@ -101,7 +103,7 @@ for i, (w,idx) in enumerate(itertools.product(halo_width,halo_index)):
     
     gta.add_source(halo_source_name,halo_source_dict)
     gta.free_norm(halo_source_name)
-    gta.free_norm(args.source)
+    gta.free_norm(src_name)
     gta.free_norm('galdiff')
     gta.free_norm('isodiff')
     gta.fit()
@@ -128,7 +130,7 @@ for i, w in enumerate(halo_width):
     
     gta.add_source(halo_source_name,halo_source_dict)
     gta.free_norm(halo_source_name)
-    gta.free_norm(args.source)
+    gta.free_norm(src_name)
     gta.free_norm('galdiff')
     gta.free_norm('isodiff')
     gta.fit()
