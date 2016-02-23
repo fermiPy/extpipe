@@ -1,0 +1,78 @@
+logging : 
+
+  verbosity : 3
+
+data:
+
+  # Define input data files (FT1, FT2, LTCube)
+
+  # FT1 file
+  evfile : /u/gl/mdwood/ki20/mdwood/fermi/data/P8_SOURCE_V6_HE/P8_SOURCE_V6_239557414_476239414_z100_r180_ft1.lst
+
+  # Spacecraft file
+  scfile : /nfs/slac/g/ki/ki20/cta/mdwood/fermi/data/P8_P302_BASE/P8_P302_SOURCE_239557414_476239414_ft2.fits
+
+  ltcube : /nfs/slac/g/ki/ki20/cta/mdwood/fermi/data/P8_SOURCE_V6_HE/P8_SOURCE_V6_239557414_476239414_z100_r180_gti_ft1_gtltcube_z100.fits
+
+binning:
+
+  # Binning
+  roiwidth   : 6.0
+  npix       : null
+  binsz      : 0.05 # spatial bin size in deg
+  binsperdec : 8   # nb energy bins per decade
+  coordsys   : 'GAL'
+  
+selection:
+
+  # Data selections
+  emin    : 1000
+  emax    : 316227.766
+  zmax    : 100
+  evclass : 128
+  evtype  : 3
+  tmin    : 239557414
+  tmax    : 476239414 # 7.5 years
+
+fileio : 
+  usescratch : True
+
+gtlike:
+  # IRFs
+  edisp : True
+  irfs : 'P8R2_SOURCE_V6'
+  edisp_disable : ['isodiff','galdiff']
+
+# Settings for ROI model
+model:
+
+  # Include catalog sources within this distance from the ROI center
+  src_radius  : null
+
+  # Include catalog sources within a box of width roisrc.
+  src_roiwidth : 10.0
+
+  galdiff  : '$FERMI_DIFFUSE_DIR/gll_iem_v06.fits'
+  isodiff  : 'iso_P8R2_SOURCE_V6_v06.txt'
+  limbdiff : null
+
+  merge_sources : False
+
+  # List of catalogs to be used in the model.
+  catalogs : 
+    - '3FGL'
+
+components: null
+
+extension:
+  width_min : 0.00316227766
+  width_max : 1.0
+  width_nstep : 26
+  spatial_model : 'GaussianSource'
+
+plotting:
+  erange: [[3.5,5.5],[4.0,5.5]]
+
+localize:
+  dtheta_max : 0.20
+  nstep : 10
