@@ -152,6 +152,20 @@ for d in dirs:
             tab.add_column(Column([], name=colname, dtype='f8', format='%.3f'))
         
         row += [hd['eflux_ul95']]
+
+    for hd in halo_data2:
+        colname = 'fit2_halo_%.2f_%.3f_ts'%(np.abs(hd['params']['Index'][0]),
+                                            hd['SpatialWidth'])
+        if not colname in tab.colnames:
+            tab.add_column(Column([], name=colname, dtype='f8', format='%.3f'))        
+        row += [hd['ts']]
+
+        colname = 'fit2_halo_%.2f_%.3f_eflux_ul95'%(np.abs(hd['params']['Index'][0]),
+                                                    hd['SpatialWidth'])
+        if not colname in tab.colnames:
+            tab.add_column(Column([], name=colname, dtype='f8', format='%.3f'))
+        
+        row += [hd['eflux_ul95']]
             
     tab.add_row([src0['name'],codename,linkname] + row)
 
