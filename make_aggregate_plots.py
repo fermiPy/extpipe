@@ -11,15 +11,28 @@ import matplotlib.pyplot as plt
 from astropy.table import Table, Column
 from astropy.io import fits
 
-hdulist=fits.open('test.fits')
+parser = argparse.ArgumentParser()
+
+parser.add_argument('--output', default = 'test')
+parser.add_argument('--input', default = 'test.fits',
+                    help='input fits file from aggregate output')
+parser.add_argument('--show_plots', dest='show_plots', action='store_true')
+parser.add_argument('--save_plots', dest='save_plots', action='store_true')
+parser.set_defaults(show_plots=False)
+parser.set_defaults(save_plots=False)
+
+args = parser.parse_args()
+
+#print name of input file
+print "Analyzing file:", args.input
+#print args.show_plots, args.save_plots
+#sys.exit()
+
+hdulist=fits.open(args.input)
 data=hdulist[1].data
 
 #list of object classes
 objcls=['fsrq','bll','bcu','PSR','unkn']
-
-#Ssave/Show plots at the end?
-show_plots = True
-save_plots = True
 
 def column(matrix, i):
     return[row[i] for row in matrix]
@@ -106,8 +119,8 @@ plt.ylabel('dfde 1GeV index')
 plt.xlabel('eflux 1GeV')
 plt.xscale('log')
 
-if save_plots:
-    save('figures/test','png',False,True)
+if args.save_plots:
+    save('figures/%s' % args.output,'png',False,True)
 
 #loop over and make figures for each specific class of objects
 for i in range(0,len(objcls)):
@@ -128,13 +141,14 @@ for i in range(0,len(objcls)):
     plt.xlabel('eflux 1GeV for %s' % objcls[i])
     plt.xscale('log')
 
-    if save_plots:
-        save('figures/test_%s' % objcls[i],'png',False,True)
+    if args.save_plots:
+        save('figures/%s_%s' % (args.output, objcls[i]),'png',False,True)
 
 
 print "You observed a total of", len(data), "objects"
 
-if show_plots:
+if args.show_plots:
+    print "Displaying plots, please close them to exit"
     plt.show()
 
 
