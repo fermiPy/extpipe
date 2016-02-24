@@ -113,9 +113,11 @@ for d in dirs:
     ext1_results = [np.nan,np.nan,np.nan,np.nan]
     ext2_results = [np.nan,np.nan,np.nan,np.nan]
 
+    if ext0 is not None:
+        ext0_results = [max(ext0['ts_ext'],0),ext0['ext'],ext0['ext_err'],ext0['ext_ul95']]
 
-    ext0_results = [max(ext0['ts_ext'],0),ext0['ext'],ext0['ext_err'],ext0['ext_ul95']]
-    ext1_results = [max(ext1['ts_ext'],0),ext1['ext'],ext1['ext_err'],ext1['ext_ul95']]
+    if ext1 is not None:
+        ext1_results = [max(ext1['ts_ext'],0),ext1['ext'],ext1['ext_err'],ext1['ext_ul95']]
 
     if ext2 is not None:
         ext2_results = [max(ext2['ts_ext'],0),ext2['ext'],ext2['ext_err'],ext2['ext_ul95']]
