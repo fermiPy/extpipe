@@ -1,15 +1,16 @@
 import sys
-import glob
 import os
 import argparse
-import yaml
-import pprint
+import math
 
 import numpy as np
 import matplotlib.pyplot as plt
+from collections import OrderedDict
 
 from astropy.table import Table, Column
 from astropy.io import fits
+from astropy import units as u
+from astropy.coordinates import SkyCoord
 
 parser = argparse.ArgumentParser()
 
@@ -31,8 +32,10 @@ print "Analyzing file:", args.input
 hdulist=fits.open(args.input)
 data=hdulist[1].data
 
-#list of object classes
-objcls=['fsrq','bll','bcu','PSR','unkn']
+#list of object classes, full list here: http://heasarc.gsfc.nasa.gov/W3Browse/fermi/fermilpsc.html
+objcls=['agn','bcu','BCU','bin','bll','BLL','css','fsrq','FSRQ','gal',
+        'glc','hmb','nlsy1','NLSY1','nov','psr','PSR','pwn','rdg','RDG',
+        'sbg','sey','sfr','snr','spp','ssrq','unkn']
 
 def column(matrix, i):
     return[row[i] for row in matrix]
@@ -85,35 +88,46 @@ def save(path, ext='png', close=True, verbose=True):
         print("Done")
 
 
-#plot ra, dec of objects
-plt.figure(facecolor='w',edgecolor='w')
+plt.figure(figsize=(10,20),facecolor='w',edgecolor='w')
 plt.figure(1)
-plt.subplot(221)
-plt.plot(column(data,'ra'),column(data,'dec'),'ro')
+
+#plot ra, dec of objects
+plt.subplot(321,projection="aitoff")
+plt.grid(True)
+c = SkyCoord(column(data,'ra')*u.degree, column(data,'dec')*u.degree, frame='icrs')
+plt.plot(c.ra.wrap_at(180*u.deg).radian,c.dec.wrap_at(180*u.deg).radian,'ro')
 plt.ylabel('dec (deg)')
-plt.xlabel('ra (deg)')
+#plt.xlabel('ra (deg)')
 
 #plot glat, glon of objects
-plt.subplot(222)
-plt.plot(column(data,'glon'),column(data,'glat'),'go')
+plt.subplot(322,projection="aitoff")
+plt.grid(True)
+gc = SkyCoord(column(data,'glon')*u.degree, column(data,'glat')*u.degree, frame='galactic')
+plt.plot(gc.l.wrap_at(180*u.deg).radian,gc.b.wrap_at(180*u.deg).radian,'go')
 plt.ylabel('glat (deg)')
-plt.xlabel('glon (deg)')
+#plt.xlabel('glon (deg)')
 
 #plot number of objects in each class
 objnum=[]
+#print column(data,'class')
 for i in range(0,len(objcls)):
     holder=[s for s in column(data,'class') if objcls[i] in s]
-    #print holder, objcls[i]
+    print objcls[i], len(holder)
     objnum.append(len(holder))
 
-class_info = dict(zip(objcls, objnum))
-plt.subplot(223)
-plt.bar(range(len(class_info)), class_info.values(),align='center')
+class_info = OrderedDict(zip(objcls, objnum))
+plt.subplot(312)
+plt.bar(range(len(class_info)), class_info.values(),align='center',log=True)
 plt.xticks(range(len(class_info)),class_info.keys())
 plt.xlabel('class')
+locs, labels = plt.xticks()
+plt.setp(labels, rotation=90)
+plt.xlim([-1.,len(class_info)])
+plt.ylim([0.1,2000.])
+
 
 #plot eflux at 1 GeV vs. dfde index at 1 GeV
-plt.subplot(224)
+plt.subplot(313)
 plt.plot(column(data,'eflux1000'),column(data,'dfde1000_index'),'bo')
 plt.ylabel('dfde 1GeV index')
 plt.xlabel('eflux 1GeV')
@@ -122,25 +136,45 @@ plt.xscale('log')
 if args.save_plots:
     save('figures/%s' % args.output,'png',False,True)
 
+#plt.figure(figsize=(15,5),facecolor='w',edgecolor='w')
+#plt.figure(2)
+#plt.subplot(3,1,1)
+
+
 #loop over and make figures for each specific class of objects
+fignum=3
+#for i in range(0):
 for i in range(0,len(objcls)):
     class_data=[s for s in data if objcls[i] in s]
+    if len(class_data)==0:
+        continue
 
-    plt.figure(figsize=(10,5),facecolor='w',edgecolor='w')
-    plt.figure(i+2)
+    plt.figure(figsize=(15,5),facecolor='w',edgecolor='w')
+    plt.figure(fignum)
     #plot glat, glon of objects
-    plt.subplot(121)
-    plt.plot(column(class_data,'glon'),column(class_data,'glat'),'go')
+    plt.subplot(131,projection="aitoff")
+    plt.grid(True)
+    gc = SkyCoord(column(class_data,'glon')*u.degree, column(class_data,'glat')*u.degree, frame='galactic')
+    plt.plot(gc.l.wrap_at(180*u.deg).radian,gc.b.wrap_at(180*u.deg).radian,'go')
     plt.ylabel('glat (deg)')
-    plt.xlabel('glon (deg)')
-
+    #plt.xlabel('glon (deg)')
+    
     #plot eflux vs dfde index
-    plt.subplot(122)
+    plt.subplot(132)
     plt.plot(column(class_data,'eflux1000'),column(class_data,'dfde1000_index'),'bo')
-    plt.ylabel('dfde 1GeV index for %s' % objcls[i])
-    plt.xlabel('eflux 1GeV for %s' % objcls[i])
+    plt.ylabel('dfde 1GeV index')
+    plt.xlabel('eflux 1GeV')
     plt.xscale('log')
+    plt.title('%s' % objcls[i])
 
+    plt.subplot(133)
+    plt.plot(column(class_data,'ext0_ts'),column(class_data,'ext1_ts'),'ro')
+    plt.ylabel('ext1 ts')
+    plt.xlabel('ext0 ts')
+    plt.title('%s' % objcls[i])
+
+    fignum+=1
+    
     if args.save_plots:
         save('figures/%s_%s' % (args.output, objcls[i]),'png',False,True)
 
