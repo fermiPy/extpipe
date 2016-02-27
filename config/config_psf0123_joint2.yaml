@@ -1,0 +1,3 @@
+components:
+  - { selection : { evtype : 12 } }
+  - { selection : { evtype : 48 } }

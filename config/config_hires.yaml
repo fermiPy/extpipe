@@ -2,18 +2,6 @@ logging :
 
   verbosity : 3
 
-data:
-
-  # Define input data files (FT1, FT2, LTCube)
-
-  # FT1 file
-  evfile : /u/gl/mdwood/ki20/mdwood/fermi/data/P8_SOURCE_V6_HE/P8_SOURCE_V6_239557414_428903014_z100_r180_ft1.lst
-
-  # Spacecraft file
-  scfile : /nfs/slac/g/ki/ki20/cta/mdwood/fermi/data/P8_SOURCE_V4/P8_P301_SOURCE_239557414_428903014_ft2.fits 
-
-  ltcube : /nfs/slac/g/ki/ki20/cta/mdwood/fermi/data/P8_SOURCE_V6/P8_SOURCE_V6_239557414_428903014_z100_r180_gti_ft1_gtltcube_z100.fits
-
 binning:
 
   # Binning
@@ -21,6 +9,7 @@ binning:
   npix       : null
   binsz      : 0.025 # spatial bin size in deg
   binsperdec : 8   # nb energy bins per decade
+  coordsys   : 'GAL'
   
 selection:
 
@@ -30,20 +19,12 @@ selection:
   zmax    : 100
   evclass : 128
   evtype  : 3
-  tmin    : 239557414
-  tmax    : 428903014 # 6 years
-
-  # Set the ROI center to the coordinates of this source
-  target : 'mkn421'
 
 gtlike:
   # IRFs
   edisp : True
   irfs : 'P8R2_SOURCE_V6'
   edisp_disable : ['isodiff','galdiff']
-  rfactor : 2
-  convolve : False
-  resample : False
   minbinsz : 0.025
 
 # Settings for ROI model
@@ -55,33 +36,27 @@ model:
   # Include catalog sources within a box of width roisrc.
   src_roiwidth : 10.0
 
-  galdiff  : '/nfs/slac/g/ki/ki20/cta/mdwood/fermi/diffuse/v5r0/gll_iem_v06.fits'
-  isodiff  : '/nfs/slac/g/ki/ki20/cta/mdwood/fermi/diffuse/v5r0/iso_P8R2_SOURCE_V6_v06.txt'
+  galdiff  : '$FERMI_DIFFUSE_DIR/gll_iem_v06.fits'
+  isodiff  : 'iso_P8R2_SOURCE_V6_v06.txt'
   limbdiff : null
+
+  merge_sources : False
 
   # List of catalogs to be used in the model.
   catalogs : 
-    - 'gll_psc_v14.fit'
+    - '3FGL'
 
 components: null
 
 extension:
   width_min : 0.00316227766
-  width_max : 0.316227766
-  width_nstep : 21
-  spatial_model : 'CGaussianSource'
+  width_max : 1.0
+  width_nstep : 26
+  spatial_model : 'GaussianSource'
 
 plotting:
   erange: [[3.5,5.5],[4.0,5.5]]
 
-residmap:
-  models : 
-   - { Index : 2.0, SpatialModel : 'Gaussian', SpatialWidth : 0.1000 }
-   - { Index : 2.0, SpatialModel : 'Gaussian', SpatialWidth : 0.1778 }
-   - { Index : 2.0, SpatialModel : 'Gaussian', SpatialWidth : 0.3162 }
-   - { Index : 2.5, SpatialModel : 'Gaussian', SpatialWidth : 0.1000 }
-   - { Index : 2.5, SpatialModel : 'Gaussian', SpatialWidth : 0.1778 }
-   - { Index : 2.5, SpatialModel : 'Gaussian', SpatialWidth : 0.3162 }
-   - { Index : 1.5, SpatialModel : 'Gaussian', SpatialWidth : 0.1000 }
-   - { Index : 1.5, SpatialModel : 'Gaussian', SpatialWidth : 0.1778 }
-   - { Index : 1.5, SpatialModel : 'Gaussian', SpatialWidth : 0.3162 }
+localize:
+  dtheta_max : 0.40
+  nstep : 5

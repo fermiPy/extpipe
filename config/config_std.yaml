@@ -2,18 +2,6 @@ logging :
 
   verbosity : 3
 
-data:
-
-  # Define input data files (FT1, FT2, LTCube)
-
-  # FT1 file
-  evfile : /u/gl/mdwood/ki20/mdwood/fermi/data/P8_SOURCE_V6_HE/P8_SOURCE_V6_239557414_476239414_z100_r180_ft1.lst
-
-  # Spacecraft file
-  scfile : /nfs/slac/g/ki/ki20/cta/mdwood/fermi/data/P8_P302_BASE/P8_P302_SOURCE_239557414_476239414_ft2.fits
-
-  ltcube : /nfs/slac/g/ki/ki20/cta/mdwood/fermi/data/P8_SOURCE_V6_HE/P8_SOURCE_V6_239557414_476239414_z100_r180_gti_ft1_gtltcube_z100.fits
-
 binning:
 
   # Binning
@@ -31,8 +19,6 @@ selection:
   zmax    : 100
   evclass : 128
   evtype  : 3
-  tmin    : 239557414
-  tmax    : 476239414 # 7.5 years
 
 fileio : 
   usescratch : True
@@ -74,5 +60,5 @@ plotting:
   erange: [[3.5,5.5],[4.0,5.5]]
 
 localize:
-  dtheta_max : 0.20
-  nstep : 10
+  dtheta_max : 0.40
+  nstep : 5

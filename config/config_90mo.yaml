@@ -1,0 +1,11 @@
+data:
+
+  evfile : /u/gl/mdwood/ki20/mdwood/fermi/data/P8_SOURCE_V6_HE/P8_SOURCE_V6_239557414_476239414_z100_r180_ft1.lst
+  scfile : /nfs/slac/g/ki/ki20/cta/mdwood/fermi/data/P8_P302_BASE/P8_P302_SOURCE_239557414_476239414_ft2.fits
+  ltcube : /nfs/slac/g/ki/ki20/cta/mdwood/fermi/data/P8_SOURCE_V6_HE/P8_SOURCE_V6_239557414_476239414_z100_r180_gti_ft1_gtltcube_z100.fits
+  
+selection:
+
+  tmin    : 239557414
+  tmax    : 476239414 # 7.5 years
+
