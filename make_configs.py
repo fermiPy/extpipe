@@ -24,7 +24,10 @@ args = parser.parse_args()
 
 config = {}
 for c in args.configs:
-    config.update(yaml.load(open(c)))
+
+    config = utils.merge_dict(config,yaml.load(open(c)),
+                              add_new_keys=True)   
+#    config.update(yaml.load(open(c)))
 
 src_list = yaml.load(open(args.source_list))
 basedir = args.basedir

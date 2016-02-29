@@ -20,7 +20,9 @@ gta = GTAnalysis(args.config,logging={'verbosity' : 3})
 
 gta.setup()
 
-model = { 'SpatialModel' : 'PointSource', 'Index' : 2.0 }
+model0 = { 'SpatialModel' : 'PointSource', 'Index' : 1.5 }
+model1 = { 'SpatialModel' : 'PointSource', 'Index' : 2.0 }
+model2 = { 'SpatialModel' : 'PointSource', 'Index' : 2.5 }
 src_name = gta.roi.sources[0].name
 
 # reset the source map
@@ -37,10 +39,23 @@ gta.free_source(src_name,False)
 
 gta.optimize()
 
-gta.tsmap('base',model=model)
+gta.tsmap('base',model=model1)
 
-# Look for new point sources outside the inner 1 deg
-gta.find_sources('base',search_skydir=gta.roi.skydir,
+# Look for new point sources outside the inner 0.5 deg
+gta.find_sources('base',model=model0,
+                 search_skydir=gta.roi.skydir,
+                 max_iter=3,min_separation=1.0,
+                 sqrt_ts_threshold=5,
+                 search_minmax_radius=[0.5,None])
+
+gta.find_sources('base',model=model1,
+                 search_skydir=gta.roi.skydir,
+                 max_iter=3,min_separation=1.0,
+                 sqrt_ts_threshold=5,
+                 search_minmax_radius=[0.5,None])
+
+gta.find_sources('base',model=model2,
+                 search_skydir=gta.roi.skydir,
                  max_iter=3,min_separation=1.0,
                  sqrt_ts_threshold=5,
                  search_minmax_radius=[0.5,None])
@@ -53,20 +68,19 @@ gta.write_roi('base')
 # Pass 0 - Source at Nominal Position
 # -----------------------------------
 
-gta.free_source(src_name)
-gta.free_source('galdiff',pars='norm')
-gta.free_source('isodiff',pars='norm')
+gta.free_sources(distance=0.5,exclude_diffuse=True)
+gta.free_sources(distance=0.5,pars='norm')
 gta.fit()
-gta.free_sources(free=False)
+#gta.free_sources(free=False)
 
 gta.extension(src_name)
 gta.sed(src_name)
 
 # Baseline Fit
 gta.write_roi('fit0')
-gta.tsmap('fit0',model=model)
-gta.tsmap('fit0_nosource',model=model,exclude=[src_name])
-gta.residmap('fit0',model=model)
+gta.tsmap('fit0',model=model1)
+gta.tsmap('fit0_nosource',model=model1,exclude=[src_name])
+gta.residmap('fit0',model=model1)
 
 # Likelihood for Model
 like0 = -gta.like()
@@ -78,24 +92,25 @@ gta.logger.info('Fit0 Model Likelihood: %f'%like0)
 # -------------------------------------
 
 if gta.roi[src_name]['ts'] > 9.:
-    gta.localize(src_name,update=True)
+    gta.localize(src_name,nstep=5,dtheta_max=0.5,update=True)
 
-#gta.optimize()
+gta.optimize()
 
-gta.free_source(src_name)
-gta.free_source('galdiff',pars='norm')
-gta.free_source('isodiff',pars='norm')
+gta.free_sources(distance=0.5,exclude_diffuse=True)
+gta.free_sources(distance=0.5,pars='norm')
 gta.fit()
-gta.free_sources(free=False)
+#gta.free_sources(free=False)
 
 gta.extension(src_name)
 gta.sed(src_name)
 
 # Post-Relocalization Fit
 gta.write_roi('fit1')
-gta.tsmap('fit1',model=model)
-gta.tsmap('fit1_nosource',model=model,exclude=[src_name])
-gta.residmap('fit1',model=model)
+gta.tsmap('fit1',model=model0)
+gta.tsmap('fit1',model=model1)
+gta.tsmap('fit1',model=model2)
+gta.tsmap('fit1_nosource',model=model1,exclude=[src_name])
+gta.residmap('fit1',model=model1)
 
 # Likelihood for Model
 like1 = -gta.like()
@@ -136,12 +151,9 @@ srcs_pass1 = gta.find_sources('fit2_pass1',
 
 srcs = srcs_pass0['sources'] + srcs_pass1['sources']
 
-new_source_data = []
 for s in srcs:
-    new_source_data.append(copy.deepcopy(s.data))
-
-np.save(os.path.join(gta._savedir,'new_source_data.npy'),
-        new_source_data)
+    gta.localize(s.name,nstep=5,dtheta_max=0.4,
+                 update=True)
 
 # If no sources were found then re-add the central source
 if len(srcs) == 0:
@@ -149,23 +161,36 @@ if len(srcs) == 0:
 
 gta.optimize()
 
+gta.free_sources(distance=0.5,exclude_diffuse=True)
+gta.free_sources(distance=0.5,pars='norm')
+gta.fit()
+
 src_name = gta.roi.sources[0].name
 
-gta.extension(src_name)
-gta.sed(src_name)
+for s in srcs:
+    gta.extension(s.name)
+    gta.sed(s.name)
 
+new_source_data = []
+for s in srcs:
+    src_data = gta.roi[s.name].data
+    new_source_data.append(copy.deepcopy(src_data))
+
+np.save(os.path.join(gta._savedir,'new_source_data.npy'),
+        new_source_data)
+        
+    
 gta.write_roi('fit2')
-gta.tsmap('fit2',model=model)
-gta.tsmap('fit2_nosource',model=model,exclude=[src_name])
-gta.residmap('fit2',model=model)
+gta.tsmap('fit2',model=model0)
+gta.tsmap('fit2',model=model1)
+gta.tsmap('fit2',model=model2)
+gta.tsmap('fit2_nosource',model=model1,exclude=[src_name])
+gta.residmap('fit2',model=model1)
 
 like2 = -gta.like()
 
 gta.logger.info('Fit2 Model Likelihood: %f'%like2)
 
-#deltalnl = 2*(like2-like1)
-#gta.logger.info('Best Fit Model: %s Delta-LnL: %f'%(best_fit_model,deltalnl))
-    
 halo_source_dict = {
     'SpectrumType' : 'PowerLaw', 
     'Index' : 2.0, 
