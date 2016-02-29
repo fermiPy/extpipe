@@ -2,6 +2,7 @@ import numpy as np
 import glob
 import sys
 import os
+import traceback
 import argparse
 
 from astropy.table import Table, Column
@@ -42,13 +43,25 @@ cols = [Column([], name='name', dtype='S20', format='%s',description='Source Nam
         Column([], name='glat', dtype='f8', format='%.3f',unit='deg'),
         Column([], name='ts', dtype='f8', format='%.2f'),
         Column([], name='npred', dtype='f8', format='%.2f'),
+        Column([], name='fit0_ts', dtype='f8', format='%.2f'),
+        Column([], name='fit1_ts', dtype='f8', format='%.2f'),
+        Column([], name='fit2_ts', dtype='f8', format='%.2f'),
+        Column([], name='fit0_offset', dtype='f8', format='%.2f'),
+        Column([], name='fit1_offset', dtype='f8', format='%.2f'),
+        Column([], name='fit2_offset', dtype='f8', format='%.2f'),
         #block added by RC
         Column([], name='dfde1000', dtype='f8', format='%.2f'),
         Column([], name='dfde1000_err', dtype='f8', format='%.2f'),
         Column([], name='dfde1000_index', dtype='f8', format='%.2f'),
         Column([], name='dfde1000_index_err', dtype='f8', format='%.2f'),
+        Column([], name='flux1000', dtype='f8', format='%.2f'),
+        Column([], name='flux1000_err', dtype='f8', format='%.2f'),
         Column([], name='eflux1000', dtype='f8', format='%.2f'),
         Column([], name='eflux1000_err', dtype='f8', format='%.2f'),
+        Column([], name='flux100', dtype='f8', format='%.2f'),
+        Column([], name='flux100_err', dtype='f8', format='%.2f'),
+        Column([], name='eflux100', dtype='f8', format='%.2f'),
+        Column([], name='eflux100_err', dtype='f8', format='%.2f'),
         Column([], name='spectrum_type', dtype='S20', format='%s'),
         #Column([], name='lnlprofile', dtype='f8', format='%.2f'),
         Column([], name='ext0_ts', dtype='f8', format='%.2f'),
@@ -93,14 +106,18 @@ for d in dirs:
     
     if not os.path.isfile(file0) or not os.path.isfile(file1):
         continue
-    
-    data0 = np.load(file0).flat[0]
-    data1 = np.load(file1).flat[0]
-    data2 = np.load(file2).flat[0]
-    halo_data1 = np.load(file3)
-    halo_data2 = np.load(file4)
-    new_srcs = np.load(file5)
 
+    try:
+        data0 = np.load(file0).flat[0]
+        data1 = np.load(file1).flat[0]
+        data2 = np.load(file2).flat[0]
+        halo_data1 = np.load(file3)
+        halo_data2 = np.load(file4)
+        new_srcs = np.load(file5)
+    except Exception as e:
+        traceback.print_exc()
+        continue
+        
     src0 = find_source(data0)
     src1 = find_source(data1)
     src2 = find_source(data2)
@@ -127,16 +144,22 @@ for d in dirs:
     nsrc = len(new_srcs)
     
     row = [src0['assoc']['ASSOC1'],src0['class'],
-           src0['ra'],src0['dec'],src0['glon'],src0['glat'],
-           src0['ts'],src0['Npred'],src0['dfde1000'][0],src0['dfde1000'][1],
-           src0['dfde1000_index'][0],src0['dfde1000_index'][1],
-           src0['eflux1000'][0],src0['eflux1000'][1],src0['SpectrumType']]
+           src1['ra'],src1['dec'],src1['glon'],src1['glat'],
+           src1['ts'],src1['Npred'],
+           src0['ts'],src1['ts'],src2['ts'],
+           src0['offset'],src1['offset'],src2['offset'],
+           src1['dfde1000'][0],src1['dfde1000'][1],
+           src1['dfde1000_index'][0],src1['dfde1000_index'][1],
+           src1['flux1000'][0],src0['flux1000'][1],
+           src1['eflux1000'][0],src0['eflux1000'][1],
+           src1['flux100'][0],src0['flux100'][1],
+           src1['eflux100'][0],src0['eflux100'][1],
+           src1['SpectrumType']]
 
     row += ext0_results
     row += ext1_results
     row += ext2_results    
     row += [fit1_dlike,fit2_dlike,nsrc]
-
 
     codename = os.path.basename(d)
     linkname = '{%s}'%codename.replace('+','p').replace('.','_')
