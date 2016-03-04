@@ -26,7 +26,7 @@ model2 = { 'SpatialModel' : 'PointSource', 'Index' : 2.5 }
 src_name = gta.roi.sources[0].name
 
 # reset the source map
-gta.update_source_map(src_name)
+gta.reload_source(src_name)
 
 # -----------------------------------
 # Get a Baseline Model
