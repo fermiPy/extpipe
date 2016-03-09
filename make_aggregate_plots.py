@@ -42,12 +42,12 @@ objcls=['agn','bcu','BCU','bin','bll','BLL','css','fsrq','FSRQ','gal',
 ext_list='ext1_ts' #['ext0_ts','ext1_ts','ext2_ts']
 
 
-plt.figure(figsize=(10,10),facecolor='w',edgecolor='w')
+plt.figure(figsize=(8,8),facecolor='w',edgecolor='w')
 plt.figure(1)
 plotting.plot_aitoff(data,subplot=[2,2,1])
 
 plt.subplot(2,2,2)
-plotting.plot_xy(data,x='ts',y='ext1_ts',rangex=[0,1000.],rangey=[0,1000.])
+plotting.plot_xy(data,x='ts',y='ext2_ts',rangex=[0,1000.],rangey=[0,1000.])
 
 plt.subplot(2,1,2)
 plotting.plot_class_stats(data,objcls,out_stats=True)
@@ -55,32 +55,45 @@ plotting.plot_class_stats(data,objcls,out_stats=True)
 if args.save_plots:
     plotting.save('figures/%s' % args.output,'png',False,True)
 
-plt.figure(figsize=(12,6),facecolor='w',edgecolor='w')
+plt.figure(figsize=(8,4),facecolor='w',edgecolor='w')
 plt.figure(2)
 #this has to be its own figure... tbd
-plotting.plot_ts_vs_chi2(data,ext_list='ext0_ts', ndf_chi2=[1.0,2.0])
+plotting.plot_ts_vs_chi2(data,ext_list='ext2_ts', ndf_chi2=[1.0,2.0])
 
 if args.save_plots:
     plotting.save('figures/%s_ts' % args.output,'png',False,True)
 
+plt.figure(figsize=(8,6),facecolor='w',edgecolor='w')
+plotting.plot_xy(data, x='ext2_ts', y=plotting.delta_dlike(data,x='fit1_dlike',y='fit2_dlike'), mathy='yes')
+    
+if args.save_plots:
+    plotting.save('figures/%s_ts_vs_2dll' % args.output,'png',False,True)
 
-fignum=3
+
+#fignum=3
 for i in range(0,len(objcls)):
     class_data=[s for s in data if objcls[i] in s]
-    if len(class_data)==0:continue
+    if len(class_data)<2:continue
     #print objcls[i]
     plt.figure(figsize=(8,8),facecolor='w',edgecolor='w')
-    plt.figure(fignum)
+    #plt.figure(fignum)
     plotting.plot_aitoff(class_data,subplot=[2,2,1])
     plt.subplot(2,2,2)
-    plotting.plot_xy(class_data,x='ts',y='ext1_ts',rangey=[0,10.])
-    plotting.plot_ts_vs_chi2(data,ext_list='ext0_ts', ndf_chi2=[1.0,2.0], subplot=[2,2,3])
+    plotting.plot_xy(class_data,x='ts',y='ext2_ts',rangey=[0,10.])
+    plotting.plot_ts_vs_chi2(class_data,ext_list='ext0_ts', ndf_chi2=[1.0,2.0], subplot=[2,2,3])
 
-    fignum+=1
+    #fignum+=1
     plt.suptitle('%s' % objcls[i])
 
     if args.save_plots:
         plotting.save('figures/%s_%s' % (args.output, objcls[i]),'png',False,True)
+
+    plt.figure(figsize=(8,6),facecolor='w',edgecolor='w')
+    plotting.plot_xy(class_data, x='ext2_ts', y=plotting.delta_dlike(class_data,x='fit1_dlike',y='fit2_dlike'), mathy='yes')
+    
+    if args.save_plots:
+        plotting.save('figures/%s_%s_ts_vs_2dll' % (args.output, objcls[i]),'png',False,True)
+
 
 
 print "You observed a total of", len(data), "objects"
