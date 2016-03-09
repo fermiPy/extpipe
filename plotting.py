@@ -67,14 +67,29 @@ def save(path, ext='png', close=True, verbose=True):
     if verbose:
         print("Done")
 
-def plot_xy(data,x='eflux1000',y='dfde1000_index',rangex=None, rangey=None, logx=False, logy=False, **kwargs):
-    plt.plot(column(data,x),column(data,y),'bo')
+def delta_dlike(data,x='fit1_dlike',y='fit2_dlike',**kwargs):
+    sub_col = [-2.0*(i - j) for i, j in zip(column(data,x), column(data,y))]
+    #print column(data,x), column(data,y), sub_col
+    return sub_col
+    
+
+def plot_xy(data,x='eflux1000',y='dfde1000_index',rangex=None, rangey=None, mathx=None, mathy=None, logx=False, logy=False, **kwargs):
+
+    #set data
+    xdata=x
+    ydata=y
+    if mathx is None: xdata=column(data,x)
+    if mathy is None: ydata=column(data,y)
+
+    plt.plot(xdata,ydata,'bo')
     if rangex is not None: 
         plt.xlim([rangex[0],rangex[1]])
     if rangey is not None:
         plt.ylim([rangey[0],rangey[1]])
-    plt.xlabel(x)
-    plt.ylabel(y)
+    if mathx is None: plt.xlabel(x)
+    else: plt.xlabel('2 Delta(fit1_dlike,fit2_dlike)')
+    if mathy is None: plt.ylabel(y)
+    else: plt.ylabel('2 Delta(fit1_dlike,fit2_dlike)')
     if logx: plt.xscale('log')
     if logy: plt.yscale('log')
 
