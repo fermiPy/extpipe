@@ -18,6 +18,7 @@ def fit_region(gta,modelname,erange=None):
     
     gta.optimize()
 
+    gta.free_sources(False)
     gta.free_sources(distance=1.0,exclude_diffuse=True)
     gta.free_sources(distance=1.0,pars='norm')
     gta.fit()
@@ -47,7 +48,7 @@ def fit_region(gta,modelname,erange=None):
 
     gta.logger.info('%s Model Likelihood: %f'%(modelname,lnl))
 
-def fit_halo(gta,modelname,make_sed=True,erange=None):
+def fit_halo(gta,modelname,src_name,erange=None):
 
     halo_source_dict = {
         'SpectrumType' : 'PowerLaw', 
@@ -66,20 +67,25 @@ def fit_halo(gta,modelname,make_sed=True,erange=None):
     gta.load_roi(modelname)
     if erange is not None:
         gta.setEnergyRange(erange[0],erange[1])
+
+    gta.free_sources(False)
+    gta.free_sources(distance=1.0,pars='norm')
+    gta.write_xml(modelname + '_base')
     
     for i, (w,idx) in enumerate(itertools.product(halo_width,halo_index)):
         halo_source_dict['SpatialWidth'] = w
         halo_source_dict['Index'] = idx    
         halo_source_name = 'halo_gauss'
 
-        gta.load_xml(modelname)
+        gta.load_xml(modelname + '_base')
 
-        halo_source_dict['ra'] = gta.roi.sources[0]['ra']
-        halo_source_dict['dec'] = gta.roi.sources[0]['dec']
+        halo_source_dict['ra'] = gta.roi[src_name]['ra']
+        halo_source_dict['dec'] = gta.roi[src_name]['dec']
     
-        gta.add_source(halo_source_name,halo_source_dict)
-        gta.free_sources(distance=1.0,pars='norm')
-        gta.fit()
+        gta.add_source(halo_source_name,halo_source_dict,free=True)
+#        gta.free_sources(False)
+#        gta.free_sources(distance=1.0,pars='norm')
+        gta.fit(update=False)
     
         gta.update_source(halo_source_name,reoptimize=True,
                           npts=10)
@@ -95,10 +101,7 @@ def fit_halo(gta,modelname,make_sed=True,erange=None):
 
     np.save(os.path.join(gta.workdir,'%s_halo_data.npy'%modelname),halo_data)
 
-    if not make_sed:
-        return
-
-    gta.load_roi(modelname)
+    #gta.load_roi(modelname)
     if erange is not None:
         gta.setEnergyRange(erange[0],erange[1])
 
@@ -107,13 +110,13 @@ def fit_halo(gta,modelname,make_sed=True,erange=None):
         halo_source_dict['Index'] = 2.0    
         halo_source_name = 'halo_gauss'
 
-        gta.load_xml(modelname)
+        gta.load_xml(modelname + '_base')
         
-        halo_source_dict['ra'] = gta.roi.sources[0]['ra']
-        halo_source_dict['dec'] = gta.roi.sources[0]['dec']
+        halo_source_dict['ra'] = gta.roi[src_name]['ra']
+        halo_source_dict['dec'] = gta.roi[src_name]['dec']
         
-        gta.add_source(halo_source_name,halo_source_dict)
-        gta.free_sources(distance=1.0,pars='norm')
+        gta.add_source(halo_source_name,halo_source_dict,free=True)
+#        gta.free_sources(distance=1.0,pars='norm')
         gta.fit()
     
         gta.sed(halo_source_name)    
@@ -121,9 +124,6 @@ def fit_halo(gta,modelname,make_sed=True,erange=None):
                       save_model_map=False,format='npy')
         gta.delete_source(halo_source_name,save_template=False) 
 
-    
-
-os.environ['USE_ADAPTIVE_PSF_ESTIMATOR']='1'
 
 usage = "usage: %(prog)s [config file]"
 description = "Run fermipy analysis chain."
@@ -135,7 +135,7 @@ parser.add_argument('--source', default = None)
 args = parser.parse_args()
 gta = GTAnalysis(args.config,logging={'verbosity' : 3})
 
-gta.setup()
+gta.setup(overwrite=True)
 
 sqrt_ts_threshold=3
 
@@ -143,9 +143,6 @@ model0 = { 'SpatialModel' : 'PointSource', 'Index' : 1.5 }
 model1 = { 'SpatialModel' : 'PointSource', 'Index' : 2.0 }
 model2 = { 'SpatialModel' : 'PointSource', 'Index' : 2.5 }
 src_name = gta.roi.sources[0].name
-
-# reset the source map
-gta.reload_source(src_name)
 
 # -----------------------------------
 # Get a Baseline Model
@@ -170,7 +167,10 @@ for s in gta.roi.sources:
     if np.abs(s['offset_glon']) > 2.8 or np.abs(s['offset_glat']) > 2.8:
         continue
 
-    gta.localize(s.name,nstep=5,dtheta_max=0.5,update=True)
+    gta.localize(s.name,nstep=5,dtheta_max=0.5,update=True,
+                 prefix='base')
+
+    gta.free_source(s.name,False)
         
 gta.tsmap('base',model=model1)
 gta.tsmap('base_emin40',model=model1,erange=[4.0,5.5])
@@ -199,13 +199,14 @@ gta.load_roi('fit0')
 # Pass 1 - Source at Localized Position
 # -------------------------------------
 
-gta.localize(src_name,nstep=5,dtheta_max=0.5,update=True)
+gta.localize(src_name,nstep=5,dtheta_max=0.5,update=True,
+             prefix='fit1')
 
 fit_region(gta,'fit1')
-fit_halo(gta,'fit1')
+fit_halo(gta,'fit1',src_name)
 
 fit_region(gta,'fit1_emin40',erange=[4.0,5.5])
-fit_halo(gta,'fit1_emin40',erange=[4.0,5.5])
+fit_halo(gta,'fit1_emin40',src_name,erange=[4.0,5.5])
 
 gta.load_roi('fit1')
 
@@ -239,10 +240,10 @@ for i in range(2,6):
                      update=True,prefix='fit%i'%i)
 
     fit_region(gta,'fit%i'%i)
-    fit_halo(gta,'fit%i'%i)
+    fit_halo(gta,'fit%i'%i,src_name)
 
     fit_region(gta,'fit%i_emin40'%i,erange=[4.0,5.5])
-    fit_halo(gta,'fit%i_emin40'%i,erange=[4.0,5.5])
+    fit_halo(gta,'fit%i_emin40'%i,src_name,erange=[4.0,5.5])
     
     gta.load_roi('fit%i'%i)
 
