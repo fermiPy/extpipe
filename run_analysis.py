@@ -6,7 +6,7 @@ import numpy as np
 import itertools
 import argparse
 
-
+    
 def fit_region(gta,modelname,erange=None):
 
     if erange is not None:
@@ -38,11 +38,17 @@ def fit_region(gta,modelname,erange=None):
     
     gta.write_roi(modelname)
     gta.tsmap(modelname,model=model0,erange=erange)
-    gta.tsmap(modelname,model=model1,erange=erange)
+    maps_model1 = gta.tsmap(modelname,model=model1,erange=erange)
     gta.tsmap(modelname,model=model2,erange=erange)
-    gta.tsmap('%s_nosource'%modelname,
+    maps_model1_nosource = gta.tsmap('%s_nosource'%modelname,
               model=model1,exclude=[src_name],erange=erange)
     gta.residmap(modelname,model=model1,erange=erange)
+
+    # Make zoom plots
+    gta._plotter.make_tsmap_plots(gta,maps_model1,
+                                  zoom=2,suffix='tsmap_zoom')
+    gta._plotter.make_tsmap_plots(gta,maps_model1_nosource,
+                                  zoom=2,suffix='tsmap_zoom')    
 
     lnl = -gta.like()
 
@@ -58,10 +64,9 @@ def fit_halo(gta,modelname,src_name,erange=None):
         'SpatialModel' : 'GaussianSource',
         'SpatialWidth' : 1.0
         }
-    
+
     halo_width = np.logspace(-1,0,9)
     halo_index = np.array([1.5,1.75,2.0,2.25,2.5,2.75,3.0])
-
     halo_data = []
 
     gta.load_roi(modelname)
@@ -69,12 +74,12 @@ def fit_halo(gta,modelname,src_name,erange=None):
         gta.setEnergyRange(erange[0],erange[1])
 
     gta.free_sources(False)
-    gta.free_sources(distance=1.0,pars='norm')
+    gta.free_sources(distance=1.0,pars='norm', exclude_diffuse=True)
     gta.write_xml(modelname + '_base')
     
-    for i, (w,idx) in enumerate(itertools.product(halo_width,halo_index)):
+    #for i, (w,idx) in enumerate(itertools.product(halo_width,halo_index)):
+    for i, w in enumerate(halo_width):
         halo_source_dict['SpatialWidth'] = w
-        halo_source_dict['Index'] = idx    
         halo_source_name = 'halo_gauss'
 
         gta.load_xml(modelname + '_base')
@@ -83,28 +88,34 @@ def fit_halo(gta,modelname,src_name,erange=None):
         halo_source_dict['dec'] = gta.roi[src_name]['dec']
     
         gta.add_source(halo_source_name,halo_source_dict,free=True)
-#        gta.free_sources(False)
-#        gta.free_sources(distance=1.0,pars='norm')
-        gta.fit(update=False)
-    
-        gta.update_source(halo_source_name,reoptimize=True,
-                          npts=10)
 
-        gta.logger.info('%s Halo Width: %6.3f Index: %6.2f TS: %6.2f'%(modelname,w,idx,
-                                                                       gta.roi[halo_source_name]['ts']))
+
+        for j, idx in enumerate(halo_index):
+
+            model_idx = i*len(halo_index) + j
+
+            gta.set_parameter(halo_source_name,'Index',-1.0*idx,
+                              update_source=False)
+            gta.fit(update=False)
     
-        gta.write_roi('%s_halo_gauss_%02i'%(modelname,i),make_plots=False,
-                      save_model_map=False,format='npy')
-        halo_data += [copy.deepcopy(gta.roi['halo_gauss'].data)]    
+            gta.update_source(halo_source_name,reoptimize=True,
+                              npts=9)
+
+            gta.logger.info('%s Halo Width: %6.3f Index: %6.2f TS: %6.2f'%(modelname,w,idx,
+                                                                           gta.roi[halo_source_name]['ts']))
+    
+            gta.write_roi('%s_halo_gauss_%02i'%(modelname,model_idx),make_plots=False,
+                          save_model_map=False,format='npy')
+            halo_data += [copy.deepcopy(gta.roi['halo_gauss'].data)]
+            
         gta.delete_source(halo_source_name,save_template=False) 
-
 
     np.save(os.path.join(gta.workdir,'%s_halo_data.npy'%modelname),halo_data)
 
-    #gta.load_roi(modelname)
+    gta.load_roi(modelname)
     if erange is not None:
         gta.setEnergyRange(erange[0],erange[1])
-
+        
     for i, w in enumerate(halo_width):        
         halo_source_dict['SpatialWidth'] = w
         halo_source_dict['Index'] = 2.0    
@@ -125,133 +136,142 @@ def fit_halo(gta,modelname,src_name,erange=None):
         gta.delete_source(halo_source_name,save_template=False) 
 
 
-usage = "usage: %(prog)s [config file]"
-description = "Run fermipy analysis chain."
-parser = argparse.ArgumentParser(usage=usage,description=description)
-
-parser.add_argument('--config', default = 'sample_config.yaml')
-parser.add_argument('--source', default = None)
-
-args = parser.parse_args()
-gta = GTAnalysis(args.config,logging={'verbosity' : 3})
-
-gta.setup(overwrite=True)
-
-sqrt_ts_threshold=3
-
-model0 = { 'SpatialModel' : 'PointSource', 'Index' : 1.5 }
-model1 = { 'SpatialModel' : 'PointSource', 'Index' : 2.0 }
-model2 = { 'SpatialModel' : 'PointSource', 'Index' : 2.5 }
-src_name = gta.roi.sources[0].name
-
-# -----------------------------------
-# Get a Baseline Model
-# -----------------------------------
-
-# Get a reasonable starting point for the spectral model
-gta.free_source(src_name)
-gta.fit()
-gta.free_source(src_name,False)
-
-gta.optimize()
-
-# Localize 3FGL sources
-for s in gta.roi.sources:
-
-    if not s['SpatialModel'] == 'PointSource':
-        continue
-
-    if s['offset'] < 0.5 or s['ts'] < 25.:
-        continue
-
-    if np.abs(s['offset_glon']) > 2.8 or np.abs(s['offset_glat']) > 2.8:
-        continue
-
-    gta.localize(s.name,nstep=5,dtheta_max=0.5,update=True,
-                 prefix='base')
-
-    gta.free_source(s.name,False)
+if __name__ == '__main__':
         
-gta.tsmap('base',model=model1)
-gta.tsmap('base_emin40',model=model1,erange=[4.0,5.5])
+    usage = "usage: %(prog)s [config file]"
+    description = "Run fermipy analysis chain."
+    parser = argparse.ArgumentParser(usage=usage,description=description)
 
-# Look for new point sources outside the inner 1.0 deg
+    parser.add_argument('--config', default = 'sample_config.yaml')
+    parser.add_argument('--source', default = None)
 
-gta.find_sources('base',model=model1,
-                 search_skydir=gta.roi.skydir,
-                 max_iter=4,min_separation=0.5,
-                 sqrt_ts_threshold=sqrt_ts_threshold,
-                 search_minmax_radius=[1.0,None])
-gta.optimize()
+    args = parser.parse_args()
+    gta = GTAnalysis(args.config,logging={'verbosity' : 3})
 
-gta.write_roi('base')
+    gta.setup(overwrite=True)
 
-# -----------------------------------
-# Pass 0 - Source at Nominal Position
-# -----------------------------------
+    sqrt_ts_threshold=3
 
-fit_region(gta,'fit0')
-fit_region(gta,'fit0_emin40',erange=[4.0,5.5])
+    model0 = { 'SpatialModel' : 'PointSource', 'Index' : 1.5 }
+    model1 = { 'SpatialModel' : 'PointSource', 'Index' : 2.0 }
+    model2 = { 'SpatialModel' : 'PointSource', 'Index' : 2.5 }
+    src_name = gta.roi.sources[0].name
 
-gta.load_roi('fit0')
+    # -----------------------------------
+    # Get a Baseline Model
+    # -----------------------------------
 
-# -------------------------------------
-# Pass 1 - Source at Localized Position
-# -------------------------------------
+    # Get a reasonable starting point for the spectral model
+    gta.free_source(src_name)
+    gta.fit()
+    gta.free_source(src_name,False)
 
-gta.localize(src_name,nstep=5,dtheta_max=0.5,update=True,
-             prefix='fit1')
+    gta.optimize()
 
-fit_region(gta,'fit1')
-fit_halo(gta,'fit1',src_name)
+    # Localize 3FGL sources
+    for s in gta.roi.sources:
 
-fit_region(gta,'fit1_emin40',erange=[4.0,5.5])
-fit_halo(gta,'fit1_emin40',src_name,erange=[4.0,5.5])
+        if not s['SpatialModel'] == 'PointSource':
+            continue
 
-gta.load_roi('fit1')
+        if s['offset'] < 0.5 or s['ts'] < 25.:
+            continue
 
-# -------------------------------------
-# Pass 2 - 2+ Point Sources
-# -------------------------------------
+        if np.abs(s['offset_glon']) > 2.8 or np.abs(s['offset_glat']) > 2.8:
+            continue
 
-srcs = []
+        gta.localize(s.name,nstep=5,dtheta_max=0.5,update=True,
+                     prefix='base')
 
-for i in range(2,6):
+        gta.free_source(s.name,False)
 
-    srcs_fit = gta.find_sources('fit%i'%i,
-                                search_skydir=gta.roi.skydir,
-                                max_iter=1,
-                                sources_per_iter=1,
-                                sqrt_ts_threshold=3,
-                                min_separation=0.5,
-                                search_minmax_radius=[None,1.0])
+    gta.tsmap('base',model=model1)
+    gta.tsmap('base_emin40',model=model1,erange=[4.0,5.5])
 
-    if len(srcs_fit['sources']) == 0:
-        break
+    # Look for new point sources outside the inner 1.0 deg
 
-    srcs += srcs_fit['sources']
+    gta.find_sources('base',model=model1,
+                     search_skydir=gta.roi.skydir,
+                     max_iter=4,min_separation=0.5,
+                     sqrt_ts_threshold=sqrt_ts_threshold,
+                     search_minmax_radius=[1.0,None])
+    gta.optimize()
 
-    gta.localize(src_name,nstep=5,dtheta_max=0.4,
-                 update=True,prefix='fit%i'%i)
-    
-    # Relocalize new sources
-    for s in sorted(srcs, key=lambda t: t['ts'],reverse=True):        
-        gta.localize(s.name,nstep=5,dtheta_max=0.4,
+    gta.write_roi('base')
+
+    # -----------------------------------
+    # Pass 0 - Source at Nominal Position
+    # -----------------------------------
+
+    fit_region(gta,'fit0')
+    fit_region(gta,'fit0_emin40',erange=[4.0,5.5])
+
+    gta.load_roi('fit0')
+
+    # -------------------------------------
+    # Pass 1 - Source at Localized Position
+    # -------------------------------------
+
+    gta.localize(src_name,nstep=5,dtheta_max=0.5,update=True,
+                 prefix='fit1')
+
+    fit_region(gta,'fit1')
+    fit_halo(gta,'fit1',src_name)
+
+    fit_region(gta,'fit1_emin40',erange=[4.0,5.5])
+    fit_halo(gta,'fit1_emin40',src_name,erange=[4.0,5.5])
+
+    gta.load_roi('fit1')
+
+    # -------------------------------------
+    # Pass 2 - 2+ Point Sources
+    # -------------------------------------
+
+    srcs = []
+    best_fit_idx = 1
+
+    # Fit up to 4 sources
+    for i in range(2,5):
+
+        srcs_fit = gta.find_sources('fit%i'%i,
+                                    search_skydir=gta.roi.skydir,
+                                    max_iter=1,
+                                    sources_per_iter=1,
+                                    sqrt_ts_threshold=3,
+                                    min_separation=0.5,
+                                    search_minmax_radius=[None,1.0])
+
+        if len(srcs_fit['sources']) == 0:
+            break
+
+        srcs += srcs_fit['sources']
+        best_fit_idx = i
+        
+        gta.localize(src_name,nstep=5,dtheta_max=0.4,
                      update=True,prefix='fit%i'%i)
 
-    fit_region(gta,'fit%i'%i)
-    fit_halo(gta,'fit%i'%i,src_name)
+        # Relocalize new sources
+        for s in sorted(srcs, key=lambda t: t['ts'],reverse=True):        
+            gta.localize(s.name,nstep=5,dtheta_max=0.4,
+                         update=True,prefix='fit%i'%i)
 
-    fit_region(gta,'fit%i_emin40'%i,erange=[4.0,5.5])
-    fit_halo(gta,'fit%i_emin40'%i,src_name,erange=[4.0,5.5])
-    
-    gta.load_roi('fit%i'%i)
+        fit_region(gta,'fit%i'%i)
+#        fit_halo(gta,'fit%i'%i,src_name)
 
+        fit_region(gta,'fit%i_emin40'%i,erange=[4.0,5.5])
+#        fit_halo(gta,'fit%i_emin40'%i,src_name,erange=[4.0,5.5])
 
-new_source_data = []
-for s in srcs:
-    src_data = gta.roi[s.name].data
-    new_source_data.append(copy.deepcopy(src_data))
+        gta.load_roi('fit%i'%i)
 
-np.save(os.path.join(gta.workdir,'new_source_data.npy'),
-        new_source_data)
+    # Only Run Halo Fit for Best-fit Model
+    if best_fit_idx > 1:
+        fit_halo(gta,'fit%i'%best_fit_idx,src_name)
+        fit_halo(gta,'fit%i_emin40'%best_fit_idx,src_name,erange=[4.0,5.5])
+        
+    new_source_data = []
+    for s in srcs:
+        src_data = gta.roi[s.name].data
+        new_source_data.append(copy.deepcopy(src_data))
+
+    np.save(os.path.join(gta.workdir,'new_source_data.npy'),
+            new_source_data)
