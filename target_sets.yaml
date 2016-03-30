@@ -1,0 +1,16 @@
+fsrq:
+
+  class: ['fsrq','FSRQ']
+
+unkn:
+
+  class: ['unkn']
+
+bll:
+
+  class: ['bll','BLL']
+
+bll_ts100:
+
+  class: ['bll','BLL']
+  ts : { min : 100 }
