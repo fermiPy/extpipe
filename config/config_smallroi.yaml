@@ -1,0 +1,16 @@
+
+
+binning:
+
+  # Binning
+  roiwidth   : 2.0
+  
+selection:
+
+  # Data selections
+  emin    : 1000
+  emax    : 100000
+
+fileio:
+
+  usescratch : False

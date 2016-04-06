@@ -1,0 +1,10 @@
+
+binning:
+
+  # Binning
+  roiwidth   : 6.0
+  npix       : null
+  binsz      : 0.1 # spatial bin size in deg
+  binsperdec : 8   # nb energy bins per decade
+  coordsys   : 'GAL'
+  
