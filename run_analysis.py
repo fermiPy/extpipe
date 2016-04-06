@@ -5,135 +5,9 @@ from fermipy.gtanalysis import GTAnalysis
 import numpy as np
 import itertools
 import argparse
-
+from haloanalysis.fit_funcs import fit_region, fit_halo
     
-def fit_region(gta,modelname,erange=None):
 
-    if erange is not None:
-        gta.setEnergyRange(erange[0],erange[1])
-    
-    model0 = { 'SpatialModel' : 'PointSource', 'Index' : 1.5 }
-    model1 = { 'SpatialModel' : 'PointSource', 'Index' : 2.0 }
-    model2 = { 'SpatialModel' : 'PointSource', 'Index' : 2.5 }
-    
-    gta.optimize()
-
-    gta.free_sources(False)
-    gta.free_sources(distance=1.0,exclude_diffuse=True)
-    gta.free_sources(distance=1.0,pars='norm')
-    gta.fit()
-
-    src_name = gta.roi.sources[0].name
-
-    for s in gta.roi.sources:
-
-        if s['offset'] > 1.0:
-            continue
-
-        if not s['SpatialModel'] == 'PointSource':
-            continue
-        
-        gta.extension(s.name)
-        gta.sed(s.name)
-    
-    gta.write_roi(modelname)
-    gta.tsmap(modelname,model=model0,erange=erange)
-    maps_model1 = gta.tsmap(modelname,model=model1,erange=erange)
-    gta.tsmap(modelname,model=model2,erange=erange)
-    maps_model1_nosource = gta.tsmap('%s_nosource'%modelname,
-              model=model1,exclude=[src_name],erange=erange)
-    gta.residmap(modelname,model=model1,erange=erange)
-
-    # Make zoom plots
-    gta._plotter.make_tsmap_plots(gta,maps_model1,
-                                  zoom=2,suffix='tsmap_zoom')
-    gta._plotter.make_tsmap_plots(gta,maps_model1_nosource,
-                                  zoom=2,suffix='tsmap_zoom')    
-
-    lnl = -gta.like()
-
-    gta.logger.info('%s Model Likelihood: %f'%(modelname,lnl))
-
-def fit_halo(gta,modelname,src_name,erange=None):
-
-    halo_source_dict = {
-        'SpectrumType' : 'PowerLaw', 
-        'Index' : 2.0, 
-        'Scale' : 1000,
-        'Prefactor' : { 'value' : 1E-5, 'scale' : 1e-13 },
-        'SpatialModel' : 'GaussianSource',
-        'SpatialWidth' : 1.0
-        }
-
-    halo_width = np.logspace(-1,0,9)
-    halo_index = np.array([1.5,1.75,2.0,2.25,2.5,2.75,3.0])
-    halo_data = []
-
-    gta.load_roi(modelname)
-    if erange is not None:
-        gta.setEnergyRange(erange[0],erange[1])
-
-    gta.free_sources(False)
-    gta.free_sources(distance=1.0,pars='norm', exclude_diffuse=True)
-    gta.write_xml(modelname + '_base')
-    
-    #for i, (w,idx) in enumerate(itertools.product(halo_width,halo_index)):
-    for i, w in enumerate(halo_width):
-        halo_source_dict['SpatialWidth'] = w
-        halo_source_name = 'halo_gauss'
-
-        gta.load_xml(modelname + '_base')
-
-        halo_source_dict['ra'] = gta.roi[src_name]['ra']
-        halo_source_dict['dec'] = gta.roi[src_name]['dec']
-    
-        gta.add_source(halo_source_name,halo_source_dict,free=True)
-
-
-        for j, idx in enumerate(halo_index):
-
-            model_idx = i*len(halo_index) + j
-
-            gta.set_parameter(halo_source_name,'Index',-1.0*idx,
-                              update_source=False)
-            gta.fit(update=False)
-    
-            gta.update_source(halo_source_name,reoptimize=True,
-                              npts=9)
-
-            gta.logger.info('%s Halo Width: %6.3f Index: %6.2f TS: %6.2f'%(modelname,w,idx,
-                                                                           gta.roi[halo_source_name]['ts']))
-    
-            gta.write_roi('%s_halo_gauss_%02i'%(modelname,model_idx),make_plots=False,
-                          save_model_map=False,format='npy')
-            halo_data += [copy.deepcopy(gta.roi['halo_gauss'].data)]
-            
-        gta.delete_source(halo_source_name,save_template=False) 
-
-    np.save(os.path.join(gta.workdir,'%s_halo_data.npy'%modelname),halo_data)
-
-    gta.load_roi(modelname)
-    if erange is not None:
-        gta.setEnergyRange(erange[0],erange[1])
-        
-    for i, w in enumerate(halo_width):        
-        halo_source_dict['SpatialWidth'] = w
-        halo_source_dict['Index'] = 2.0    
-        halo_source_name = 'halo_gauss'
-
-        gta.load_xml(modelname + '_base')
-        
-        halo_source_dict['ra'] = gta.roi[src_name]['ra']
-        halo_source_dict['dec'] = gta.roi[src_name]['dec']
-        
-        gta.add_source(halo_source_name,halo_source_dict,free=True)
-#        gta.free_sources(distance=1.0,pars='norm')
-        gta.fit()
-    
-        gta.sed(halo_source_name)    
-        gta.write_roi('%s_halo_gauss_sed_%02i'%(modelname,i),make_plots=False,
-                      save_model_map=False,format='npy')
-        gta.delete_source(halo_source_name,save_template=False) 
 
 
 if __name__ == '__main__':
@@ -152,6 +26,9 @@ if __name__ == '__main__':
 
     sqrt_ts_threshold=3
 
+    halo_width = np.logspace(-1,0,9)
+    halo_index = np.array([1.5,1.75,2.0,2.25,2.5,2.75,3.0])
+    
     model0 = { 'SpatialModel' : 'PointSource', 'Index' : 1.5 }
     model1 = { 'SpatialModel' : 'PointSource', 'Index' : 2.0 }
     model2 = { 'SpatialModel' : 'PointSource', 'Index' : 2.5 }
@@ -203,8 +80,8 @@ if __name__ == '__main__':
     # Pass 0 - Source at Nominal Position
     # -----------------------------------
 
-    fit_region(gta,'fit0')
-    fit_region(gta,'fit0_emin40',erange=[4.0,5.5])
+    fit_region(gta,'fit0',src_name)
+    fit_region(gta,'fit0_emin40',src_name,erange=[4.0,5.5])
 
     gta.load_roi('fit0')
 
@@ -215,11 +92,11 @@ if __name__ == '__main__':
     gta.localize(src_name,nstep=5,dtheta_max=0.5,update=True,
                  prefix='fit1')
 
-    fit_region(gta,'fit1')
-    fit_halo(gta,'fit1',src_name)
+    fit_region(gta,'fit1',src_name)
+    fit_halo(gta,'fit1',src_name,halo_width,halo_index)
 
-    fit_region(gta,'fit1_emin40',erange=[4.0,5.5])
-    fit_halo(gta,'fit1_emin40',src_name,erange=[4.0,5.5])
+    fit_region(gta,'fit1_emin40',src_name,erange=[4.0,5.5])
+    fit_halo(gta,'fit1_emin40',src_name,halo_width,halo_index,erange=[4.0,5.5])
 
     gta.load_roi('fit1')
 
@@ -255,18 +132,18 @@ if __name__ == '__main__':
             gta.localize(s.name,nstep=5,dtheta_max=0.4,
                          update=True,prefix='fit%i'%i)
 
-        fit_region(gta,'fit%i'%i)
-#        fit_halo(gta,'fit%i'%i,src_name)
+        fit_region(gta,'fit%i'%i,src_name)
+        fit_halo(gta,'fit%i'%i,src_name,halo_width,halo_index)
 
-        fit_region(gta,'fit%i_emin40'%i,erange=[4.0,5.5])
-#        fit_halo(gta,'fit%i_emin40'%i,src_name,erange=[4.0,5.5])
+        fit_region(gta,'fit%i_emin40'%i,src_name,erange=[4.0,5.5])
+        fit_halo(gta,'fit%i_emin40'%i,src_name,halo_width,halo_index,erange=[4.0,5.5])
 
         gta.load_roi('fit%i'%i)
 
     # Only Run Halo Fit for Best-fit Model
-    if best_fit_idx > 1:
-        fit_halo(gta,'fit%i'%best_fit_idx,src_name)
-        fit_halo(gta,'fit%i_emin40'%best_fit_idx,src_name,erange=[4.0,5.5])
+    #if best_fit_idx > 1:
+    #    fit_halo(gta,'fit%i'%best_fit_idx,src_name)
+    #    fit_halo(gta,'fit%i_emin40'%best_fit_idx,src_name,erange=[4.0,5.5])
         
     new_source_data = []
     for s in srcs:
