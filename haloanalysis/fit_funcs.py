@@ -48,7 +48,8 @@ def fit_region(gta,modelname,src_name,erange=None):
 
     gta.logger.info('%s Model Likelihood: %f'%(modelname,lnl))
 
-def fit_halo(gta,modelname,src_name,halo_width,halo_index,erange=None):
+def fit_halo(gta,modelname,src_name,halo_width,halo_index,erange=None,
+             do_scan=True):
 
     halo_source_name = 'halo_gauss'
     halo_source_dict = {
@@ -79,11 +80,16 @@ def fit_halo(gta,modelname,src_name,halo_width,halo_index,erange=None):
     # Find best-fit halo model
     halo_source_dict['SpatialWidth'] = 0.1
     gta.add_source(halo_source_name,halo_source_dict,free=True)
-    gta.free_parameter(halo_source_name,'Index')
     gta.extension(halo_source_name,update=True)
+
+    # Now fit spectrum
     gta.free_parameter(halo_source_name,'Index')
     gta.fit()
+
+    # Re-fit extension
     gta.free_parameter(halo_source_name,'Index',False)
+    gta.extension(halo_source_name,update=True)    
+    
     gta.update_source(halo_source_name,reoptimize=True,npts=9)
 
     gta.write_roi('%s_halo_gauss'%(modelname),make_plots=False,
@@ -94,6 +100,10 @@ def fit_halo(gta,modelname,src_name,halo_width,halo_index,erange=None):
     
     #for i, (w,idx) in enumerate(itertools.product(halo_width,halo_index)):
     for i, w in enumerate(halo_width):
+
+        if not do_scan:
+            continue
+            
         halo_source_dict['SpatialWidth'] = w
         gta.load_xml(modelname + '_base')
         
@@ -105,7 +115,7 @@ def fit_halo(gta,modelname,src_name,halo_width,halo_index,erange=None):
 
         gta.fit()
         
-        # SED
+        # SED w/ Index = 2.0
         gta.sed(halo_source_name)    
         gta.write_roi('%s_halo_gauss_sed_%02i'%(modelname,i),make_plots=False,
                       save_model_map=False,format='npy')
