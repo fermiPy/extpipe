@@ -16,7 +16,7 @@ parser.add_argument('--source_list', default = None, required=True,
                     'analyzed.')
 parser.add_argument('--script', default = None, required=True,
                     help='The python script.')
-parser.add_argument('configs', nargs='+', default = None,
+parser.add_argument('configs', nargs='*', default = None,
                     help='One or more configuration files that will be merged '
                     'to construct the analysis configuration.')
 
@@ -53,19 +53,12 @@ for name, v in src_list.items():
 #        config['selection']['target'] = name 
 
     print name
-    
-#    dirname = os.path.join(basedir,name.lower().replace(' ','_'))
     dirname = os.path.join(basedir,name)    
     utils.mkdir(dirname)
 
-    c = copy.deepcopy(config)
-    c = utils.merge_dict(c,v,add_new_keys=True)
-    
-    cfgfile = os.path.abspath(os.path.join(dirname,'config.yaml'))
-    yaml.dump(utils.tolist(c),open(cfgfile,'w'),default_flow_style=False)
-
     script = os.path.basename(args.script)
     scriptpath = os.path.abspath(os.path.join(dirname,script))
+    cfgfile = os.path.abspath(os.path.join(dirname,'config.yaml'))
     
     os.system('ln -sf %s %s'%(os.path.abspath(os.path.join(scriptdir,script)),
                              scriptpath))
@@ -75,4 +68,13 @@ for name, v in src_list.items():
     with open(os.path.join(runscript),'wt') as f:
         f.write(bash_script.format(source=name,config=cfgfile,
                                    script=scriptpath))
+
+    if not config:
+        continue
+        
+    c = copy.deepcopy(config)
+    c = utils.merge_dict(c,v,add_new_keys=True)
+    yaml.dump(utils.tolist(c),open(cfgfile,'w'),default_flow_style=False)
+
+    
     
