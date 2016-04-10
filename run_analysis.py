@@ -45,6 +45,8 @@ if __name__ == '__main__':
 
     gta.optimize()
 
+    roiwidth = gta.config['binning']['roiwidth']
+    
     # Localize 3FGL sources
     for s in gta.roi.sources:
 
@@ -54,16 +56,19 @@ if __name__ == '__main__':
         if s['offset'] < 0.5 or s['ts'] < 25.:
             continue
 
-        if np.abs(s['offset_glon']) > 2.8 or np.abs(s['offset_glat']) > 2.8:
+        if np.abs(s['offset_glon']) > 0.5*roiwidth-0.2:
             continue
 
+        if np.abs(s['offset_glat']) > 0.5*roiwidth-0.2:
+            continue
+        
         gta.localize(s.name,nstep=5,dtheta_max=0.5,update=True,
                      prefix='base')
 
         gta.free_source(s.name,False)
 
     gta.tsmap('base',model=model1)
-    gta.tsmap('base_emin40',model=model1,erange=[4.0,5.5])
+    #gta.tsmap('base_emin40',model=model1,erange=[4.0,5.5])
 
     # Look for new point sources outside the inner 1.0 deg
 
@@ -74,6 +79,8 @@ if __name__ == '__main__':
                      search_minmax_radius=[1.0,None])
     gta.optimize()
 
+    gta.print_roi()
+
     gta.write_roi('base')
 
     # -----------------------------------
@@ -81,7 +88,7 @@ if __name__ == '__main__':
     # -----------------------------------
 
     fit_region(gta,'fit0',src_name)
-    fit_region(gta,'fit0_emin40',src_name,erange=[4.0,5.5])
+    #fit_region(gta,'fit0_emin40',src_name,erange=[4.0,5.5])
 
     gta.load_roi('fit0')
 
@@ -95,8 +102,8 @@ if __name__ == '__main__':
     fit_region(gta,'fit1',src_name)
     fit_halo(gta,'fit1',src_name,halo_width,halo_index)
 
-    fit_region(gta,'fit1_emin40',src_name,erange=[4.0,5.5])
-    fit_halo(gta,'fit1_emin40',src_name,halo_width,halo_index,erange=[4.0,5.5])
+    #fit_region(gta,'fit1_emin40',src_name,erange=[4.0,5.5])
+    #fit_halo(gta,'fit1_emin40',src_name,halo_width,halo_index,erange=[4.0,5.5])
 
     gta.load_roi('fit1')
 
@@ -133,17 +140,22 @@ if __name__ == '__main__':
                          update=True,prefix='fit%i'%i)
 
         fit_region(gta,'fit%i'%i,src_name)
-        fit_halo(gta,'fit%i'%i,src_name,halo_width,halo_index)
+        fit_halo(gta,'fit%i'%i,src_name,halo_width,halo_index,
+                 do_scan=False)
 
-        fit_region(gta,'fit%i_emin40'%i,src_name,erange=[4.0,5.5])
-        fit_halo(gta,'fit%i_emin40'%i,src_name,halo_width,halo_index,erange=[4.0,5.5])
+#        fit_region(gta,'fit%i_emin40'%i,src_name,erange=[4.0,5.5])
+#        fit_halo(gta,'fit%i_emin40'%i,src_name,halo_width,halo_index,erange=[4.0,5.5],
+#                 do_scan=False)
 
         gta.load_roi('fit%i'%i)
 
     # Only Run Halo Fit for Best-fit Model
-    #if best_fit_idx > 1:
-    #    fit_halo(gta,'fit%i'%best_fit_idx,src_name)
-    #    fit_halo(gta,'fit%i_emin40'%best_fit_idx,src_name,erange=[4.0,5.5])
+    if best_fit_idx > 1:
+        fit_halo(gta,'fit%i'%best_fit_idx,src_name,
+                 halo_width,halo_index)
+#        fit_halo(gta,'fit%i_emin40'%best_fit_idx,src_name,
+#                 halo_width,halo_index,
+#                 erange=[4.0,5.5])
         
     new_source_data = []
     for s in srcs:
