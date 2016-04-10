@@ -8,3 +8,6 @@ binning:
   binsperdec : 8   # nb energy bins per decade
   coordsys   : 'GAL'
   
+tsmap:
+
+  max_kernel_radius : 1.0
