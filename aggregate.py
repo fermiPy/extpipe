@@ -6,6 +6,7 @@ import traceback
 import argparse
 from collections import OrderedDict
 
+from astropy.coordinates import SkyCoord
 import astropy.io.fits as pyfits
 from astropy.table import Table, Column
 from haloanalysis.utils import collect_dirs
@@ -19,6 +20,9 @@ def extract_halo_data(halo_data):
              eflux = [],
              dlnl = [],
              dlnl_eflux = [])
+
+    if len(halo_data) == 0:
+        return {}
     
     for hd in halo_data:
 
@@ -99,6 +103,21 @@ if __name__ == '__main__':
     args = parser.parse_args()
     dirs = sorted(collect_dirs(args.dirs))
 
+    
+    cols_dict_srcs = OrderedDict()
+    cols_dict_srcs['name'] = dict(dtype='S20', format='%s',description='Source Name')
+    cols_dict_srcs['assoc'] = dict(dtype='S20', format='%s')
+    cols_dict_srcs['class'] = dict(dtype='S20', format='%s')
+    cols_dict_srcs['ra'] = dict(dtype='f8', format='%.3f',unit='deg')
+    cols_dict_srcs['dec'] = dict(dtype='f8', format='%.3f',unit='deg')
+    cols_dict_srcs['glon'] = dict(dtype='f8', format='%.3f',unit='deg')
+    cols_dict_srcs['glat'] = dict(dtype='f8', format='%.3f',unit='deg')
+    cols_dict_srcs['ts'] = dict(dtype='f8', format='%.2f')
+    cols_dict_srcs['npred'] = dict(dtype='f8', format='%.2f')
+    cols_dict_srcs['offset'] = dict(dtype='f8', format='%.2f')
+    cols_dict_srcs['offset_roi'] = dict(dtype='f8', format='%.2f')
+    cols_dict_srcs['in3fgl'] = dict(dtype='i8', format='%i')    
+    
     cols_dict_lnl = OrderedDict()
     cols_dict_lnl['name'] = dict(dtype='S20', format='%s',description='Source Name')
 
@@ -107,8 +126,6 @@ if __name__ == '__main__':
 
     cols_dict_lnl['fit_halo_scan_dlnl'] = dict(dtype='f8', format='%.3f',shape=(9,7,31))
     cols_dict_lnl['fit1_halo_scan_dlnl'] = dict(dtype='f8', format='%.3f',shape=(9,7,31))
-
-
 
     cols_dict = OrderedDict()
     cols_dict['name'] = dict(dtype='S20', format='%s',description='Source Name')
@@ -191,12 +208,15 @@ if __name__ == '__main__':
 
     cols = [Column(name=k, **v) for k,v in cols_dict.items()]
     cols_lnl = [Column(name=k, **v) for k,v in cols_dict_lnl.items()]
+    cols_srcs = [Column(name=k, **v) for k,v in cols_dict_srcs.items()]
 
     tab = Table(cols)
     tab_lnl = Table(cols_lnl)
+    tab_srcs = Table(cols_srcs)
 
     row_dict = {}
     row_dict_lnl = {}
+    row_dict_srcs = {}
 
     for d in dirs:
 
@@ -235,6 +255,10 @@ if __name__ == '__main__':
             if os.path.isfile(file3):
                 halo_fit += [np.load(file3).flat[0]]
 
+        if len(fit_data) == 0:
+            print 'skipping'
+            continue
+        
         src = find_source(fit_data[0])
         src_name = src['name']
 
@@ -276,6 +300,8 @@ if __name__ == '__main__':
         for hd in halo_data:
             halo_pars += [extract_halo_data(hd)]
 
+        ext_width = []
+            
         for i, fd in enumerate(fit_data):
 
             src = fd['sources'][src_name]
@@ -287,7 +313,8 @@ if __name__ == '__main__':
                 extn_ts[i] = max(ext['ts_ext'],0)
                 extn_mle[i] = ext['ext']
                 extn_err[i] = ext['ext_err']
-                extn_ul95[i] = ext['ext_ul95']            
+                extn_ul95[i] = ext['ext_ul95']
+                ext_width += [ext['width']]
 
         for i, fd in enumerate(halo_fit):
             halon_ts[i+1] = fd['sources']['halo_gauss']['ts']
@@ -311,7 +338,7 @@ if __name__ == '__main__':
                 fit_dlike1_ext[i] = (logLike+extn_ts[i]/2.) - logLike1
                 fit_dlike1_halo[i] = (logLike+halon_ts[i]/2.) - logLike1
 
-            if i < len(fit_data)-1:
+            if i >= 1 and i < len(fit_data)-1:
                 fit_dlike_ext[i+1] = (fit_data[i]['roi']['logLike']+extn_ts[i]/2.) - fit_data[i+1]['roi']['logLike'] 
                 fit_dlike_halo[i+1] = (fit_data[i]['roi']['logLike']+halon_ts[i]/2.) - fit_data[i+1]['roi']['logLike']
 
@@ -403,6 +430,90 @@ if __name__ == '__main__':
             row += [row_dict[k]]
         tab.add_row(row)
 
+        # Add all sources
+        srcs_delete = []
+
+        skydir = SkyCoord(tab_srcs['ra'],tab_srcs['dec'],unit='deg',
+                          frame='icrs')
+
+        srcs = []
+        
+        for k, v in fit_data[-1]['sources'].items():
+
+            if v['name'] == 'galdiff':
+                continue
+            if v['name'] == 'isodiff':
+                continue
+
+            skydir0 = SkyCoord(v['ra'],v['dec'],unit='deg',
+                               frame='icrs')
+
+            sep = skydir0.separation(skydir).deg
+            
+            row_dict_src = {}
+            # Look for source of the same name
+            m = (tab_srcs['name'] == v['name'])
+
+#            print v['name'], np.sum(m)           
+#            if v['name'] == '3FGL J0002.2-4152':
+#               print 'here', v['offset']
+            
+            if np.sum(m):
+
+                mrow = tab_srcs[m][0]
+
+                print 'match name ', v['name'], mrow['name'], np.min(sep)
+                
+                if v['offset'] < mrow['offset']:
+                    srcs_delete += [np.argmax(m)]
+                else:
+                    continue
+            elif len(sep) and np.min(sep) < 0.1:
+
+                mrow = tab_srcs[np.argmin(sep)]
+                
+                print 'match sep ', v['name'], mrow['name'], np.min(sep)
+                
+                if v['offset'] < mrow['offset']:
+                    srcs_delete += [np.argmin(sep)]
+                else:
+                    continue
+                    
+            row_dict_src['name'] = v['name']
+
+            if 'assoc' in v and v['assoc']:
+                row_dict_src['assoc'] = v['assoc']['ASSOC1']
+            else:
+                row_dict_src['assoc'] = ''
+
+            if v['class'] is None or v['class'] == '':
+                row_dict_src['class'] = 'unkn'
+            else:
+                row_dict_src['class'] = v['class']
+            
+            row_dict_src['ra'] = v['ra']
+            row_dict_src['dec'] = v['dec']
+            row_dict_src['glon'] = v['glon']
+            row_dict_src['glat'] = v['glat']
+            row_dict_src['ts'] = v['ts']
+            row_dict_src['npred'] = v['Npred']
+            row_dict_src['offset'] = v['offset']
+            row_dict_src['offset_roi'] = max(np.abs(v['offset_glon']),np.abs(v['offset_glat']))
+
+            if '3FGL' in v['name']:
+                row_dict_src['in3fgl'] = 1
+            else:
+                row_dict_src['in3fgl'] = 0
+
+            srcs += [row_dict_src]
+
+        # remove source pairs
+        print 'Deleting rows ', srcs_delete
+        tab_srcs.remove_rows(srcs_delete)
+            
+        for row in srcs:
+            tab_srcs.add_row([row[k] for k in cols_dict_srcs.keys()])
+        
         from scipy.interpolate import UnivariateSpline
 
         fit1_dlnl_interp = np.zeros((9,7,31))
@@ -435,21 +546,29 @@ if __name__ == '__main__':
     tab['class'][m] = 'unkn'
 
     output_lnl = os.path.splitext(args.output)[0] + '_lnl.fits'
+    output_srcs = os.path.splitext(args.output)[0] + '_srcs.fits'
 
     tab.write(args.output,format='fits',overwrite=True)
     tab_lnl.write(output_lnl,format='fits',overwrite=True)
-
+    tab_srcs.write(output_srcs,format='fits',overwrite=True)
 
     #col1 = pyfits.Column(name='test', format='63D', array=halo_pars[0]['width'],dim=halo_pars[0]['width'].shape[1:])
-    col1 = pyfits.Column(name='width', format='D', array=halo_pars[0]['width'][:,0])
-    col2 = pyfits.Column(name='index', format='D', array=halo_pars[0]['index'][0,:])
-                         
-    tbhdu1 = pyfits.BinTableHDU.from_columns([col1])
-    tbhdu2 = pyfits.BinTableHDU.from_columns([col2])
+    col1 = pyfits.Column(name='halo_scan_width', format='D', array=halo_pars[0]['width'][:,0])
+    col2 = pyfits.Column(name='halo_scan_index', format='D', array=halo_pars[0]['index'][0,:])
+    col3 = pyfits.Column(name='halo_scan_eflux', format='D', array=np.logspace(-8,-5,31))
+    col4 = pyfits.Column(name='ext_width', format='D', array=ext_width[0])
+    
+    tbhdu1 = pyfits.BinTableHDU.from_columns([col1],name='halo_scan_width')
+    tbhdu2 = pyfits.BinTableHDU.from_columns([col2],name='halo_scan_index')
+    tbhdu3 = pyfits.BinTableHDU.from_columns([col3],name='halo_scan_eflux')
+    tbhdu4 = pyfits.BinTableHDU.from_columns([col4],name='ext_width')
 
     hdulist = pyfits.open(args.output)
+    
     hdulist.append(tbhdu1)
     hdulist.append(tbhdu2)
+    hdulist.append(tbhdu3)
+    hdulist.append(tbhdu4)
     hdulist.writeto(args.output,clobber=True)
 
 
