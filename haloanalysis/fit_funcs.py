@@ -7,6 +7,8 @@ import numpy as np
     
 def fit_region(gta,modelname,src_name,erange=None):
 
+    gta.logger.info('Starting Region Fit %s'%(modelname))
+    
     if erange is not None:
         gta.setEnergyRange(erange[0],erange[1])
     
@@ -28,7 +30,7 @@ def fit_region(gta,modelname,src_name,erange=None):
     gta.free_sources(distance=1.0,pars='norm',exclude_diffuse=True)
     
     gta.extension(src_name)
-    gta.sed(src_name)
+    gta.sed(src_name,prefix=modelname)
     
     gta.write_roi(modelname)
     gta.tsmap(modelname,model=model0,erange=erange)
@@ -46,15 +48,20 @@ def fit_region(gta,modelname,src_name,erange=None):
 
     lnl = -gta.like()
 
+    gta.print_params()
+    
     gta.logger.info('%s Model Likelihood: %f'%(modelname,lnl))
+    gta.logger.info('Finished Region Fit %s'%(modelname))
 
 def fit_halo(gta,modelname,src_name,halo_width,halo_index,erange=None,
              do_scan=True):
 
+    gta.logger.info('Starting Halo Fit %s'%(modelname))
+    
     halo_source_name = 'halo_gauss'
     halo_source_dict = {
         'SpectrumType' : 'PowerLaw', 
-        'Index' : 2.0, 
+        'Index' : { 'value' : 2.0, 'scale' : -1.0, 'min' : 1.0, 'max' : 4.5 }, 
         'Scale' : 1000,
         'Prefactor' : { 'value' : 1E-5, 'scale' : 1e-13 },
         'SpatialModel' : 'GaussianSource',
@@ -82,16 +89,22 @@ def fit_halo(gta,modelname,src_name,halo_width,halo_index,erange=None,
     gta.add_source(halo_source_name,halo_source_dict,free=True)
     gta.extension(halo_source_name,update=True)
 
-    # Now fit spectrum
+    # Fit spectrum
     gta.free_parameter(halo_source_name,'Index')
     gta.fit()
 
     # Re-fit extension
     gta.free_parameter(halo_source_name,'Index',False)
     gta.extension(halo_source_name,update=True)    
+
+    # Re-fit Spectrum
+    gta.free_parameter(halo_source_name,'Index')
+    gta.fit()
     
     gta.update_source(halo_source_name,reoptimize=True,npts=9)
 
+    gta.print_params()
+    
     gta.write_roi('%s_halo_gauss'%(modelname),make_plots=False,
                   save_model_map=False,format='npy')    
     np.save(os.path.join(gta.workdir,'%s_halo_data.npy'%modelname),
@@ -116,7 +129,7 @@ def fit_halo(gta,modelname,src_name,halo_width,halo_index,erange=None,
         gta.fit()
         
         # SED w/ Index = 2.0
-        gta.sed(halo_source_name)    
+        gta.sed(halo_source_name,prefix='%s_%02i'%(modelname,i))    
         gta.write_roi('%s_halo_gauss_sed_%02i'%(modelname,i),make_plots=False,
                       save_model_map=False,format='npy')
 
@@ -153,3 +166,5 @@ def fit_halo(gta,modelname,src_name,halo_width,halo_index,erange=None,
     np.save(os.path.join(gta.workdir,'%s_halo_data.npy'%modelname),halo_data)
     np.save(os.path.join(gta.workdir,'%s_halo_data_idx_free.npy'%modelname),
             halo_data_idx_free)
+
+    gta.logger.info('Finished Halo Fit %s'%(modelname))
