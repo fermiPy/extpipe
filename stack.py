@@ -68,6 +68,8 @@ if __name__ == '__main__':
     tab1 = Table.read(args.tables[1])
     tab0 = join(tab0,tab1)
 
+    ext_width = np.array(Table.read(args.tables[0],hdu='EXT_WIDTH')['ext_width'])
+    
     targets_mask = {}
     
     for k,v in targets.items():
@@ -87,7 +89,8 @@ if __name__ == '__main__':
     cols = [Column(name=k, **v) for k,v in cols_dict.items()]
 
     tab_out = Table(cols)
-    
+
+       
     row_dict = {}
     for name, v in targets.items():
         
@@ -95,7 +98,6 @@ if __name__ == '__main__':
         tab = tab0[m]
 
         # These should eventually be extracted from the FITS file
-        ext_width = np.logspace(-2.5,0,26)
         eflux = np.logspace(-8,-5,31)
         halo_ts = np.zeros((9,7))
         halo_eflux_ul95 = np.zeros((9,7))
@@ -133,6 +135,8 @@ if __name__ == '__main__':
         yedge = np.linspace(1.5,3.0,7)
         
         # Make diagnostics
+        
+        
         plt.figure()
         im = plt.pcolormesh(xedge,yedge,halo_ts.T)
         plt.colorbar(im)
@@ -146,13 +150,20 @@ if __name__ == '__main__':
 #        plt.contour(halo_ts.T)
         
 
+    
+        
     tab_out.write(args.output,format='fits',overwrite=True)
 
+    fig_ext = plt.figure()
+    for row in tab_out:
 
+        plt.figure(fig_ext.number)
+        plt.plot(ext_width,row['fit_ext_dlnl'],label=row['name'])
 
-
-        
-    
+    plt.gca().legend(frameon=False)
+    plt.gca().set_ylim(-10,1)
+    plt.gca().set_xscale('log')
+            
     
     sys.exit(0)
         
