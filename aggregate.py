@@ -103,6 +103,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     dirs = sorted(collect_dirs(args.dirs))
 
+
+    eflux_scan_pts = np.logspace(-9,-5,41)
     
     cols_dict_srcs = OrderedDict()
     cols_dict_srcs['name'] = dict(dtype='S20', format='%s',description='Source Name')
@@ -124,8 +126,10 @@ if __name__ == '__main__':
     cols_dict_lnl['fit_ext_scan_dlnl'] = dict(dtype='f8', format='%.3f',shape=(26))
     cols_dict_lnl['fit1_ext_scan_dlnl'] = dict(dtype='f8', format='%.3f',shape=(26))
 
-    cols_dict_lnl['fit_halo_scan_dlnl'] = dict(dtype='f8', format='%.3f',shape=(9,7,31))
-    cols_dict_lnl['fit1_halo_scan_dlnl'] = dict(dtype='f8', format='%.3f',shape=(9,7,31))
+    cols_dict_lnl['fit_halo_scan_dlnl'] = dict(dtype='f8', format='%.3f',
+                                               shape=(9,7,len(eflux_scan_pts)))
+    cols_dict_lnl['fit1_halo_scan_dlnl'] = dict(dtype='f8', format='%.3f',
+                                                shape=(9,7,len(eflux_scan_pts)))
 
     cols_dict = OrderedDict()
     cols_dict['name'] = dict(dtype='S20', format='%s',description='Source Name')
@@ -453,10 +457,6 @@ if __name__ == '__main__':
             row_dict_src = {}
             # Look for source of the same name
             m = (tab_srcs['name'] == v['name'])
-
-#            print v['name'], np.sum(m)           
-#            if v['name'] == '3FGL J0002.2-4152':
-#               print 'here', v['offset']
             
             if np.sum(m):
 
@@ -516,23 +516,22 @@ if __name__ == '__main__':
         
         from scipy.interpolate import UnivariateSpline
 
-        fit1_dlnl_interp = np.zeros((9,7,31))
-        fit_dlnl_interp = np.zeros((9,7,31))
+        fit1_dlnl_interp = np.zeros((9,7,len(eflux_scan_pts)))
+        fit_dlnl_interp = np.zeros((9,7,len(eflux_scan_pts)))
 
-        eflux = np.logspace(-8,-5,31)    
         for i in range(9):
             for j in range(7):
                 sp = UnivariateSpline(halo_pars[0]['dlnl_eflux'][i,j],halo_pars[0]['dlnl'][i,j],k=2,s=0.001)
-                fit1_dlnl_interp[i,j] = sp(eflux)
+                fit1_dlnl_interp[i,j] = sp(eflux_scan_pts)
 
                 sp = UnivariateSpline(halo_pars[-1]['dlnl_eflux'][i,j],halo_pars[-1]['dlnl'][i,j],k=2,s=0.001)
-                fit_dlnl_interp[i,j] = sp(eflux)
+                fit_dlnl_interp[i,j] = sp(eflux_scan_pts)
 
 
 
         row_dict_lnl['name'] = src_data[0]['name']
         row_dict_lnl['fit1_ext_scan_dlnl'] = ext_data[1]['dlogLike']
-        row_dict_lnl['fit_ext_scan_dlnl'] = ext_data[1]['dlogLike']
+        row_dict_lnl['fit_ext_scan_dlnl'] = ext_data[-1]['dlogLike']
 
         row_dict_lnl['fit1_halo_scan_dlnl'] = fit1_dlnl_interp
         row_dict_lnl['fit_halo_scan_dlnl'] = fit_dlnl_interp
@@ -555,7 +554,7 @@ if __name__ == '__main__':
     #col1 = pyfits.Column(name='test', format='63D', array=halo_pars[0]['width'],dim=halo_pars[0]['width'].shape[1:])
     col1 = pyfits.Column(name='halo_scan_width', format='D', array=halo_pars[0]['width'][:,0])
     col2 = pyfits.Column(name='halo_scan_index', format='D', array=halo_pars[0]['index'][0,:])
-    col3 = pyfits.Column(name='halo_scan_eflux', format='D', array=np.logspace(-8,-5,31))
+    col3 = pyfits.Column(name='halo_scan_eflux', format='D', array=eflux_scan_pts)
     col4 = pyfits.Column(name='ext_width', format='D', array=ext_width[0])
     
     tbhdu1 = pyfits.BinTableHDU.from_columns([col1],name='halo_scan_width')
