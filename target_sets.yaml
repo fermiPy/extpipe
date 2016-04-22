@@ -1,16 +1,54 @@
 fsrq:
 
   class: ['fsrq','FSRQ']
+  ts : { min : 25 }
+
+fsrq_ts100:
+
+  class: ['fsrq','FSRQ']
+  ts : { min : 100 }
+
+fsrq_ts1000:
+
+  class: ['fsrq','FSRQ']
+  ts : { min : 1000 }
+
+fsrq_ts10000:
+
+  class: ['fsrq','FSRQ']
+  ts : { min : 10000 }
+
+psr:
+
+  class: ['psr','PSR']
+  ts : { min : 25 }
+
+bcu:
+
+  class: ['bcu','BCU']
+  ts : { min : 25 }
 
 unkn:
 
   class: ['unkn']
-
+  ts : { min : 25 }
+  
 bll:
 
   class: ['bll','BLL']
-
+  ts : { min : 25 }
+  
 bll_ts100:
 
   class: ['bll','BLL']
   ts : { min : 100 }
+
+bll_ts1000:
+
+  class: ['bll','BLL']
+  ts : { min : 1000 }
+
+bll_ts10000:
+
+  class: ['bll','BLL']
+  ts : { min : 10000 }
