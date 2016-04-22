@@ -24,7 +24,7 @@ def collect_jobs(dirs,runscript,overwrite=False):
 
     jobs = []
     
-    for dirname in dirs:        
+    for dirname in sorted(dirs):        
         
         o = dict(cfgfile = os.path.join(dirname,'config.yaml'),
                  logfile = os.path.join(dirname,os.path.splitext(runscript)[0] + '.log'),
@@ -105,8 +105,8 @@ while(1):
         print 'Submitting ', njob_to_submit, 'jobs'
     
         for job in jobs[:njob_to_submit]:
-            cmd = 'bsub -W 1000 -oo %s bash %s'%(job['logfile'],
-                                                job['runscript'])
+            cmd = 'bsub -W 1500 -R "bullet,hequ,kiso" -oo %s bash %s'%(job['logfile'],
+                                                                       job['runscript'])
             print cmd
             if not args.dry_run:
                 print 'submitting'
