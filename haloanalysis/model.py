@@ -1,6 +1,7 @@
 import numpy as np
 
-from astropy.table import Table, Column
+from astropy.table import Table, Column, join
+from astropy.modeling.powerlaws import LogParabola1D, PowerLaw1D
 
 class Axis(object):
 
@@ -46,6 +47,10 @@ class HaloModelCalc(object):
         self._mmap = mmap
         self._smodel = smodel
 
+    def interpolate(self):
+        #scipy.interpolate.LinearNDInterpolator, or RegularGridInterpolator
+        pass
+
     def eflux(self,eobs,p0,p1):
         """Evaluate the model energy flux at observed energy x for parameters
         p.
@@ -67,6 +72,7 @@ class HaloModelCalc(object):
         x = np.linspace(3.0,7.0,21)
         etrue = np.vstack((x[:-1],x[1:]))
         
+        # primary spectrum start at ~100 GeV approximate as powerlaw
         w = smodel.eflux(etrue,p0)/1E-6
 
         # Model Map
@@ -76,8 +82,9 @@ class HaloModelCalc(object):
         # Axis N ...
 
         # Interpolate model flux onto grid of true, observed energy
-        mmap = interpolate(self._mmap,etrue,eobs,p1)
+        mmap = interpolate(self._mmap,etrue,eobs,p1) 
 
+        #bin width in energy 
         detrue = x
         deobs = x
         
@@ -100,6 +107,7 @@ class HaloModelCalc(object):
            Model parameters.
 
         """
+        #weight theta by energy flux, not primary spectrum as in w, it's energy flux. 
         pass
         
 class HaloModelMap(object):
@@ -116,6 +124,12 @@ class HaloModelMap(object):
     @property
     def eflux(self):
         return self._eflux
+
+    #def get_eflux(self, energy, p0):
+    #here is where we make the map
+    #write values into eflux array
+    # contains log parabola information 
+    # model: LogParabola1D(10**8,1000,2,1)
         
     def write_fits(self,filename):
 
@@ -128,3 +142,40 @@ class HaloModelMap(object):
     @staticmethod
     def create_from_fits(filename):
         pass
+
+
+if __name__ == '__main__':
+    
+    from astropy.io import fits 
+    import stack
+    
+    def column(matrix, i):
+        return[row[i] for row in matrix]
+
+    # Reading in a fits file using the Table class
+
+    hdulist=Table.read("/u/gl/mdwood/ki20/mdwood/fermi/ext_analysis/v9/table_std_all_3fgl_glat050.fits")
+    hdu_lnl=Table.read("/u/gl/mdwood/ki20/mdwood/fermi/ext_analysis/v9/table_std_all_3fgl_glat050_lnl.fits")
+
+    joint=join(hdulist,hdu_lnl)
+    test_mask=stack.create_mask(joint, {'assoc':['1ES 0229+200']})
+
+    print joint['name','assoc'][test_mask]
+
+    test_source=joint[test_mask]
+
+    # Doing this using astropy.fits just for fun
+    #hdulist=fits.open("/u/gl/mdwood/ki20/mdwood/fermi/ext_analysis/v9/table_std_all_3fgl_glat050.fits")
+    #hdu_lnl=fits.open("/u/gl/mdwood/ki20/mdwood/fermi/ext_analysis/v9/table_std_all_3fgl_glat050_lnl.fits")
+    #data=hdulist[1].data
+    #lnl=hdu_lnl[1].data
+
+    #for i in range(len(data)):
+    #    if data.field('assoc')[i]=='1ES 0229+200':
+    #        print data.field('name')[i], lnl.field('name')[i]
+    #        eflux_ul95=data.field('fit_halo_scan_eflux_ul95')[i]
+    #        src_eflux=lnl.field('fit_src_sed_scan_eflux')[i]
+    #        halo_eflux=lnl.field('fit_halo_sed_scan_eflux')[i]
+    #        print eflux_ul95, src_eflux
+
+
