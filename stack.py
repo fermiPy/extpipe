@@ -21,22 +21,22 @@ def create_mask(tab,target_def):
         
         if isinstance(v,list):
 
-            m0 = np.zeros(len(tab0),dtype=bool)
+            m0 = np.zeros(len(tab),dtype=bool)
 
             for t in v:
-                m0 |= (tab0[k] == t)
+                m0 |= (tab[k] == t)
 
             m &= m0
             
         elif isinstance(v,dict):
 
-            m0 = np.empty(len(tab0),dtype=bool)
+            m0 = np.empty(len(tab),dtype=bool)
             m0.fill(True)
             if 'min' in v:
-                m0 &= (tab0[k] >= v['min'])
+                m0 &= (tab[k] >= v['min'])
 
             if 'max' in v:
-                m0 &= (tab0[k] <= v['max'])
+                m0 &= (tab[k] <= v['max'])
             m &= m0
             
     return m
