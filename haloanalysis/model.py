@@ -1,7 +1,14 @@
 import numpy as np
 
 from astropy.table import Table, Column, join
-from astropy.modeling.powerlaws import LogParabola1D, PowerLaw1D
+from astropy.modeling.models import Gaussian1D
+from astropy.convolution import convolve
+
+from fermipy.spectrum import *
+import itertools
+
+from scipy.interpolate import RegularGridInterpolator
+from scipy.interpolate import interp1d
 
 class Axis(object):
 
@@ -21,24 +28,15 @@ class Axis(object):
     def nbin(self):
         return len(self._edges)-1
 
-
-class SpectralModel(object):
-
-    def __init__(self,norm,index):
-
-        self._norm = norm
-        self._index = index
-
     @property
-    def norm(self):
-        return self._norm
+    def centers(self):
+        #naively averages the bin edges to determine the center
+        centers=np.zeros(len(self._edges)-1)
+        for i in range(len(self._edges)-1):
+            centers[i]=(self._edges[i+1]+self._edges[i])/2.0
+        return centers
 
-    @property
-    def index(self):
-        return self._index
 
-    def eflux(self):
-        pass
     
 class HaloModelCalc(object):
 
@@ -47,9 +45,6 @@ class HaloModelCalc(object):
         self._mmap = mmap
         self._smodel = smodel
 
-    def interpolate(self):
-        #scipy.interpolate.LinearNDInterpolator, or RegularGridInterpolator
-        pass
 
     def eflux(self,eobs,p0,p1):
         """Evaluate the model energy flux at observed energy x for parameters
@@ -73,7 +68,9 @@ class HaloModelCalc(object):
         etrue = np.vstack((x[:-1],x[1:]))
         
         # primary spectrum start at ~100 GeV approximate as powerlaw
+        #think about this implementation... WHAT is in mind for smodel     
         w = smodel.eflux(etrue,p0)/1E-6
+
 
         # Model Map
         # Axis 0 : True Energy
@@ -82,11 +79,22 @@ class HaloModelCalc(object):
         # Axis N ...
 
         # Interpolate model flux onto grid of true, observed energy
-        mmap = interpolate(self._mmap,etrue,eobs,p1) 
+        #data = np.meshgrid(etrue, w, indexing='ij',sparse=True)
+        #define what exactly we want to do here. 
+        #I interpret this is we have the etrue and eflux grid points. We want
+        #the eflux if given an eobs grid point. Output eflux, input point eobs
+        #mmap = interpolate(self._mmap,etrue,w) 
+        #mmap=RegularGridInterpolator((etrue, w), data)
+        interp=interp1d(x,w)
+        mmap=interp(eobs)
 
+        print interp, mmap
+        
         #bin width in energy 
-        detrue = x
-        deobs = x
+        detrue = (x[1]-x[0])
+        deobs =  (x[1]-x[0])
+
+        print detrue, deobs
         
         # Summation over true energy
         eflux = np.sum(w*mmap*deobs*detrue,axis=0)
@@ -116,7 +124,7 @@ class HaloModelMap(object):
 
         data_shape = []
         for axis in axes:
-            data_shape += [axis.nbin]        
+            data_shape += [axis.nbin]    
         self._eflux = np.zeros(data_shape)
         self._th68 = np.zeros(data_shape)
         self._axes = axes
@@ -125,19 +133,44 @@ class HaloModelMap(object):
     def eflux(self):
         return self._eflux
 
-    #def get_eflux(self, energy, p0):
-    #here is where we make the map
-    #write values into eflux array
-    # contains log parabola information 
-    # model: LogParabola1D(10**8,1000,2,1)
+    def get_eflux(self, axes): 
+        #axes right now are E, and B
+        #some random constants that we can change
+        B0=1E-16
+        gamma=0.5
+
+        #right now the definition dependent on the E and B fields
+        #eflux = PowerLaw.eval_dfde(np.array(x),[1E-10,-2.0],1E3)#*(axes[1].edges/B0)**gamma
+        allaxes=[]
+        for axis in axes:
+            allaxes.append(axis.centers)
+
+        params = np.meshgrid(*allaxes,indexing='ij')
+        #the application does make it dependend on the axes...
+        ef=PowerLaw.eval_dfde(10**params[0],[1E-10,-2.0],1E3)*(10**params[1]/B0)**gamma
+        #print ef
+        #print self.eflux
+        self._eflux=ef
+        #print self.eflux
+
+        pass
+ 
         
-    def write_fits(self,filename):
+    def write_fits(self,filename,axes):
 
         cols = [Column(name='eflux',dtype='f8',shape=self.eflux.shape,data=self.eflux)]
+        allaxes=[]
         for axis in axes:
-            cols += [Column(name=axis.name,dtype='f8',shape=axis.nbins,data=axis.edges)]
+            allaxes.append(axis.centers)
+
+        params = np.meshgrid(*allaxes,indexing='ij')
+        for i in range(len(axes)):
+            cols += [Column(name=axes[i].name,dtype='f8',data=params[i])]
+            #print cols
         tab = Table(cols)        
         tab.write(filename,format='fits',overwrite=True)
+
+        return tab
 
     @staticmethod
     def create_from_fits(filename):
@@ -160,9 +193,28 @@ if __name__ == '__main__':
     joint=join(hdulist,hdu_lnl)
     test_mask=stack.create_mask(joint, {'assoc':['1ES 0229+200']})
 
-    print joint['name','assoc'][test_mask]
+    #print joint['name','assoc'][test_mask]
 
     test_source=joint[test_mask]
+
+    x = np.linspace(3.0,7.0,21)
+    eobs = np.vstack((x[:-1],x[1:]))
+
+    E=Axis('E',x)
+    Ep=Axis('Ep',convolve(x, [0.2, 0.6, 0.3]))
+    B=Axis('B',np.linspace(-13,-16,9))
+    axes=[E,B]
+
+    #print E, Ep, B
+    test=HaloModelMap(axes)
+    test.get_eflux(axes)
+    cols=test.write_fits('test.fits',axes)
+    
+    #test_source_eflux=HaloModelCalc(mmap, test_source['spectrum_type']) 
+    #test_source_eflux.eflux(eobs, p0, p1)
+
+    #print test_source_eflux
+
 
     # Doing this using astropy.fits just for fun
     #hdulist=fits.open("/u/gl/mdwood/ki20/mdwood/fermi/ext_analysis/v9/table_std_all_3fgl_glat050.fits")
