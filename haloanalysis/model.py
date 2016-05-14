@@ -133,32 +133,50 @@ class HaloModelMap(object):
     def eflux(self):
         return self._eflux
 
+    @property
+    def th68(self):
+        return self._th68
+
+    def ContainmentAngle():
+        return ca
+
     def get_eflux(self, axes): 
-        #axes right now are E, and B
-        #some random constants that we can change
+        # Here are some random constants that we can change
         B0=1E-16
         gamma=0.5
 
-        #right now the definition dependent on the E and B fields
-        #eflux = PowerLaw.eval_dfde(np.array(x),[1E-10,-2.0],1E3)#*(axes[1].edges/B0)**gamma
         allaxes=[]
         for axis in axes:
             allaxes.append(axis.centers)
-
         params = np.meshgrid(*allaxes,indexing='ij')
-        #the application does make it dependend on the axes...
+
+        # Really stupid function which defines the eflux
         ef=PowerLaw.eval_dfde(10**params[0],[1E-10,-2.0],1E3)*(10**params[1]/B0)**gamma
-        #print ef
-        #print self.eflux
         self._eflux=ef
-        #print self.eflux
+
+        pass
+
+    def get_th68(self, axes): 
+        # Here are some random constants that we can change
+        B0=1E-16
+        gamma=0.5
+
+        allaxes=[]
+        for axis in axes:
+            allaxes.append(axis.centers)
+        params = np.meshgrid(*allaxes,indexing='ij')
+
+        # Function which defines the containment angle
+        th=(10**params[0]/1E3)**(-0.5)*(10**params[1]/B0)**gamma
+        self._th68=th
 
         pass
  
         
     def write_fits(self,filename,axes):
 
-        cols = [Column(name='eflux',dtype='f8',shape=self.eflux.shape,data=self.eflux)]
+        cols  = [Column(name='eflux',dtype='f8',shape=self.eflux.shape,data=self.eflux)]
+        cols += [Column(name='th68',dtype='f8',shape=self.th68.shape,data=self.th68)]
         allaxes=[]
         for axis in axes:
             allaxes.append(axis.centers)
@@ -166,7 +184,6 @@ class HaloModelMap(object):
         params = np.meshgrid(*allaxes,indexing='ij')
         for i in range(len(axes)):
             cols += [Column(name=axes[i].name,dtype='f8',data=params[i])]
-            #print cols
         tab = Table(cols)        
         tab.write(filename,format='fits',overwrite=True)
 
@@ -186,7 +203,6 @@ if __name__ == '__main__':
         return[row[i] for row in matrix]
 
     # Reading in a fits file using the Table class
-
     hdulist=Table.read("/u/gl/mdwood/ki20/mdwood/fermi/ext_analysis/v9/table_std_all_3fgl_glat050.fits")
     hdu_lnl=Table.read("/u/gl/mdwood/ki20/mdwood/fermi/ext_analysis/v9/table_std_all_3fgl_glat050_lnl.fits")
 
@@ -197,6 +213,7 @@ if __name__ == '__main__':
 
     test_source=joint[test_mask]
 
+    # Creating a toy model from HaloModelMap
     x = np.linspace(3.0,7.0,21)
     eobs = np.vstack((x[:-1],x[1:]))
 
@@ -205,29 +222,19 @@ if __name__ == '__main__':
     B=Axis('B',np.linspace(-13,-16,9))
     axes=[E,B]
 
-    #print E, Ep, B
     test=HaloModelMap(axes)
     test.get_eflux(axes)
+    test.get_th68(axes)
     cols=test.write_fits('test.fits',axes)
     
-    #test_source_eflux=HaloModelCalc(mmap, test_source['spectrum_type']) 
+
+    # Comparing the toy model to the data
+    test_source_eflux=HaloModelCalc(cols, test_source['spectrum_type']) 
     #test_source_eflux.eflux(eobs, p0, p1)
 
     #print test_source_eflux
 
 
-    # Doing this using astropy.fits just for fun
-    #hdulist=fits.open("/u/gl/mdwood/ki20/mdwood/fermi/ext_analysis/v9/table_std_all_3fgl_glat050.fits")
-    #hdu_lnl=fits.open("/u/gl/mdwood/ki20/mdwood/fermi/ext_analysis/v9/table_std_all_3fgl_glat050_lnl.fits")
-    #data=hdulist[1].data
-    #lnl=hdu_lnl[1].data
 
-    #for i in range(len(data)):
-    #    if data.field('assoc')[i]=='1ES 0229+200':
-    #        print data.field('name')[i], lnl.field('name')[i]
-    #        eflux_ul95=data.field('fit_halo_scan_eflux_ul95')[i]
-    #        src_eflux=lnl.field('fit_src_sed_scan_eflux')[i]
-    #        halo_eflux=lnl.field('fit_halo_sed_scan_eflux')[i]
-    #        print eflux_ul95, src_eflux
 
 
