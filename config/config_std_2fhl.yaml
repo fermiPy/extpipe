@@ -69,5 +69,5 @@ extension:
   spatial_model : 'GaussianSource'
 
 plotting:
-  erange: [[3.5,5.5],[4.0,5.5]]
+  loge_bounds: [[3.5,5.5],[4.0,5.5]]
 

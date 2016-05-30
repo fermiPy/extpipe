@@ -10,7 +10,7 @@ def fit_region(gta,modelname,src_name,erange=None):
     gta.logger.info('Starting Region Fit %s'%(modelname))
     
     if erange is not None:
-        gta.setEnergyRange(erange[0],erange[1])
+        gta.set_energy_range(erange[0],erange[1])
     
     model0 = { 'SpatialModel' : 'PointSource', 'Index' : 1.5 }
     model1 = { 'SpatialModel' : 'PointSource', 'Index' : 2.0 }
@@ -78,7 +78,7 @@ def fit_halo(gta,modelname,src_name,halo_width,halo_index,erange=None,
 
     gta.load_roi(modelname)
     if erange is not None:
-        gta.setEnergyRange(erange[0],erange[1])
+        gta.set_energy_range(erange[0],erange[1])
 
     gta.free_sources(False)
     gta.free_sources(distance=1.0,pars='norm', exclude_diffuse=True)
