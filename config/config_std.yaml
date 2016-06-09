@@ -28,6 +28,7 @@ gtlike:
   edisp : True
   irfs : 'P8R2_SOURCE_V6'
   edisp_disable : ['isodiff','galdiff']
+  llscan_npts : 9
 
 # Settings for ROI model
 model:
