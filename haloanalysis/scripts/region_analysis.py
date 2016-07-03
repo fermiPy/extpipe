@@ -7,7 +7,7 @@ import itertools
 import argparse
 from haloanalysis.fit_funcs import fit_region, fit_halo
     
-if __name__ == '__main__':
+def main():
         
     usage = "usage: %(prog)s [config file]"
     description = "Run fermipy analysis chain."
@@ -135,3 +135,8 @@ if __name__ == '__main__':
 
     np.save(os.path.join(gta.workdir,'new_source_data.npy'),
             new_source_data)
+
+
+if __name__ == '__main__':
+
+    main()
