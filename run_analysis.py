@@ -7,9 +7,6 @@ import itertools
 import argparse
 from haloanalysis.fit_funcs import fit_region, fit_halo
     
-
-
-
 if __name__ == '__main__':
         
     usage = "usage: %(prog)s [config file]"
@@ -20,13 +17,14 @@ if __name__ == '__main__':
     parser.add_argument('--source', default = None)
 
     args = parser.parse_args()
-    gta = GTAnalysis(args.config,logging={'verbosity' : 3})
+    gta = GTAnalysis(args.config,logging={'verbosity' : 3},
+                     fileio={'workdir_regex' : '\.xml$|\.npy$'})
 
     gta.setup(overwrite=True)
 
     sqrt_ts_threshold=3
 
-    halo_width = np.logspace(-1,0,9)
+    halo_width = np.logspace(-1.25,0.25,13)
     halo_index = np.array([1.5,1.75,2.0,2.25,2.5,2.75,3.0])
     
     model0 = { 'SpatialModel' : 'PointSource', 'Index' : 1.5 }
@@ -35,7 +33,7 @@ if __name__ == '__main__':
     src_name = gta.roi.sources[0].name
 
     # -----------------------------------
-    # Get a Baseline Model
+    # Fit the Baseline Model
     # -----------------------------------
 
     # Get a reasonable starting point for the spectral model
@@ -44,8 +42,6 @@ if __name__ == '__main__':
     gta.free_source(src_name,False)
 
     gta.optimize()
-
-    roiwidth = gta.config['binning']['roiwidth']
     
     # Localize 3FGL sources
     for s in gta.roi.sources:
@@ -56,10 +52,7 @@ if __name__ == '__main__':
         if s['offset'] < 0.5 or s['ts'] < 25.:
             continue
 
-        if np.abs(s['offset_glon']) > 0.5*roiwidth-0.2:
-            continue
-
-        if np.abs(s['offset_glat']) > 0.5*roiwidth-0.2:
+        if s['offset_roi_edge'] > -0.1:
             continue
         
         gta.localize(s.name,nstep=5,dtheta_max=0.5,update=True,
@@ -68,7 +61,6 @@ if __name__ == '__main__':
         gta.free_source(s.name,False)
 
     gta.tsmap('base',model=model1)
-    #gta.tsmap('base_emin40',model=model1,erange=[4.0,5.5])
 
     # Look for new point sources outside the inner 1.0 deg
 
@@ -88,9 +80,6 @@ if __name__ == '__main__':
     # -----------------------------------
 
     fit_region(gta,'fit0',src_name)
-    #fit_region(gta,'fit0_emin40',src_name,erange=[4.0,5.5])
-
-    gta.load_roi('fit0')
 
     # -------------------------------------
     # Pass 1 - Source at Localized Position
@@ -100,11 +89,7 @@ if __name__ == '__main__':
                  prefix='fit1')
 
     fit_region(gta,'fit1',src_name)
-    fit_halo(gta,'fit1',src_name,halo_width,halo_index)
-
-    #fit_region(gta,'fit1_emin40',src_name,erange=[4.0,5.5])
-    #fit_halo(gta,'fit1_emin40',src_name,halo_width,halo_index,erange=[4.0,5.5])
-
+    fit_halo(gta,'fit1',src_name)
     gta.load_roi('fit1')
 
     # -------------------------------------
@@ -112,10 +97,9 @@ if __name__ == '__main__':
     # -------------------------------------
 
     srcs = []
-    best_fit_idx = 1
 
     # Fit up to 4 sources
-    for i in range(2,5):
+    for i in range(2,6):
 
         srcs_fit = gta.find_sources('fit%i'%i,
                                     search_skydir=gta.roi.skydir,
@@ -140,22 +124,9 @@ if __name__ == '__main__':
                          update=True,prefix='fit%i'%i)
 
         fit_region(gta,'fit%i'%i,src_name)
-        fit_halo(gta,'fit%i'%i,src_name,halo_width,halo_index,
-                 do_scan=False)
-
-#        fit_region(gta,'fit%i_emin40'%i,src_name,erange=[4.0,5.5])
-#        fit_halo(gta,'fit%i_emin40'%i,src_name,halo_width,halo_index,erange=[4.0,5.5],
-#                 do_scan=False)
+        fit_halo(gta,'fit%i'%i,src_name)
 
         gta.load_roi('fit%i'%i)
-
-    # Only Run Halo Fit for Best-fit Model
-    if best_fit_idx > 1:
-        fit_halo(gta,'fit%i'%best_fit_idx,src_name,
-                 halo_width,halo_index)
-#        fit_halo(gta,'fit%i_emin40'%best_fit_idx,src_name,
-#                 halo_width,halo_index,
-#                 erange=[4.0,5.5])
         
     new_source_data = []
     for s in srcs:
