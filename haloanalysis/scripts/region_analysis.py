@@ -66,7 +66,7 @@ def main():
 
     gta.find_sources('base',model=model1,
                      search_skydir=gta.roi.skydir,
-                     max_iter=4,min_separation=0.5,
+                     max_iter=5,min_separation=0.5,
                      sqrt_ts_threshold=sqrt_ts_threshold,
                      search_minmax_radius=[1.0,None])
     gta.optimize()
