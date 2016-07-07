@@ -24,6 +24,8 @@ setup(name='haloanalysis',
       entry_points= {'console_scripts': [
             'run-region-analysis = haloanalysis.scripts.region_analysis:main',
             'run-halo-analysis = haloanalysis.scripts.halo_analysis:main',
+            'haloanalysis-aggregate = haloanalysis.scripts.aggregate:main',
+            'haloanalysis-make-html-table = haloanalysis.scripts.make_html_table:main',
             ]},
       install_requires=['numpy >= 1.6.1',
                         'matplotlib >= 1.4.0',
