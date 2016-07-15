@@ -10,6 +10,50 @@ import itertools
 from scipy.interpolate import RegularGridInterpolator
 from scipy.interpolate import interp1d
 
+def make_prim_model(prim_spectrum, inj_flux, prim_flux, emin, emax):
+    """Generate a model for the EBL-absorbed primary spectrum weighted
+    according to the injection spectrum given in the first argument.
+    Weighting is performed along the injected energy dimension with
+    index specified by the eidx parameter."""
+    
+    prim_scale = prim_spectrum.flux(emin,emax)/inj_flux
+    return prim_flux*prim_scale
+
+def make_casc_model(inj_spectrum, inj_flux, casc_flux, emin, emax, eidx=1):
+    """Generate a model for the secondary cascade spectrum weighted
+    according to the injection spectrum given in the first argument.
+    Weighting is performed along the injected energy dimension with
+    index specified by the eidx parameter.
+
+    Parameters
+    ----------
+    inj_spectrum : `~fermipy.spectrum.Spectrum`
+      Model for the injection spectrum.
+    
+    inj_flux : `~numpy.ndarray`
+       Array of injected flux values in arbitrary units.
+       
+    casc_flux : `~numpy.ndarray`
+       Array of injected flux values in arbitrary units.
+
+    emin: `~numpy.ndarray`
+    
+    emax: `~numpy.ndarray`
+           
+    eidx : int
+       Index of injected energy axis.
+
+    Returns
+    -------
+    casc_flux : `~numpy.ndarray`
+       Weighted model for the cascade spectrum.
+           
+    """
+        
+    inj_scale = inj_spectrum.flux(emin,emax)/inj_flux    
+    return np.sum(casc_flux*inj_scale[...,np.newaxis],axis=eidx)
+
+
 class Axis(object):
 
     def __init__(self,name,edges):
@@ -37,6 +81,21 @@ class Axis(object):
         return centers
 
 
+class HaloLike(object):
+
+    """Class responsible for evaluating the total likelihood
+    function:
+
+    ln L = ln L_LAT + ln L_TEV
+
+    Things to be specified:
+
+    * Parameterization of injection spectrum
+    * Object representing TeV SED
+    
+    """
+    def __init__(self,hmc):
+        pass
     
 class HaloModelCalc(object):
 
