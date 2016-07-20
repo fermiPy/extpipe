@@ -13,9 +13,15 @@ class HaloSED(object):
 
         self._sed = sed
 
+    @property
+    def axes(self):
+        return self._sed.axes
+        
     @staticmethod
     def create_from_fits(row):
 
+        # These are hard-coded for now until we can figure out how to
+        # extract them from the file
         axis0 = Axis('eobs',np.linspace(3,5.5,21))
         axis1 = Axis.create_from_centers('width',np.linspace(-1.125, 1.125, 13))
         axis2 = Axis.create_from_centers('eflux',np.linspace(-9, -5, 41))
