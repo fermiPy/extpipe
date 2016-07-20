@@ -129,11 +129,11 @@ class HaloModelMap(object):
         ----------
         axes : list
 
-        casc_flux : `~haloanalysis.mapnd.MapND`
+        casc_flux : `~haloanalysis.utils.MapND`
 
-        casc_r68 : `~haloanalysis.mapnd.MapND`
+        casc_r68 : `~haloanalysis.utils.MapND`
 
-        prim_flux : `~haloanalysis.mapnd.MapND`
+        prim_flux : `~haloanalysis.utils.MapND`
 
         """
         self._axes = axes
