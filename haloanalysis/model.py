@@ -4,6 +4,7 @@ import numpy as np
 import scipy
 from scipy.interpolate import RegularGridInterpolator
 from scipy.interpolate import interp1d
+from scipy.optimize import brentq
 
 from astropy.table import Table, Column, join
 from astropy.modeling.models import Gaussian1D
@@ -11,6 +12,59 @@ from astropy.convolution import convolve
 
 from fermipy.spectrum import *
 from haloanalysis.utils import Axis, MapND
+
+def find_eflux_peak(fn, p1, inj_eflux, axis):
+
+    imax = np.argmax(inj_eflux)
+    emin = axis.lo[max(imax-1,0)]
+    emax = axis.hi[min(imax+1,axis.nbin-1)]
+    e2dfde_deriv_emin = np.squeeze(fn.e2dfde_deriv(10**emin,p1))
+    e2dfde_deriv_emax = np.squeeze(fn.e2dfde_deriv(10**emax,p1))
+
+    x = np.linspace(emin,emax,11)
+    if (np.sign(e2dfde_deriv_emin) != np.sign(e2dfde_deriv_emax)):
+        if e2dfde_deriv_emin > 0:                
+            epeak = np.interp(0.,np.squeeze(fn.e2dfde_deriv(10**x,p1))[::-1],x[::-1])
+        else:
+            epeak = np.interp(0.,np.squeeze(fn.e2dfde_deriv(10**x,p1)),x)
+    elif e2dfde_deriv_emax > 0:
+        epeak = emax
+    elif e2dfde_deriv_emin < 0:
+        epeak = emin
+    else:
+        raise Exception('error finding peak')
+
+    return epeak
+
+
+def interp_flux(flux, axis0, axis1):
+
+    dfde = flux/axis0.width[:, np.newaxis]
+    flux_interp = np.zeros((len(axis1.centers),
+                            flux.shape[1]))
+
+    for i in range(flux.shape[1]):
+            
+        flux_interp[:, i] = np.interp(axis1.centers,
+                                      axis0.centers,
+                                      dfde[:, i])
+        flux_interp[:, i] *= axis1.width
+
+    return flux_interp
+
+
+def interp_r68(r68, axis0, axis1):
+
+    r68_interp = np.zeros((len(axis1.centers),
+                           r68.shape[1]))
+
+    for i in range(r68.shape[1]):
+
+        r68_interp[:, i] = np.interp(axis1.centers,
+                                     axis0.centers,
+                                     r68[:, i])
+
+    return r68_interp
 
 
 def make_prim_model(inj_spectrum, inj_flux, prim_flux, emin, emax):
@@ -78,46 +132,76 @@ class HaloLike(object):
         self._sed_prim = sed_prim
         self._sed_casc = sed_casc
         self._axis_prim = Axis('eobs',
-                               sed_prim.specData.ebins,
-                               sed_prim.specData.evals)
+                               np.log10(sed_prim.specData.ebins),
+                               np.log10(sed_prim.specData.evals))
         self._axis_casc = sed_casc.axes[1]
-        
-    def lnl(self, p0, p1):
-        """Evaluate the likelihood.
+
+
+    def lnl_prim(self, p0, p1):
+        """Evaluate the likelihood for the primary spectrum.
 
         Parameters
         ----------
-        p0 : `~numpy.ndarray`
-           Array of IGMF parameters.
+        p0 : list
+           List of IGMF parameters.  Parameters can be passed as
+           either scalars or numpy arrays.  All non-scalar parameters
+           must have the same shape.
+
+        p1 : `~numpy.ndarray`
+           Array of spectral parameters.
+        """
+        prim_flux = self._model.prim_flux(self._fn, p0, p1,
+                                          axis_eobs=self._axis_prim)
+        return self._sed_prim(prim_flux)
+
+    def lnl(self, p0, p1):
+        """Evaluate the total likelihood.
+
+        Parameters
+        ----------
+        p0 : list
+           List of IGMF parameters.  Parameters can be passed as
+           either scalars or numpy arrays.  All non-scalar parameters
+           must have the same shape.
 
         p1 : `~numpy.ndarray`
            Array of spectral parameters.
 
         """
-
-        prim_flux = self._model.prim_flux(self._fn, p0, p1,
-                                          axis_eobs=self._axis_prim)
-
         casc_flux = self._model.casc_flux(self._fn, p0, p1,
                                           axis_eobs=self._axis_casc)
 
         casc_r68 = self._model.casc_r68(self._fn, p0, p1,
                                         axis_eobs=self._axis_casc)
 
-        lnl_prim = self._sed_prim(prim_flux)
+        lnl_prim = self.lnl_prim(p0, p1)
         lnl_casc = self._sed_casc(casc_flux, casc_r68)
+
+        #print(lnl_prim,lnl_casc)
+        
         return lnl_prim + lnl_casc
 
-    def fit(self, p0):
+    def fit(self, p0, p1=None, method='SLSQP', fit_casc=True):
 
         def fitfn(params):
-            p = np.array([10**params[0],params[1],10**params[2]])            
-            return self.lnl(p0,p)
+            p = self._fn.log_to_params(params)
+            v = self.lnl(p0,p)
+            #print params, v
+            return v
         
-        #p1 = scipy.optimize.fmin(fn, self._fn.params, disp=False, xtol=1e-3)
-        p1 = scipy.optimize.minimize(fitfn, [-9,-1.5,7], method='BFGS', tol=1e-3)
+        if p1 is None:
+            p1 = self._fn.log_params
+        else:
+            p1 = self._fn.params_to_log(p1)
 
-        return p1
+        o = scipy.optimize.minimize(fitfn, p1,
+                                    bounds=[(-12., None),
+                                            (-3.0, -1.5),
+                                            (5., 9.)],
+                                    method=method, tol=1e-4)
+
+        p1 = self._fn.log_to_params(o['x'])
+        return o['fun'], p1
 
         
 class HaloModelMap(object):
@@ -159,10 +243,10 @@ class HaloModelMap(object):
         fn : `~fermipy.spectrum.Spectrum`
            Model for the injection spectrum.
 
-        p0 : tuple
-           Tuple of IGMF parameters.  Parameters can be passed as
+        p0 : list
+           List of IGMF parameters.  Parameters can be passed as
            either scalars or numpy arrays.  All non-scalar parameters
-           must have the same dimension.
+           must have the same shape.
 
         p1 : `~numpy.ndarray`
            Array of spectral parameters.  If none then the parameters
@@ -171,16 +255,24 @@ class HaloModelMap(object):
         axis_eobs : `~haloanalysis.utils.Axis`
            Axis defining the binning in observed energy.
 
+        Returns
+        -------
+        casc_flux : `~numpy.ndarray`
+           Flux of the cascade emission represented as an N x M array
+           where N is the number of bins in observed energy and M is
+           the number of steps in the IGMF parameters.
+
         """
 
         # Get Injected Flux
-        inj_flux = np.squeeze(fn.flux(self.axes[0].lo, self.axes[0].hi, p1))
+        inj_flux = np.squeeze(fn.flux(10**self.axes[0].lo,
+                                      10**self.axes[0].hi, p1))
 
-        p00 = np.array(p0[0],ndmin=1)
-        p01 = np.array(p0[1],ndmin=1)
+        p00 = np.array(p0[0], ndmin=1)
+        p01 = np.array(p0[1], ndmin=1)
         
         vals = np.meshgrid(self.axes[0].centers,
-                           self.axes[1].centers, 
+                           self.axes[1].centers,
                            indexing='ij', sparse=True)
         
         # Interpolate IGMF Params
@@ -196,25 +288,22 @@ class HaloModelMap(object):
 
         # Remap to binning defined by axis_eobs
         if axis_eobs is not None:
-
-            casc_dfde = casc_flux/self.axes[1].width
-            casc_flux = np.interp(axis_eobs.centers, self.axes[1].centers,
-                                  casc_dfde)
-            casc_flux *= axis_eobs.width
+            casc_flux = interp_flux(casc_flux, self.axes[1],
+                                    axis_eobs)
 
         return np.squeeze(casc_flux)
 
     def casc_r68(self, fn, p0, p1=None, axis_eobs=None):
         """Calculate the 68% containment radius of the cascade emission given
-        an injection spectrum and a sequence of observed energy bins.
+        an injection spectrum and a sequence of observed energy bins.  
 
         Parameters
         ----------
         fn : `~fermipy.spectrum.Spectrum`
            Model for the injection spectrum.
 
-        p0 : tuple
-           Tuple of IGMF parameters.  Parameters can be passed as
+        p0 : list
+           List of IGMF parameters.  Parameters can be passed as
            either scalars or numpy arrays.  All non-scalar parameters
            must have the same dimension.
 
@@ -229,34 +318,66 @@ class HaloModelMap(object):
         -------
         casc_r68 : `~numpy.ndarray`
            68% containment radius of the cascade emission represented
-           as an N x M x K array where N is the number of bins in
-           observed energy, M is the number of steps in the IGMF
-           parameters, and K is the number of steps in the spectral
+           as an N x M array where N is the number of bins in
+           observed energy and M is the number of steps in the IGMF
            parameters.
 
         """
         # Get Injected Flux
-        inj_eflux = np.squeeze(fn.eflux(self.axes[0].lo, self.axes[0].hi, p1))
+        inj_eflux = np.squeeze(fn.eflux(10**self.axes[0].lo,
+                                        10**self.axes[0].hi, p1))
+
+        inj_e2dfde = np.squeeze(fn.e2dfde(10**self.axes[0].centers,
+                                          p1))
+        
         imax = np.argmax(inj_eflux)
+        emin = self.axes[0].lo[max(imax-1,0)]
+        emax = self.axes[0].hi[min(imax+1,self.axes[0].nbin-1)]
+        e2dfde_deriv_emin = np.squeeze(fn.e2dfde_deriv(10**emin,p1))
+        e2dfde_deriv_emax = np.squeeze(fn.e2dfde_deriv(10**emax,p1))
 
-        p00 = np.array(p0[0],ndmin=1)
-        p01 = np.array(p0[1],ndmin=1)
+        if isinstance(fn,PLExpCutoff):
+            epeak = np.log10(p1[2])
+        else:
+            epeak = find_eflux_peak(fn,p1,inj_eflux,self.axes[0])            
 
-        vals = np.meshgrid(self.axes[0].centers[imax],
-                           self.axes[1].centers, 
+        epeak = max(epeak,5.0)
+            
+#        print e2dfde_deriv_emin, e2dfde_deriv_emax
+#        print emin,emax, epeak, epeak2, epeak3
+            
+ #       import matplotlib.pyplot as plt
+ #       plt.figure()
+
+ #       plt.plot([emin,emax],[e2dfde_deriv_emin,e2dfde_deriv_emax])
+
+ #       plt.axvline(epeak,color='k')
+ #       plt.axvline(epeak2,color='b')
+ #       plt.axvline(epeak3,color='r')
+        
+#        print epeak
+            
+        p00 = np.array(p0[0], ndmin=1)
+        p01 = np.array(p0[1], ndmin=1)
+
+        vals = np.meshgrid(epeak,
+                           self.axes[1].centers,
                            indexing='ij', sparse=True)
         
         # Interpolate IGMF Params
-        casc_r68 = self._casc_r68.interp((vals[0][...,np.newaxis],
-                                          vals[1][...,np.newaxis],
-                                          p00[np.newaxis,np.newaxis,...],
-                                          p01[np.newaxis,np.newaxis,...]))
+        casc_r68 = self._casc_r68.interp((vals[0][..., np.newaxis],
+                                          vals[1][..., np.newaxis],
+                                          p00[np.newaxis, np.newaxis, ...],
+                                          p01[np.newaxis, np.newaxis, ...]))
 
+        casc_r68 = np.squeeze(casc_r68, axis=0)
+        
         # Remap to binning defined by axis_eobs
         if axis_eobs is not None:
-            casc_r68 = np.interp(axis_eobs.centers,
-                                 self.axes[1].centers,
-                                 casc_r68)
+            casc_r68 = interp_r68(casc_r68, self.axes[1], axis_eobs)
+            #np.interp(axis_eobs.centers,
+            #                     self.axes[1].centers,
+            #                     casc_r68)
 
         return np.squeeze(casc_r68)
 
@@ -281,31 +402,27 @@ class HaloModelMap(object):
         axis_eobs : `~haloanalysis.utils.Axis`
            Tuple with lower and upper bin edges in observed energy.
            If none then the internal energy binning will be used.
-        
         """
 
-        inj_flux = np.squeeze(fn.flux(self.axes[0].lo, self.axes[0].hi, p1))
+        inj_flux = np.squeeze(fn.flux(10**self.axes[0].lo,
+                                      10**self.axes[0].hi, p1))
         p00 = np.array(p0[0], ndmin=1)
         p01 = np.array(p0[1], ndmin=1)
-        
+
         x, = np.meshgrid(self.axes[0].centers,
                          indexing='ij', sparse=True)
 
         # Interpolate IGMF Params
-        prim_flux = self._prim_flux.interp((x[:,np.newaxis],
-                                            p00[np.newaxis,:],
-                                            p01[np.newaxis,:]))
-        
+        prim_flux = self._prim_flux.interp((x[:, np.newaxis],
+                                            p00[np.newaxis, :],
+                                            p01[np.newaxis, :]))
+
         # Rescale to injected flux
-        prim_flux = inj_flux[:,np.newaxis]*prim_flux
+        prim_flux = inj_flux[:, np.newaxis]*prim_flux
 
         # Remap to binning defined by axis_eobs
         if axis_eobs is not None:
-
-            prim_dfde = prim_flux/self.axes[1].width
-            prim_flux = np.interp(axis_eobs.centers, self.axes[1].centers,
-                                  prim_dfde)
-            prim_flux *= axis_eobs.width
+            prim_flux = interp_flux(prim_flux, self.axes[1], axis_eobs)
         
         return np.squeeze(prim_flux)
 
@@ -390,8 +507,8 @@ class HaloModelMap(object):
 
         data_casc_r68[data_casc_r68 < 1E-6] = 1E-6
         
-        einj_axis = Axis.create_from_centers('einj', ectr, True)
-        eobs_axis = Axis.create_from_centers('eobs', ectr, True)
+        einj_axis = Axis.create_from_centers('einj', np.log10(ectr))
+        eobs_axis = Axis.create_from_centers('eobs', np.log10(ectr))
         lcoh_axis = Axis.create_from_centers('log_lcoh', log_lcoh[:, 0])
         igmf_axis = Axis.create_from_centers('log_igmf', log_igmf[0, :])
 

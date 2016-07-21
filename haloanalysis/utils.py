@@ -30,6 +30,24 @@ def create_mask(tab,target_def):
             
     return m
 
+def interp_map(z, axis0, axis1,dim=0):
+
+    s0 = z.ndim*[None]
+    s1 = z.ndim*[slice(None)]
+    s0[idim] = slice(None)
+    s1[idim] = slice(0,1)
+    z /= axis0.width[s0]
+
+    shape = list(z.shape)
+    shape[idim] = len(axis1.centers)
+    
+    zinterp = np.zeros(shape)
+    
+    for x, idx in np.ndenumerate(z[s1]):
+        zinterp = np.interp(axis1.centers,
+                            axis0.centers,
+                            z[:,i])
+        
 class MapND(object):
     """Container class representing an n-dimensional map."""
     
@@ -53,9 +71,13 @@ class MapND(object):
         points = [ax.centers for ax in axes]
 
         if log_interp:
-            self._fn = RegularGridInterpolator(points, np.log(data))
+            self._fn = RegularGridInterpolator(points, np.log(data),
+                                               bounds_error=False,
+                                               fill_value=None)
         else:
-            self._fn = RegularGridInterpolator(points, data)
+            self._fn = RegularGridInterpolator(points, data,
+                                               bounds_error=False,
+                                               fill_value=None)
             
     @property
     def fn(self):
