@@ -110,7 +110,7 @@ def make_casc_model(inj_spectrum, inj_flux, casc_flux, emin, emax, eidx=1):
     return np.sum(casc_flux*inj_scale[..., np.newaxis], axis=eidx)
 
 
-class HaloLike(object):
+class CascLike(object):
 
     """Class responsible for evaluating the likelihood function for a
     given model of cascade and primary emission:
@@ -124,7 +124,7 @@ class HaloLike(object):
         """
         Parameters
         ----------
-        model : `~haloanalysis.model.HaloModelMap`
+        model : `~haloanalysis.model.CascModel`
         """
         
         self._model = model
@@ -204,7 +204,7 @@ class HaloLike(object):
         return o['fun'], p1
 
         
-class HaloModelMap(object):
+class CascModel(object):
     """Object representing a library of cascade simulations."""
     
     def __init__(self, axes, casc_flux, casc_r68, prim_flux):
@@ -521,7 +521,7 @@ class HaloModelMap(object):
         mapnd_prim_flux = MapND([einj_axis, lcoh_axis, igmf_axis],
                                 data_prim_flux, True)
 
-        return HaloModelMap(axes, mapnd_casc_flux, mapnd_casc_r68,
+        return CascModel(axes, mapnd_casc_flux, mapnd_casc_r68,
                             mapnd_prim_flux)
         
 
@@ -544,7 +544,7 @@ if __name__ == '__main__':
 
     test_source=joint[test_mask]
 
-    # Creating a toy model from HaloModelMap
+    # Creating a toy model from CascModel
     x = np.linspace(3.0,7.0,21)
     eobs = np.vstack((x[:-1],x[1:]))
 
@@ -553,7 +553,7 @@ if __name__ == '__main__':
     B=Axis('B',np.linspace(-13,-16,9))
     axes=[E,B]
 
-    test=HaloModelMap(axes)
+    test=CascModel(axes)
     test.get_eflux(axes)
     test.get_th68(axes)
     cols=test.write_fits('test.fits',axes)

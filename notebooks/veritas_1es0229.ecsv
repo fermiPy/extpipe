@@ -1,0 +1,17 @@
+# %ECSV 0.9
+# ---
+# datatype:
+# - {name: E_REF, unit: TeV, datatype: float64}
+# - {name: NORM, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRP, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRN, datatype: float64, unit: ph / (m2 TeV s)}
+E_REF NORM NORM_ERRP NORM_ERRN
+0.291 1.20E-007 2.80E-008 2.80E-008
+0.427 6.10E-008 1.00E-008 1.00E-008
+0.628 2.20E-008 4.40E-009 4.40E-009
+0.922 4.30E-009 1.70E-009 1.70E-009
+1.36 2.20E-009 8.10E-010 8.10E-010
+1.99 1.00E-009 4.20E-010 4.20E-010
+2.92 3.50E-010 2.10E-010 2.10E-010
+4.29 2.40E-010 1.20E-010 1.20E-010
+7.64 2.80E-011 2.50E-011 2.50E-011
