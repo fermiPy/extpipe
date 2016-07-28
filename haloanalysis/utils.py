@@ -1,10 +1,40 @@
 import numpy as np
+from numpy.core import defchararray
 from scipy.interpolate import RegularGridInterpolator
 
-def create_mask(tab,target_def):
+
+def load_source_rows(tab, names, key='assoc'):
+    """Load the rows from a table that match a source name.
+
+    Parameters
+    ----------
+    tab : `astropy.table.Table`
+       Table that will be searched.
+
+    names : list
+       List of source identifiers.
+
+    key : str
+       Name of the table column that will be searched for a source
+       matching key.
+
+    Returns
+    -------
+    outtab : `astropy.table.Table`
+       Table containing the subset of rows with matching source identifiers.
+
+    """
+    names = [name.lower().replace(' ', '') for name in names]
+    tab[key] = defchararray.replace(defchararray.lower(tab[key]),
+                                    ' ', '')
+    mask = create_mask(tab, {key: names})
+    return tab[mask]
+
+
+def create_mask(tab, target_def):
     """Create a table mask from a target definition."""
 
-    m = np.empty(len(tab),dtype=bool); m.fill(True)
+    m = np.empty(len(tab), dtype=bool); m.fill(True)
 
     for k,v in target_def.items():
         

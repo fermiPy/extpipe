@@ -1,4 +1,5 @@
 import itertools
+from collections import OrderedDict
 
 import numpy as np
 import scipy
@@ -12,6 +13,77 @@ from astropy.convolution import convolve
 
 from fermipy.spectrum import *
 from haloanalysis.utils import Axis, MapND
+from haloanalysis.sed import *
+
+def scan_igmf_likelihood(tab, modelfile, sedtab, outputfile, nstep):
+    """This function uses the primary and cascade SEDs to scan the
+    likelihood space in the IGMF parameter (B,L_coh).
+
+    Parameters
+    ----------
+    tab : `astropy.table.Table`
+
+    modelfile : str
+       FITS file containing the pre-computed IGMF models.
+
+    sedtab : `astropy.table.Table`
+    """
+    
+    fn = PLExpCutoff([1E-11,-1.5,1E6],scale=1E3)
+
+    lcoh_scan = np.linspace(-4,4,nstep)
+    igmf_scan = np.linspace(-20,-12,nstep)    
+    bpars = np.meshgrid(lcoh_scan, igmf_scan)
+
+    #sed_prim = CastroData.create_from_flux_points(sedfile)
+    sed_prim = SED.create_from_row(sedtab)
+    sed_casc = HaloSED.create_from_fits(tab)
+    hmm = CascModel.create_from_fits(modelfile)
+    hl = CascLike(hmm, fn, sed_casc, sed_prim)
+
+    model_lnl = np.zeros(bpars[0].shape)*np.nan
+    p1 = fn.params
+
+    for idx, x in np.ndenumerate(bpars[0]):
+
+        p0 = [bpars[0][idx], bpars[1][idx]]
+        lnl, p1 = hl.fit(p0,p1,method='SLSQP')
+        model_lnl[idx] = lnl
+        print(idx, lnl, p0, p1)
+        #print bpars, lnl, p1
+
+    cols_dict = OrderedDict()
+    cols_dict['name'] = dict(dtype='S32', format='%s', description='name')
+    cols_dict['assoc'] = dict(dtype='S32', format='%s', description='assoc')
+    cols_dict['igmf_scan_dlnl'] = dict(dtype='f8', format='%.3f',
+                                       shape=model_lnl.shape)
+    
+    tab_scan = Table([Column(name=k, **v) for k, v in cols_dict.items()])
+    row_dict = {}
+    row_dict['name'] = tab['name']
+    row_dict['assoc'] = tab['assoc']
+    row_dict['igmf_scan_dlnl'] = model_lnl
+    tab_scan.add_row([row_dict[k] for k in cols_dict.keys()])
+
+    cols_dict = OrderedDict()
+    cols_dict['lcoh'] = dict(dtype='f8', format='%.3f', shape=bpars[0].shape,
+                             data=bpars[0])
+    cols_dict['igmf'] = dict(dtype='f8', format='%.3f', shape=bpars[1].shape,
+                             data=bpars[1])
+    tab_scan_grid = Table([Column(name=k, **v) for k, v in cols_dict.items()])
+
+    return tab_scan, tab_scan_grid
+
+    
+    hdulist = fits.HDUList()
+    hdulist.append(fits.table_to_hdu(tab_scan))
+    hdulist.append(fits.table_to_hdu(tab_scan_grid))
+
+    hdulist[1].name = 'SCAN_DATA'
+    hdulist[2].name = 'SCAN_GRID'
+    
+    hdulist.writeto(outputfile,clobber=True)
+
 
 def find_eflux_peak(fn, p1, inj_eflux, axis):
 
@@ -122,18 +194,34 @@ class CascLike(object):
     """
     def __init__(self, model, fn, sed_casc, sed_prim):
         """
+        Constructor.
+
         Parameters
         ----------
         model : `~haloanalysis.model.CascModel`
+           Cascade model object.  This contains precomputed tables for
+           the cascade flux and angular size.
+
+        fn : `~fermipy.spectrum.SpectralFunction`
+
+        sed_casc : `~haloanalysis.sed.HaloSED`
+           SED for the cascade component.
+
+        sed_prim : `~haloanalysis.sed.SED`
+           SED for the primary component.
+        
         """
         
         self._model = model
         self._fn = fn
         self._sed_prim = sed_prim
         self._sed_casc = sed_casc
-        self._axis_prim = Axis('eobs',
-                               np.log10(sed_prim.specData.ebins),
-                               np.log10(sed_prim.specData.evals))
+        self._axis_prim = Axis('eobs',np.log10(sed_prim.ebins),
+                               np.log10(sed_prim.ectr))
+        
+#        self._axis_prim = Axis('eobs',
+#                               np.log10(sed_prim.specData.ebins),
+#                               np.log10(sed_prim.specData.evals))
         self._axis_casc = sed_casc.axes[1]
 
 
@@ -149,12 +237,13 @@ class CascLike(object):
 
         p1 : `~numpy.ndarray`
            Array of spectral parameters.
+
         """
         prim_flux = self._model.prim_flux(self._fn, p0, p1,
-                                          axis_eobs=self._axis_prim)
+                                          axis_eobs=self._axis_prim)        
         return self._sed_prim(prim_flux)
 
-    def lnl(self, p0, p1):
+    def lnl(self, p0, p1, casc_scale=1.0):
         """Evaluate the total likelihood.
 
         Parameters
@@ -167,25 +256,29 @@ class CascLike(object):
         p1 : `~numpy.ndarray`
            Array of spectral parameters.
 
+        casc_scale : float
+           Scaling factor to be applied to the cascade flux.
+
         """
         casc_flux = self._model.casc_flux(self._fn, p0, p1,
                                           axis_eobs=self._axis_casc)
 
+        casc_flux *= casc_scale
+        
         casc_r68 = self._model.casc_r68(self._fn, p0, p1,
                                         axis_eobs=self._axis_casc)
 
         lnl_prim = self.lnl_prim(p0, p1)
         lnl_casc = self._sed_casc(casc_flux, casc_r68)
-
-        #print(lnl_prim,lnl_casc)
-        
         return lnl_prim + lnl_casc
 
-    def fit(self, p0, p1=None, method='SLSQP', fit_casc=True):
-
+    def fit(self, p0, p1=None, method='SLSQP', casc_scale=1.0):
+        """Perform a fit of the parameters of the primary spectrum while
+        holding the IGMF parameters fixed."""
+        
         def fitfn(params):
             p = self._fn.log_to_params(params)
-            v = self.lnl(p0,p)
+            v = self.lnl(p0,p, casc_scale=casc_scale)
             #print params, v
             return v
         
@@ -195,7 +288,7 @@ class CascLike(object):
             p1 = self._fn.params_to_log(p1)
 
         o = scipy.optimize.minimize(fitfn, p1,
-                                    bounds=[(-12., None),
+                                    bounds=[(-14., None),
                                             (-3.0, -1.5),
                                             (5., 9.)],
                                     method=method, tol=1e-4)
@@ -270,20 +363,18 @@ class CascModel(object):
 
         p00 = np.array(p0[0], ndmin=1)
         p01 = np.array(p0[1], ndmin=1)
-        
         vals = np.meshgrid(self.axes[0].centers,
                            self.axes[1].centers,
                            indexing='ij', sparse=True)
         
         # Interpolate IGMF Params
-        casc_flux = self._casc_flux.interp((vals[0][...,np.newaxis],
-                                            vals[1][...,np.newaxis],
-                                            p00[np.newaxis,np.newaxis,...],
-                                            p01[np.newaxis,np.newaxis,...]))
+        casc_flux = self._casc_flux.interp((vals[0][..., np.newaxis],
+                                            vals[1][..., np.newaxis],
+                                            p00[np.newaxis, np.newaxis, ...],
+                                            p01[np.newaxis, np.newaxis, ...]))
 
         # Integrate over injected energy
-        inj_flux = inj_flux.reshape(inj_flux.shape + (1,1))
-        
+        inj_flux = inj_flux.reshape(inj_flux.shape + (1, 1))
         casc_flux = np.sum(inj_flux*casc_flux, axis=0)
 
         # Remap to binning defined by axis_eobs
@@ -337,12 +428,15 @@ class CascModel(object):
         e2dfde_deriv_emax = np.squeeze(fn.e2dfde_deriv(10**emax,p1))
 
         if isinstance(fn,PLExpCutoff):
-            epeak = np.log10(p1[2])
+            if p1 is not None:            
+                epeak = np.log10(p1[2])
+            else:
+                epeak = np.log10(fn.params[2])
         else:
             epeak = find_eflux_peak(fn,p1,inj_eflux,self.axes[0])            
 
         epeak = max(epeak,5.0)
-            
+        
 #        print e2dfde_deriv_emin, e2dfde_deriv_emax
 #        print emin,emax, epeak, epeak2, epeak3
             
