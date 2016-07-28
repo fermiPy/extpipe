@@ -1,0 +1,17 @@
+# %ECSV 0.9
+# ---
+# datatype:
+# - {name: E_REF, datatype: float64, unit: TeV}
+# - {name: NORM, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRP, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRN, datatype: float64, unit: ph / (m2 TeV s)}
+# meta:
+# - comments: [Name=PG1553+113_HESS_2005-2006, LiveTime(h)=24.8, Excess=785, significance=10.2]
+E_REF NORM NORM_ERRP NORM_ERRN
+0.245575 8.8094e-07 1.9492e-07 1.9492e-07
+0.29751 5.7756e-07 9.6654e-08 9.6654e-08
+0.36003 2.7328e-07 4.4227e-08 4.4227e-08
+0.452852 5.2467e-08 1.8189e-08 1.8189e-08
+0.604285 4.9851e-09 1.2244e-08 1.2244e-08
+0.805611 3.8762e-09 4.1407e-09 4.1407e-09
+1.0738 3.5223e-09 2.3605e-09 2.3605e-09

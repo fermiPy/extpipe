@@ -1,0 +1,16 @@
+# %ECSV 0.9
+# ---
+# datatype:
+# - {name: E_REF, datatype: float64, unit: TeV}
+# - {name: NORM, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRP, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRN, datatype: float64, unit: ph / (m2 TeV s)}
+# meta:
+# - comments: [Name=PG1553+113_HESS_2012_flare, LiveTime(h)=3.2, Excess=391, significance=22]
+E_REF NORM NORM_ERRP NORM_ERRN
+0.2468 5.454e-06 1.434e-06 6.92e-07
+0.2977 1.586e-06 4.89e-07 2.36e-07
+0.3647 7.394e-07 2.489e-07 1.196e-07
+0.4484 4.165e-07 1.436e-07 6.89e-08
+0.5499 8.061e-08 6.187e-08 2.898e-08
+0.6737 5.211e-08 3.793e-08 1.756e-08

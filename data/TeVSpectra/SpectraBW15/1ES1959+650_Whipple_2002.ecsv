@@ -1,0 +1,31 @@
+# %ECSV 0.9
+# ---
+# datatype:
+# - {name: E_REF, datatype: float64, unit: TeV}
+# - {name: NORM, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRP, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRN, datatype: float64, unit: ph / (m2 TeV s)}
+# meta:
+# - comments: [Name=1ES1959+650_Whipple_2002, LiveTime(h)=2.7, Excess=300, significance=15.3]
+E_REF NORM NORM_ERRP NORM_ERRN
+0.383 2.75e-05 1e-05 1e-05
+0.562 3.58e-06 2.1e-06 2.1e-06
+0.759 2.05e-06 7.5e-07 7.5e-07
+0.826 1.63e-06 6.8e-07 6.8e-07
+1 9.53e-07 5.5e-07 5.5e-07
+1.21 8.07e-07 2.4e-07 2.4e-07
+1.58 3.45e-07 9.2e-08 9.2e-08
+1.78 2.47e-07 9.6e-08 9.6e-08
+2.09 2.32e-07 7.7e-08 7.7e-08
+2.61 3.23e-08 3.8e-08 3.8e-08
+3.31 7.18e-08 2e-08 2e-08
+3.83 2.36e-08 1.6e-08 1.6e-08
+4.37 5.49e-08 1.4e-08 1.4e-08
+5.62 1.83e-08 6.6e-09 6.6e-09
+6.92 5.75e-09 3.3e-09 3.3e-09
+8.26 4.34e-09 3.1e-09 3.1e-09
+9.12 9.26e-09 2.6e-09 2.6e-09
+12.1 1.25e-09 1.1e-09 1.1e-09
+14.5 1.6e-10 4.2e-10 4.2e-10
+17.8 3.79e-10 2.7e-10 2.7e-10
+19.1 2.23e-10 5.8e-10 5.8e-10

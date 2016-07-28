@@ -1,0 +1,15 @@
+# %ECSV 0.9
+# ---
+# datatype:
+# - {name: E_REF, datatype: float64, unit: TeV}
+# - {name: NORM, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRP, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRN, datatype: float64, unit: ph / (m2 TeV s)}
+# meta:
+# - comments: [Name=BLLacertae_VERITAS_2011, LiveTime(h)=0.5, Excess=212, significance=21.1]
+E_REF NORM NORM_ERRP NORM_ERRN
+0.224 1.69e-05 2.94e-06 2.94e-06
+0.282 6.53e-06 1.5e-06 1.5e-06
+0.355 5.34e-06 1.08e-06 1.08e-06
+0.447 1.03e-06 4.02e-07 4.02e-07
+0.562 4.34e-07 2.4e-07 2.4e-07

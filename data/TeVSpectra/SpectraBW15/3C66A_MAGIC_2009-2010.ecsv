@@ -1,0 +1,14 @@
+# %ECSV 0.9
+# ---
+# datatype:
+# - {name: E_REF, datatype: float64, unit: TeV}
+# - {name: NORM, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRP, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRN, datatype: float64, unit: ph / (m2 TeV s)}
+# meta:
+# - comments: [Name=3C66A_MAGIC_2009-2010, LiveTime(h)=2.3, Excess=232, significance=5.2]
+E_REF NORM NORM_ERRP NORM_ERRN
+0.0774236 2.4e-05 8.33e-06 8.33e-06
+0.143067 2.17e-06 1.04e-06 1.04e-06
+0.264367 3.14e-07 1.48e-07 1.48e-07
+0.48851 4.42e-08 2.54e-08 2.54e-08

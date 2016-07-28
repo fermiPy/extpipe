@@ -1,0 +1,15 @@
+# %ECSV 0.9
+# ---
+# datatype:
+# - {name: E_REF, datatype: float64, unit: TeV}
+# - {name: NORM, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRP, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRN, datatype: float64, unit: ph / (m2 TeV s)}
+# meta:
+# - comments: [Name=RGBJ0710+591_VERITAS_2008-2009, LiveTime(h)=22.1, Excess=129, significance=5.5]
+E_REF NORM NORM_ERRP NORM_ERRN
+0.4028 8.78e-08 3.62e-08 3.62e-08
+0.6914 2.37e-08 7.72e-09 7.72e-09
+1.187 7.25e-09 2.2e-09 2.2e-09
+2.037 8.57e-10 5.57e-10 5.57e-10
+3.497 3.1e-10 1.96e-10 1.96e-10

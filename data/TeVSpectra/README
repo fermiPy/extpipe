@@ -1,0 +1,14 @@
+# author: Jonathan Biteau
+# date: 2016-07-20
+
+--- FILE: SourcesBW15.ecsv ---
+
+- Contains a list of the sources studied in 2015ApJ...812...60B (Biteau & Williams 2015).
+- Right ascension and declination in J2000 are retrieved manualy from NASA's HEASARC Coordinate Converter.
+- Known redshifts as of 2015 are provided. The boolean indicates whether this value should be trusted or not.
+
+--- FILES IN: SpectraBW15 ---
+
+- File names: Source_Obervatory_PeriodOfObservation
+- Table in each file: reference energy, flux at this energy, high and low uncertainties on this flux
+- Comments in each file: the name of the file is provided for redundancy w/o the .ecsv extension. The livetime of observation (in hours), estimated gamma-ray excess (number of photons), and significance (number of gaussian standard deviations) are provided. These values should be seen as indicative. Sometimes, the litterature does not provide these values for subdatasets. They are re-estimated whenever possible, but the excess is set by default to zero and the significance to one when a re-estimation is not possible.

@@ -1,0 +1,14 @@
+# %ECSV 0.9
+# ---
+# datatype:
+# - {name: E_REF, datatype: float64, unit: TeV}
+# - {name: NORM, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRP, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRN, datatype: float64, unit: ph / (m2 TeV s)}
+# meta:
+# - comments: [Name=PG1553+113_MAGIC_2007, LiveTime(h)=11.5, Excess=1400, significance=5.8]
+E_REF NORM NORM_ERRP NORM_ERRN
+0.098 2.22e-05 4.81e-06 4.81e-06
+0.155 4.1e-06 1.36e-06 1.36e-06
+0.246 5.23e-07 1.72e-07 1.72e-07
+0.39 5.8e-08 3.36e-08 3.36e-08

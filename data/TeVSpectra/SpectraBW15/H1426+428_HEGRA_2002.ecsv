@@ -1,0 +1,14 @@
+# %ECSV 0.9
+# ---
+# datatype:
+# - {name: E_REF, datatype: float64, unit: TeV}
+# - {name: NORM, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRP, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRN, datatype: float64, unit: ph / (m2 TeV s)}
+# meta:
+# - comments: [Name=H1426+428_HEGRA_2002, LiveTime(h)=217.5, Excess=177.1, significance=5.3]
+E_REF NORM NORM_ERRP NORM_ERRN
+0.78 1.23e-08 3.78e-09 3.78e-09
+1.48 2.02e-09 1.4e-09 1.4e-09
+2.82 6.6e-10 2.4e-10 2.4e-10
+5.37 1.8e-10 5e-11 5e-11

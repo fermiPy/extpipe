@@ -1,0 +1,14 @@
+# %ECSV 0.9
+# ---
+# datatype:
+# - {name: E_REF, datatype: float64, unit: TeV}
+# - {name: NORM, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRP, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRN, datatype: float64, unit: ph / (m2 TeV s)}
+# meta:
+# - comments: [Name=Mkn180_MAGIC_2006, LiveTime(h)=11.1, Excess=165, significance=5.5]
+E_REF NORM NORM_ERRP NORM_ERRN
+0.182323 2.21e-06 1.63e-06 1.63e-06
+0.35201 2.3e-07 1.75e-07 1.75e-07
+0.679625 3.34e-08 1.87e-08 1.87e-08
+1.31215 4.06e-09 3.97e-09 3.97e-09

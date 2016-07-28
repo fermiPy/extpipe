@@ -1,0 +1,13 @@
+# %ECSV 0.9
+# ---
+# datatype:
+# - {name: E_REF, datatype: float64, unit: TeV}
+# - {name: NORM, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRP, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRN, datatype: float64, unit: ph / (m2 TeV s)}
+# meta:
+# - comments: [Name=Mkn421_TIBET_2000-2001, LiveTime(h)=0, Excess=0, significance=1]
+E_REF NORM NORM_ERRP NORM_ERRN
+1.71 3.71e-07 1.51e-07 1.51e-07
+2.691 6.84e-08 3.03e-08 3.03e-08
+4.498 1.61e-08 6.87e-09 6.87e-09

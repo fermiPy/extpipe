@@ -1,0 +1,27 @@
+# %ECSV 0.9
+# ---
+# datatype:
+# - {name: E_REF, datatype: float64, unit: TeV}
+# - {name: NORM, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRP, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRN, datatype: float64, unit: ph / (m2 TeV s)}
+# meta:
+# - comments: [Name=Mkn501_HEGRA_1997, LiveTime(h)=110, Excess=38000, significance=200]
+E_REF NORM NORM_ERRP NORM_ERRN
+3.28 6.655e-08 2.669e-09 2.669e-09
+3.68 4.766e-08 1.982e-09 1.982e-09
+4.13 3.506e-08 1.574e-09 1.574e-09
+4.63 2.76e-08 1.281e-09 1.281e-09
+5.2 1.958e-08 9.927e-10 9.927e-10
+5.83 1.287e-08 7.53e-10 7.53e-10
+6.54 1.1e-08 6.567e-10 6.567e-10
+7.34 7.577e-09 4.982e-10 4.982e-10
+8.24 4.597e-09 3.677e-10 3.677e-10
+9.25 3.122e-09 2.845e-10 2.845e-10
+10.38 2.213e-09 2.259e-10 2.259e-10
+11.64 1.824e-09 1.935e-10 1.935e-10
+13.06 7.759e-10 1.354e-10 1.354e-10
+14.66 4.095e-10 9.585e-11 9.585e-11
+16.45 3.276e-10 9.227e-11 9.227e-11
+18.45 1.779e-10 5.318e-11 5.318e-11
+20.71 3.493e-11 3.784e-11 3.784e-11

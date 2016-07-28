@@ -1,0 +1,20 @@
+# %ECSV 0.9
+# ---
+# datatype:
+# - {name: E_REF, datatype: float64, unit: TeV}
+# - {name: NORM, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRP, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRN, datatype: float64, unit: ph / (m2 TeV s)}
+# meta:
+# - comments: [Name=1ES1101-232_HESS_2004-2005, LiveTime(h)=40, Excess=608, significance=9.9]
+E_REF NORM NORM_ERRP NORM_ERRN
+0.257254 2.1193e-07 1.0851e-07 1.0851e-07
+0.343005 1.2031e-07 3.7421e-08 3.7421e-08
+0.457587 6.9717e-08 1.6346e-08 1.6346e-08
+0.610549 3.1151e-08 6.7965e-09 6.7965e-09
+0.813942 8.8237e-09 3.339e-09 3.339e-09
+1.08492 3.3934e-09 1.6441e-09 1.6441e-09
+1.44646 9.8446e-10 8.5114e-10 8.5114e-10
+1.92908 6.2822e-10 5.0526e-10 5.0526e-10
+2.57254 5.3781e-10 3.5046e-10 3.5046e-10
+3.43042 4.2947e-10 2.0987e-10 2.0987e-10

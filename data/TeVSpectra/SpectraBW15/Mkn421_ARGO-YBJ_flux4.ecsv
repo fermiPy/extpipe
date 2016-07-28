@@ -1,0 +1,16 @@
+# %ECSV 0.9
+# ---
+# datatype:
+# - {name: E_REF, datatype: float64, unit: TeV}
+# - {name: NORM, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRP, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRN, datatype: float64, unit: ph / (m2 TeV s)}
+# meta:
+# - comments: [Name=Mkn421_ARGO-YBJ_flux4, LiveTime(h)=0, Excess=0, significance=1]
+E_REF NORM NORM_ERRP NORM_ERRN
+0.708 1.27e-07 1.56e-06 1.56e-06
+1.12 1.51e-06 4.74e-07 4.74e-07
+1.41 9.36e-07 2.18e-07 2.18e-07
+2.82 1.7e-07 5.06e-08 5.06e-08
+5.62 6.59e-08 2.02e-08 2.02e-08
+7.08 2.43e-08 2.05e-08 2.05e-08

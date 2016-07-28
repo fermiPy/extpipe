@@ -1,0 +1,15 @@
+# %ECSV 0.9
+# ---
+# datatype:
+# - {name: E_REF, datatype: float64, unit: TeV}
+# - {name: NORM, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRP, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRN, datatype: float64, unit: ph / (m2 TeV s)}
+# meta:
+# - comments: [Name=IC310_MAGIC_2009-2010_low, LiveTime(h)=38.8, Excess=0, significance=1]
+E_REF NORM NORM_ERRP NORM_ERRN
+0.199 1.28e-07 7.46e-08 7.46e-08
+0.459 2.29e-08 7.82e-09 7.82e-09
+1.06 5.86e-09 1.79e-09 1.79e-09
+2.45 1.25e-09 4.22e-10 4.22e-10
+5.659 1.56e-10 8.3e-11 8.3e-11

@@ -1,0 +1,16 @@
+# %ECSV 0.9
+# ---
+# datatype:
+# - {name: E_REF, datatype: float64, unit: TeV}
+# - {name: NORM, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRP, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRN, datatype: float64, unit: ph / (m2 TeV s)}
+# meta:
+# - comments: [Name=Mkn421_TACTIC_2008, LiveTime(h)=152.5, Excess=672, significance=9.7]
+E_REF NORM NORM_ERRP NORM_ERRN
+1 9.41e-07 3.28e-07 3.28e-07
+1.46 2.26e-07 3.51e-08 3.51e-08
+2.13 4.61e-08 7.06e-09 7.06e-09
+3.12 1.5e-08 2.76e-09 2.76e-09
+4.57 4.73e-09 1.22e-09 1.22e-09
+6.68 1.57e-09 5.62e-10 5.62e-10

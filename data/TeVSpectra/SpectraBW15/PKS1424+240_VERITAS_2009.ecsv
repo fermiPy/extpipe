@@ -1,0 +1,18 @@
+# %ECSV 0.9
+# ---
+# datatype:
+# - {name: E_REF, datatype: float64, unit: TeV}
+# - {name: NORM, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRP, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRN, datatype: float64, unit: ph / (m2 TeV s)}
+# meta:
+# - comments: [Name=PKS1424+240_VERITAS_2009, LiveTime(h)=28.5, Excess=423, significance=8.5]
+E_REF NORM NORM_ERRP NORM_ERRN
+0.1268 4.46e-06 1.51e-06 1.51e-06
+0.1383 2.7e-06 1.01e-06 1.01e-06
+0.1508 2.4e-06 6.88e-07 6.88e-07
+0.1713 8.21e-07 3.05e-07 3.05e-07
+0.2037 3.47e-07 1.8e-07 1.8e-07
+0.2426 2.66e-07 1.14e-07 1.14e-07
+0.3125 8.04e-08 3.79e-08 3.79e-08
+0.5119 1.22e-08 6.45e-09 6.45e-09

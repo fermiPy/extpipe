@@ -1,0 +1,16 @@
+# %ECSV 0.9
+# ---
+# datatype:
+# - {name: E_REF, datatype: float64, unit: TeV}
+# - {name: NORM, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRP, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRN, datatype: float64, unit: ph / (m2 TeV s)}
+# meta:
+# - comments: [Name=PG1553+113_VERITAS_2010-2012, LiveTime(h)=80, Excess=5460, significance=53]
+E_REF NORM NORM_ERRP NORM_ERRN
+0.175 4.668e-06 1.84e-07 1.84e-07
+0.217 2.05e-06 8.62e-08 8.62e-08
+0.268 8.76e-07 4.649e-08 4.649e-08
+0.33 3.236e-07 2.55e-08 2.55e-08
+0.408 9.996e-08 1.42e-08 1.42e-08
+0.504 4.168e-08 8.719e-09 8.719e-09

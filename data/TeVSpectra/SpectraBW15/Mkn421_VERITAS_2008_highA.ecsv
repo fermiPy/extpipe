@@ -1,0 +1,25 @@
+# %ECSV 0.9
+# ---
+# datatype:
+# - {name: E_REF, datatype: float64, unit: TeV}
+# - {name: NORM, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRP, datatype: float64, unit: ph / (m2 TeV s)}
+# - {name: NORM_ERRN, datatype: float64, unit: ph / (m2 TeV s)}
+# meta:
+# - comments: [Name=Mkn421_VERITAS_2008_highA, LiveTime(h)=1.4, Excess=5300, significance=73]
+E_REF NORM NORM_ERRP NORM_ERRN
+0.275 1.702e-05 3.295e-06 3.295e-06
+0.34 1.289e-05 1.106e-06 1.106e-06
+0.42 8.821e-06 6.072e-07 6.072e-07
+0.519 5.777e-06 3.697e-07 3.697e-07
+0.642 3.509e-06 2.351e-07 2.351e-07
+0.793 2.151e-06 1.525e-07 1.525e-07
+0.98 1.302e-06 1.024e-07 1.024e-07
+1.212 6.273e-07 6.117e-08 6.117e-08
+1.498 3.31e-07 3.853e-08 3.853e-08
+1.851 1.661e-07 2.401e-08 2.401e-08
+2.288 1.124e-07 1.732e-08 1.732e-08
+2.828 6.158e-08 1.138e-08 1.138e-08
+3.496 3.347e-08 7.427e-09 7.427e-09
+4.321 1.16e-08 4.031e-09 4.031e-09
+5.342 5.23e-09 2.371e-09 2.371e-09
