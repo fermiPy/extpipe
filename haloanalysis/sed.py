@@ -35,6 +35,8 @@ class SED(object):
         self._flux = flux
         self._flux_err = flux_err
         self._lnl = lnl
+        self._axis = Axis('eobs',np.log10(self._ebins),
+                          np.log10(self._ectr))
 
     @property
     def flux(self):
@@ -51,6 +53,35 @@ class SED(object):
     @property
     def ebins(self):
         return self._ebins
+
+    @property
+    def axis(self):
+        return self._axis
+    
+    @staticmethod
+    def create_from_row2(row, tab_ebounds):
+
+        ref_flux = np.array(row['REF_FLUX'][0])
+        norm = np.array(row['NORM'][0])
+        norm_err = np.array(row['NORM_ERR'][0])
+                
+        flux = norm*ref_flux
+        flux_err = norm_err*ref_flux
+
+        ectr = np.array(tab_ebounds['E_REF'])
+        emin = np.array(tab_ebounds['E_MIN'])
+        emax = np.array(tab_ebounds['E_MAX'])
+
+        norm_vals = np.array(row['NORM_SCAN'][0])*ref_flux[:,np.newaxis]
+        nll_vals = -np.array(row['DLOGLIKE_SCAN'][0])
+        lnl_maps = []
+        
+        for i, x in enumerate(ectr):
+            axis = Axis.create_from_centers('flux',norm_vals[i])
+            lnl_maps += [MapND([axis], nll_vals[i])]
+
+        return SED(lnl_maps, emin, ectr, emax, flux, flux_err)
+        
         
     @staticmethod
     def create_from_row(row):
@@ -107,6 +138,16 @@ class SED(object):
             
         return np.sum(nll_sum,axis=0)
 
+    def plot(self, ax=None):
+
+        import matplotlib.pyplot as plt
+        
+        ax = ax if ax is not None else plt.gca()        
+        ax.errorbar(self._ectr/1E6,
+                    self._ectr*self._flux,
+                    self._ectr*self._flux_err,
+                    marker='o',linestyle='None')
+
 
 class HaloSED(object):
     """Representation of a halo SED containing log-likelihood values as a
@@ -123,13 +164,18 @@ class HaloSED(object):
         return self._sed.axes
         
     @staticmethod
-    def create_from_fits(row):
+    def create_from_fits(row, tab_ebounds, tab_pars):
 
-        # These are hard-coded for now until we can figure out how to
-        # extract them from the file
-        axis0 = Axis.create_from_centers('width',np.linspace(-1.125, 1.125, 13))
-        axis1 = Axis('eobs',np.linspace(3,5.5,21))
-        axis2 = Axis.create_from_centers('eflux',np.linspace(-9, -5, 41))
+        width = np.log10(np.array(tab_pars['halo_scan_width'][0]))
+        index = np.log10(tab_pars['halo_scan_index'][0])
+        eobs = np.array(tab_ebounds['E_MAX'])
+        eobs = np.insert(eobs,0,tab_ebounds['E_MIN'][0])
+        eobs = np.log10(eobs)
+        eflux = np.log10(np.array(tab_pars['halo_scan_eflux'][0]))
+
+        axis0 = Axis.create_from_centers('width',width)
+        axis1 = Axis('eobs',eobs)
+        axis2 = Axis.create_from_centers('eflux',eflux)
 
         sed = MapND([axis0,axis1,axis2],-np.array(row['fit_halo_sed_scan_dlnl']))
 
@@ -148,10 +194,15 @@ class HaloSED(object):
 
         log_eflux = np.log10(flux*10**ectr)
         log_width = np.log10(width)
-
-        #log_eflux[log_eflux < self.axes[2].lo[0]]
-        #log_width[log_width < -1.0] = -1.0
+        
+        log_eflux[log_eflux < self.axes[2].edges[0] ] = self.axes[2].edges[0]
+        log_width[log_width < self.axes[0].edges[0] ] = self.axes[0].edges[0]
         
         args = (log_width, ectr, log_eflux)
+
+#        print 'log_eflux: ', log_eflux
+#        print 'log_width: ', log_width
+#        print self._sed.interp(args)
+        
         return np.sum(self._sed.interp(args),axis=0)
         

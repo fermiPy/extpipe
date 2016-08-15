@@ -121,6 +121,21 @@ class MapND(object):
     def data(self):
         return self._data
 
+    def slice(self, dims, vals):
+        axis_xvals = []
+        axes = []
+        for i, axis in enumerate(self.axes):
+            axis_xvals += [axis.centers]
+            if not i in dims:
+                axes += [axis]
+
+        for i, v in zip(dims,vals):
+            axis_xvals[i] = np.array(v,ndmin=1)
+            
+        interp_xvals = np.meshgrid(*axis_xvals,indexing='ij',sparse=True)
+        data = np.squeeze(self.interp(tuple(interp_xvals)))
+        return MapND(axes, data, self._log_interp)
+        
     def interp(self, *args):
 
         if self._log_interp:
