@@ -350,8 +350,7 @@ class CascModel(object):
         """
         self._axes = axes
         self._casc_theta_flux = casc_flux
-        self._casc_flux = MapND([axes[0], axes[1], axes[3], axes[4]],
-                                np.sum(casc_flux.data,axis=2), True)
+        self._casc_flux = casc_flux.marginalize([2])
         self._prim_flux = prim_flux
 
         self._casc_flux_cache = self._casc_flux
@@ -363,8 +362,8 @@ class CascModel(object):
 
     def set_pars(self,p0):
         """Set the fixed IGMF and source parameters."""
-        self._casc_flux_cache = self._casc_flux.slice([2,3],p0)
-        self._casc_theta_flux_cache = self._casc_theta_flux.slice([3,4],p0)
+        self._casc_flux_cache = self._casc_flux.slice(np.arange(2,2+len(p0)),p0) 
+        self._casc_theta_flux_cache = self._casc_theta_flux.slice(np.arange(3,3+len(p0)),p0)
     
     def make_fits_template(self, fn, p0, p1):
         """Make a FITS template for the given spectral model and input
@@ -380,10 +379,10 @@ class CascModel(object):
         fn : `~fermipy.spectrum.Spectrum`
            Model for the injection spectrum.
 
-        p0 : list
-           List of IGMF parameters.  Parameters can be passed as
-           scalars or numpy arrays.  All non-scalar parameters
-           must have the same shape.
+        p0 : list        
+           List of IGMF and source parameters.  Parameters can be
+           passed as scalars or numpy arrays.  All non-scalar
+           parameters must have the same shape.
 
         p1 : `~numpy.ndarray`
            Array of spectral parameters.  If none then the parameters
@@ -404,9 +403,6 @@ class CascModel(object):
         # Get Injected Flux
         inj_flux = np.squeeze(fn.flux(10**self.axes[0].lo,
                                       10**self.axes[0].hi, p1))
-
-        p00 = np.array(p0[0], ndmin=1)
-        p01 = np.array(p0[1], ndmin=1)
 
         # Interpolate IGMF Params
         if sum_theta is True:
@@ -605,53 +601,28 @@ class CascModel(object):
 
         inj_flux = np.squeeze(fn.flux(10**self.axes[0].lo,
                                       10**self.axes[0].hi, p1))
-        p00 = np.array(p0[0], ndmin=1)
-        p01 = np.array(p0[1], ndmin=1)
 
-        x, = np.meshgrid(self.axes[0].centers,
-                         indexing='ij', sparse=True)
+        vals = np.meshgrid(self.axes[0].centers,
+                           indexing='ij', sparse=True)
 
-        # Interpolate IGMF Params
-        prim_flux = self._prim_flux.interp((x[:, np.newaxis],
-                                            p00[np.newaxis, :],
-                                            p01[np.newaxis, :]))
-
+        for i, v in enumerate(vals):
+            vals[i] = vals[i][...,np.newaxis]
+            
+        for i, ax in enumerate(self._prim_flux.axes[1:]):
+            p = np.array(p0[i], ndmin=1)
+            vals += [p[np.newaxis, ...]]
+            
+        prim_flux = self._prim_flux.interp(tuple(vals))
+        
         # Rescale to injected flux
-        prim_flux = inj_flux[:, np.newaxis]*prim_flux
-
+        inj_flux = expand_array(prim_flux,inj_flux)
+        prim_flux = inj_flux*prim_flux        
+        
         # Remap to binning defined by axis_eobs
         if axis_eobs is not None:
             prim_flux = interp_flux(prim_flux, self.axes[1], axis_eobs)
         
         return np.squeeze(prim_flux)
-
-#    def get_eflux(self, axes): 
-#        # Here are some random constants that we can change
-#        B0=1E-16
-#        gamma=0.5
-#
-#        allaxes=[]
-#        for axis in axes:
-#            allaxes.append(axis.centers)
-#        params = np.meshgrid(*allaxes,indexing='ij')
-#
-#        # Really stupid function which defines the eflux
-#        ef=PowerLaw.eval_dfde(10**params[0],[1E-10,-2.0],1E3)*(10**params[1]/B0)**gamma
-#        self._eflux=ef
-
-#    def get_th68(self, axes): 
-#        # Here are some random constants that we can change
-#        B0=1E-16
-#        gamma=0.5
-#
-#        allaxes=[]
-#        for axis in axes:
-#            allaxes.append(axis.centers)
-#        params = np.meshgrid(*allaxes,indexing='ij')
-#
-#        # Function which defines the containment angle
-#        th=(10**params[0]/1E3)**(-0.5)*(10**params[1]/B0)**gamma
-#        self._th68=th
         
     def write_fits(self,filename,axes):
 
@@ -676,10 +647,15 @@ class CascModel(object):
         tab1 = Table.read(filename, 'ENERGIES')
         tab2 = Table.read(filename, 'THETA')
         
-        nebin = 44
-        nthbin = 23
-        model_shape = (9, 9)
-
+        nebin = len(tab1)
+        nthbin = len(tab2)
+        if 'z' in tab0.columns:        
+            model_shape = (17, 9, 9)
+            axis_offset = 1
+        else:
+            model_shape = (9, 9)
+            axis_offset = 0
+            
         emin = np.array(tab1['E_ledge']/1E6)
         emax = np.array(tab1['E_redge']/1E6)
         ectr = np.array(tab1['E_cen']/1E6)
@@ -691,56 +667,48 @@ class CascModel(object):
         
         domega = np.pi*(thmax**2-thmin**2)*(np.pi/180.)**2
         
-        #tab_r_68 = tab0['r_68'].reshape(model_shape + (nebin, nebin))
         tab_casc_flux = tab0['casc_flux'].reshape(model_shape + (nebin, nebin, nthbin))
         tab_prim_flux = tab0['prim_flux'].reshape(model_shape + (nebin,))
         tab_inj_flux = tab0['inj_flux'].reshape(model_shape + (nebin,))
-        tab_igmf = np.array(tab0['igmf'].reshape(model_shape))
-        tab_lcoh = np.array(tab0['lcoh'].reshape(model_shape))
-
-
-        
-        
+        tab_igmf = np.unique(np.array(tab0['igmf'].reshape(model_shape)))
+        tab_lcoh = np.unique(np.array(tab0['lcoh'].reshape(model_shape)))
+            
         log_igmf = np.log10(tab_igmf)
         log_lcoh = np.log10(tab_lcoh)
 
         data_casc_flux = np.array(tab_casc_flux/tab_inj_flux[..., np.newaxis, np.newaxis])
         data_prim_flux = np.array(tab_prim_flux/tab_inj_flux)
-
-        data_prim_flux[:,:] = np.sum(np.sum(data_prim_flux,axis=0),axis=0)/sum(model_shape)
         
-        #data_casc_r68 = np.array(tab_r_68)
+        #data_avg = np.apply_over_axes(np.sum, data_prim_flux, axes=[0,1])/(model_shape[0]*model_shape[1])        
+        #data_prim_flux[:,:,:] = data_avg
         
         # Swap axes so that E_inj and E_obs are the first two
         # dimensions
-        data_casc_flux = np.rollaxis(data_casc_flux, 2, 0)
-        data_casc_flux = np.rollaxis(data_casc_flux, 3, 1)
-        data_casc_flux = np.rollaxis(data_casc_flux, 4, 2)
-        #data_casc_r68 = np.rollaxis(data_casc_r68, 2, 0)
-        #data_casc_r68 = np.rollaxis(data_casc_r68, 3, 1)
-        data_prim_flux = np.rollaxis(data_prim_flux, 2, 0)
+        data_casc_flux = np.rollaxis(data_casc_flux, 2+axis_offset, 0)
+        data_casc_flux = np.rollaxis(data_casc_flux, 3+axis_offset, 1)
+        data_casc_flux = np.rollaxis(data_casc_flux, 4+axis_offset, 2)
+        data_prim_flux = np.rollaxis(data_prim_flux, 2+axis_offset, 0)
+
+        axis_einj = Axis.create_from_centers('einj', np.log10(ectr))
+        axis_eobs = Axis.create_from_centers('eobs', np.log10(ectr))
+        axis_theta = Axis('th', thedges)
+        axis_lcoh = Axis.create_from_centers('log_lcoh', log_lcoh)
+        axis_igmf = Axis.create_from_centers('log_igmf', log_igmf)
+
+        model_axes = [axis_lcoh, axis_igmf]
+        axes = [axis_einj, axis_eobs, axis_theta]
+
+        if 'z' in tab0.columns:
+            tab_z = np.unique(np.array(tab0['z'].reshape(model_shape)))
+            axis_z = Axis.create_from_centers('z', tab_z)            
+            model_axes = [axis_z] + model_axes
         
-#        data_casc_r68[data_casc_r68 < 1E-6] = 1E-6
-
-
-
-        einj_axis = Axis.create_from_centers('einj', np.log10(ectr))
-        eobs_axis = Axis.create_from_centers('eobs', np.log10(ectr))
-        th_axis = Axis('th', thedges)
-        lcoh_axis = Axis.create_from_centers('log_lcoh', log_lcoh[:, 0])
-        igmf_axis = Axis.create_from_centers('log_igmf', log_igmf[0, :])
-
-        axes = [einj_axis, eobs_axis, th_axis, lcoh_axis, igmf_axis]
-
-        mapnd_casc_flux = MapND([einj_axis, eobs_axis, th_axis, lcoh_axis, igmf_axis],
-                                      data_casc_flux, True)
-#        mapnd_casc_r68 = MapND([einj_axis, eobs_axis, lcoh_axis, igmf_axis],
-#                               data_casc_r68, True)
-        mapnd_prim_flux = MapND([einj_axis, lcoh_axis, igmf_axis],
+        mapnd_casc_flux = MapND([axis_einj, axis_eobs, axis_theta] + model_axes,
+                                data_casc_flux, True)
+        mapnd_prim_flux = MapND([axis_einj] + model_axes,
                                 data_prim_flux, True)
 
-        return CascModel(axes, mapnd_casc_flux, 
-                         mapnd_prim_flux)
+        return CascModel(axes + model_axes, mapnd_casc_flux, mapnd_prim_flux)
         
 
 if __name__ == '__main__':
