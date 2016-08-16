@@ -121,6 +121,17 @@ class MapND(object):
     def data(self):
         return self._data
 
+    def marginalize(self, dims):
+
+        data = np.squeeze(np.apply_over_axes(np.sum,self.data,axes=dims))
+
+        axes = []
+        for i, axis in enumerate(self.axes):
+            if i not in dims:
+                axes += [axis]
+                
+        return MapND(axes, data, self._log_interp)
+    
     def slice(self, dims, vals):
         axis_xvals = []
         axes = []
@@ -159,8 +170,12 @@ class Axis(object):
             delta = np.log(centers[1:])-np.log(centers[:-1])
         else:
             delta = centers[1:]-centers[:-1]
+
+        if len(delta) == 0:
+            delta = np.array([1.0])
+        else:
+            delta = np.insert(delta,0,delta[0])
             
-        delta = np.insert(delta,0,delta[0])
         if logscale:
             edges_lo = np.log(centers) - 0.5*delta
             edges_hi = np.log(centers) + 0.5*delta
