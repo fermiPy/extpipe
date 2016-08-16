@@ -150,7 +150,11 @@ class MapND(object):
     def interp(self, *args):
 
         if self._log_interp:
-            return np.exp(self._fn(*args))
+
+            log_vals = self._fn(*args)
+            log_vals[~np.isfinite(log_vals)] = -33
+            
+            return np.exp(log_vals)
         else:
             return self._fn(*args)
 
