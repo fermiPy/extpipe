@@ -1,3 +1,4 @@
+import copy
 import numpy as np
 from numpy.core import defchararray
 from scipy.interpolate import RegularGridInterpolator
@@ -25,9 +26,11 @@ def load_source_rows(tab, names, key='assoc'):
 
     """
     names = [name.lower().replace(' ', '') for name in names]
-    tab[key] = defchararray.replace(defchararray.lower(tab[key]),
-                                    ' ', '')
-    mask = create_mask(tab, {key: names})
+    col = tab[[key]].copy()
+    
+    col[key] = defchararray.replace(defchararray.lower(col[key]),
+                               ' ', '')
+    mask = create_mask(col, {key: names})
     return tab[mask]
 
 
@@ -150,7 +153,11 @@ class MapND(object):
     def interp(self, *args):
 
         if self._log_interp:
-            return np.exp(self._fn(*args))
+
+            log_vals = self._fn(*args)
+            log_vals[~np.isfinite(log_vals)] = -33
+            
+            return np.exp(log_vals)
         else:
             return self._fn(*args)
 

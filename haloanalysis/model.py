@@ -15,64 +15,87 @@ from fermipy.spectrum import *
 from haloanalysis.utils import Axis, MapND
 from haloanalysis.sed import *
 
-def scan_igmf_likelihood(tab, modelfile, sedtab, outputfile, nstep):
+def scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
+                         rows_casc, tab_pars, tab_ebounds,
+                         nstep):
     """This function uses the primary and cascade SEDs to scan the
     likelihood space in the IGMF parameter (B,L_coh).
 
     Parameters
     ----------
-    tab : `astropy.table.Table`
+    casc_model : `haloanalysis.model.CascModel`
 
-    modelfile : str
-       FITS file containing the pre-computed IGMF models.
-
-    sedtab : `astropy.table.Table`
+    rows_sed_tev : `astropy.table.Table`
     """
     
-    fn = PLExpCutoff([1E-11,-1.5,1E6],scale=1E3)
+    fn = PLExpCutoff([1E-13,-1.5,1E7],scale=1E3)
 
     lcoh_scan = np.linspace(-4,4,nstep)
     igmf_scan = np.linspace(-20,-12,nstep)    
-    bpars = np.meshgrid(lcoh_scan, igmf_scan)
+    bpars = np.meshgrid(lcoh_scan, igmf_scan, indexing='ij')
 
-    #sed_prim = CastroData.create_from_flux_points(sedfile)
-    sed_prim = SED.create_from_row(sedtab)
-    sed_casc = HaloSED.create_from_fits(tab)
-    hmm = CascModel.create_from_fits(modelfile)
-    hl = CascLike(hmm, fn, sed_casc, sed_prim)
+    sed_prim0 = SED.create_from_row(rows_sed_tev)
+    sed_prim1 = SED.create_from_row2(rows_sed_gev, tab_ebounds)
+    sed_casc = HaloSED.create_from_fits(rows_casc[0], tab_ebounds, tab_pars)
+    hl = CascLike(casc_model, fn, sed_casc, [sed_prim0, sed_prim1])
 
-    model_lnl = np.zeros(bpars[0].shape)*np.nan
+    model_dloglike = np.zeros(bpars[0].shape)*np.nan
+    model_fit_pars = np.zeros(bpars[0].shape + (4,))*np.nan
     p1 = fn.params
 
+    redshift = rows_sed_tev[0]['REDSHIFT']
+    
+    null_fit = hl.fit([redshift,0.0,-12.0],fn.params,method='SLSQP', casc_scale=1E-10)
+    null_fit = hl.fit([redshift,0.0,-12.0],null_fit[1],method='SLSQP', casc_scale=1E-10)
+
+    null_params = null_fit[1]
+    
     for idx, x in np.ndenumerate(bpars[0]):
 
-        p0 = [bpars[0][idx], bpars[1][idx]]
-        lnl, p1 = hl.fit(p0,p1,method='SLSQP')
-        model_lnl[idx] = lnl
-        print(idx, lnl, p0, p1)
+        p0 = [redshift,bpars[0][idx], bpars[1][idx]]
+        lnl, p1, o = hl.fit(p0,null_params,method='SLSQP')
+        lnl, p1, o = hl.fit(p0,p1,method='SLSQP')
+
+        dloglike = -(lnl - null_fit[0])
+        
+        model_dloglike[idx] = dloglike
+        model_fit_pars[idx][:3] = p1
+        print(idx, dloglike, p0, p1)
         #print bpars, lnl, p1
 
     cols_dict = OrderedDict()
     cols_dict['name'] = dict(dtype='S32', format='%s', description='name')
     cols_dict['assoc'] = dict(dtype='S32', format='%s', description='assoc')
-    cols_dict['igmf_scan_dlnl'] = dict(dtype='f8', format='%.3f',
-                                       shape=model_lnl.shape)
+    cols_dict['redshift'] = dict(dtype='S32', format='%s', description='redshift')
+    cols_dict['dloglike'] = dict(dtype='f8', format='%.3f',
+                                       shape=model_dloglike.shape)
+    cols_dict['src_fit_pars'] = dict(dtype='f8', 
+                                     shape=model_dloglike.shape + (4,))
+    cols_dict['lcoh'] = dict(dtype='f8', format='%.3f', shape=(nstep,1))
+    cols_dict['igmf'] = dict(dtype='f8', format='%.3f', shape=(1,nstep))
+
+    row = rows_casc[0]
     
     tab_scan = Table([Column(name=k, **v) for k, v in cols_dict.items()])
     row_dict = {}
-    row_dict['name'] = tab['name']
-    row_dict['assoc'] = tab['assoc']
-    row_dict['igmf_scan_dlnl'] = model_lnl
+    row_dict['name'] = row['name']
+    row_dict['assoc'] = row['assoc']
+    row_dict['redshift'] = rows_sed_tev[0]['REDSHIFT']
+    row_dict['dloglike'] = model_dloglike
+    row_dict['src_fit_pars'] = model_fit_pars
+    row_dict['lcoh'] = lcoh_scan[:,np.newaxis]
+    row_dict['igmf'] = igmf_scan[np.newaxis,:]
     tab_scan.add_row([row_dict[k] for k in cols_dict.keys()])
 
-    cols_dict = OrderedDict()
-    cols_dict['lcoh'] = dict(dtype='f8', format='%.3f', shape=bpars[0].shape,
-                             data=bpars[0])
-    cols_dict['igmf'] = dict(dtype='f8', format='%.3f', shape=bpars[1].shape,
-                             data=bpars[1])
-    tab_scan_grid = Table([Column(name=k, **v) for k, v in cols_dict.items()])
-
-    return tab_scan, tab_scan_grid
+    return tab_scan
+    
+    #cols_dict = OrderedDict()
+    #cols_dict['lcoh'] = dict(dtype='f8', format='%.3f', shape=bpars[0].shape,
+    #                         data=bpars[0])
+    #cols_dict['igmf'] = dict(dtype='f8', format='%.3f', shape=bpars[1].shape,
+    #                         data=bpars[1])
+    #tab_scan_grid = Table([Column(name=k, **v) for k, v in cols_dict.items()])
+    #return tab_scan, tab_scan_grid
 
     
     hdulist = fits.HDUList()

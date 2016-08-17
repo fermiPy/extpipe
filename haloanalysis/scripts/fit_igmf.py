@@ -7,7 +7,7 @@ import yaml
 
 import numpy as np
 from astropy.io import fits
-from astropy.table import Table, Column, join, hstack
+from astropy.table import Table, Column, join, hstack, vstack
 import matplotlib.pyplot as plt
 import matplotlib
 
@@ -21,8 +21,7 @@ from haloanalysis.model import CascModel, CascLike
 from haloanalysis.model import scan_igmf_likelihood
 
 
-def load_cache(tab_ext_filename, tab_lnl_filename, names,
-               cachefile='cache.fits'):
+def load_cache(tables, names, cachefile='cache.fits'):
 
     if os.path.isfile(cachefile):
         return Table.read(cachefile)
@@ -44,7 +43,8 @@ def main():
     parser.add_argument('--output', default = 'igmf_casc_lnl.fits')
     parser.add_argument('--make_plots', default = False, action='store_true')
     parser.add_argument('--cache', default = False, action='store_true')
-    parser.add_argument('--modelfile', default = False, required=True)
+    parser.add_argument('--modelfile', default = False, required=True,
+                        help='FITS file containing the IGMF models')
     parser.add_argument('--sedfile', default = False, required=True,
                         help='FITS file containing the TeV SEDs.')
     parser.add_argument('--nstep', default = 5)
@@ -57,21 +57,47 @@ def main():
     # list of sources
     src_names = ['1es0229+200', '1ES0347-121']
 
+    casc_model = CascModel.create_from_fits(args.modelfile)
+
+    tab_pars = Table.read(args.tables[0],'SCAN_PARS')
+    tab_ebounds = Table.read(args.tables[0],'EBOUNDS')
+    
     # Use cached fits file
     if args.cache:
-        tab_casc = load_cache(args.tables[0], args.tables[1], src_names)
+        tab_casc = load_cache(args.tables, src_names)
     else:
-        tab0 = Table.read(args.table[0])
-        tab1 = Table.read(args.table[1])
-        tab_casc = join(tab0, tab1)
+        tables = [Table.read(t) for t in args.tables]
+
+        for i, t in enumerate(tables):
+            if 'NAME' in t.columns:
+                t['name'] = t['NAME']
+
+        tab_casc = join(tables[0],tables[1])
+        tab_casc = join(tab_casc,tables[2])
         tab_casc = load_source_rows(tab_casc, src_names)
 
-    tab_tev = Table.read(args.sedfile)
-        
-    for row0 in tab_casc:
-        row1 = load_source_rows(tab_tev, [row0['assoc']], key='SOURCE')        
-        scan_igmf_likelihood(row, args.modelfile, args.sedfile, args.output, args.nstep)
+    tab_sed_tev = Table.read(args.sedfile)
 
+    tab_igmf = []
+
+    for name in src_names:
+
+        rows_sed_tev = load_source_rows(tab_sed_tev, [name], key='SOURCE')
+        cat_names = [ '3FGL %s'%row['3FGL_NAME'] for row in rows_sed_tev ]
+        cat_names = np.unique(np.array(cat_names))
+        rows_sed_gev = load_source_rows(tab_casc, cat_names, key='NAME')
+        rows_casc = load_source_rows(tab_casc, cat_names, key='name')
+        tab = scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
+                                   rows_casc, tab_pars, tab_ebounds, args.nstep)
+        tab_igmf += [tab]
+
+    tab = vstack(tab_igmf)
+        
+    hdulist = fits.HDUList()
+    hdulist.append(fits.table_to_hdu(tab))
+    hdulist[1].name = 'SCAN_DATA'    
+    hdulist.writeto(args.output, clobber=True)
+        
 
 if __name__ == "__main__":
     main()
