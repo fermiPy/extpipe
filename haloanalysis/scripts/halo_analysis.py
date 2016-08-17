@@ -1,10 +1,15 @@
 import os
 import sys
 import copy
-from fermipy.gtanalysis import GTAnalysis
 import numpy as np
 import itertools
 import argparse
+
+from fermipy.utils import init_matplotlib_backend
+
+init_matplotlib_backend()
+
+from fermipy.gtanalysis import GTAnalysis
 from haloanalysis.fit_funcs import fit_halo_scan
     
 def main():

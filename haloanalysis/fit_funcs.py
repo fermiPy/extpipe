@@ -53,9 +53,9 @@ def fit_region(gta,modelname,src_name,erange=None):
     gta.residmap(modelname,model=model3,erange=erange)
 
     # Make zoom plots
-    gta._plotter.make_tsmap_plots(gta,maps_model1,
+    gta._plotter.make_tsmap_plots(maps_model1, gta.roi,
                                   zoom=2,suffix='tsmap_zoom')
-    gta._plotter.make_tsmap_plots(gta,maps_model1_nosource,
+    gta._plotter.make_tsmap_plots(maps_model1_nosource, gta.roi,
                                   zoom=2,suffix='tsmap_zoom')    
 
     lnl = -gta.like()
