@@ -1,3 +1,4 @@
+import copy
 import numpy as np
 from numpy.core import defchararray
 from scipy.interpolate import RegularGridInterpolator
@@ -25,9 +26,11 @@ def load_source_rows(tab, names, key='assoc'):
 
     """
     names = [name.lower().replace(' ', '') for name in names]
-    tab[key] = defchararray.replace(defchararray.lower(tab[key]),
-                                    ' ', '')
-    mask = create_mask(tab, {key: names})
+    col = tab[[key]].copy()
+    
+    col[key] = defchararray.replace(defchararray.lower(col[key]),
+                               ' ', '')
+    mask = create_mask(col, {key: names})
     return tab[mask]
 
 
