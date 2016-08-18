@@ -47,16 +47,16 @@ def main():
                         help='FITS file containing the IGMF models')
     parser.add_argument('--sedfile', default = False, required=True,
                         help='FITS file containing the TeV SEDs.')
-    parser.add_argument('--nstep', default = 5)
-    parser.add_argument('--name', default = '1es0229+200')
+    parser.add_argument('--nstep', default = 5, type=int)
+    parser.add_argument('--name', default = [], action='append')
     parser.add_argument('tables', nargs='+', default = None,
                         help='Extension and likelihood tables.')
 
     args = parser.parse_args()
 
     # list of sources
-    src_names = ['1es0229+200', '1ES0347-121']
-
+    src_names = args.name
+    
     casc_model = CascModel.create_from_fits(args.modelfile)
 
     tab_pars = Table.read(args.tables[0],'SCAN_PARS')

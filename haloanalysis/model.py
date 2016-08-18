@@ -39,8 +39,22 @@ def scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
     sed_casc = HaloSED.create_from_fits(rows_casc[0], tab_ebounds, tab_pars)
     hl = CascLike(casc_model, fn, sed_casc, [sed_prim0, sed_prim1])
 
+    sed_prim0_nbin = 25
+    
     model_dloglike = np.zeros(bpars[0].shape)*np.nan
     model_fit_pars = np.zeros(bpars[0].shape + (4,))*np.nan
+    model_prim0_emin = np.zeros((1,1,sed_prim0_nbin))*np.nan
+    model_prim0_ectr = np.zeros((1,1,sed_prim0_nbin))*np.nan
+    model_prim0_emax = np.zeros((1,1,sed_prim0_nbin))*np.nan
+    model_prim0_flux = np.zeros(bpars[0].shape +
+                               (sed_prim0_nbin,))*np.nan
+    model_prim1_flux = np.zeros(bpars[0].shape +
+                               (sed_prim1.axis.nbin,))*np.nan
+    model_casc_flux = np.zeros(bpars[0].shape +
+                               (sed_casc.axes[1].nbin,))*np.nan
+    model_casc_r68 = np.zeros(bpars[0].shape +
+                              (sed_casc.axes[1].nbin,))*np.nan
+    
     p1 = fn.params
 
     redshift = rows_sed_tev[0]['REDSHIFT']
@@ -55,25 +69,56 @@ def scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
         p0 = [redshift,bpars[0][idx], bpars[1][idx]]
         lnl, p1, o = hl.fit(p0,null_params,method='SLSQP')
         lnl, p1, o = hl.fit(p0,p1,method='SLSQP')
-
         dloglike = -(lnl - null_fit[0])
         
         model_dloglike[idx] = dloglike
         model_fit_pars[idx][:3] = p1
+
+        sed_prim0_flux = casc_model.prim_flux(fn,p0,p1,
+                                              axis_eobs=sed_prim0.axis)
+        
+        model_prim0_flux[idx][:len(sed_prim0_flux)] = sed_prim0_flux
+        model_prim1_flux[idx] = casc_model.prim_flux(fn,p0,p1,
+                                                     axis_eobs=sed_prim1.axis)
+        model_casc_flux[idx] = casc_model.casc_flux(fn,p0,p1,
+                                                    axis_eobs=sed_casc.axes[1])
+        model_casc_r68[idx] = casc_model.casc_r68(fn,p0,p1,
+                                                  axis_eobs=sed_casc.axes[1])
         print(idx, dloglike, p0, p1)
         #print bpars, lnl, p1
 
+    model_prim0_emin[0,0][:sed_prim0.axis.nbin] = 10**sed_prim0.axis.lo
+    model_prim0_ectr[0,0][:sed_prim0.axis.nbin] = 10**sed_prim0.axis.centers
+    model_prim0_emax[0,0][:sed_prim0.axis.nbin] = 10**sed_prim0.axis.hi
+        
     cols_dict = OrderedDict()
     cols_dict['name'] = dict(dtype='S32', format='%s', description='name')
     cols_dict['assoc'] = dict(dtype='S32', format='%s', description='assoc')
     cols_dict['redshift'] = dict(dtype='S32', format='%s', description='redshift')
     cols_dict['dloglike'] = dict(dtype='f8', format='%.3f',
                                        shape=model_dloglike.shape)
+    cols_dict['prim_tev_emin'] = dict(dtype='f8', format='%.3f',
+                                      shape=model_prim0_emin.shape)
+    cols_dict['prim_tev_ectr'] = dict(dtype='f8', format='%.3f',
+                                      shape=model_prim0_ectr.shape)
+    cols_dict['prim_tev_emax'] = dict(dtype='f8', format='%.3f',
+                                      shape=model_prim0_emax.shape)
+    cols_dict['prim_tev_flux'] = dict(dtype='f8', format='%.3f',
+                                      shape=model_prim0_flux.shape)
+    cols_dict['prim_flux'] = dict(dtype='f8', format='%.3f',
+                                  shape=model_prim1_flux.shape)
+    cols_dict['casc_flux'] = dict(dtype='f8', format='%.3f',
+                                  shape=model_casc_flux.shape)
+    cols_dict['casc_r68'] = dict(dtype='f8', format='%.3f',
+                                 shape=model_casc_r68.shape)
     cols_dict['src_fit_pars'] = dict(dtype='f8', 
                                      shape=model_dloglike.shape + (4,))
     cols_dict['lcoh'] = dict(dtype='f8', format='%.3f', shape=(nstep,1))
     cols_dict['igmf'] = dict(dtype='f8', format='%.3f', shape=(1,nstep))
+    cols_dict['casc_flux'] = dict(dtype='f8', format='%.3f',
+                                  shape=(nstep,nstep) + (sed_casc.axes[1].nbin,))
 
+    
     row = rows_casc[0]
     
     tab_scan = Table([Column(name=k, **v) for k, v in cols_dict.items()])
@@ -82,6 +127,13 @@ def scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
     row_dict['assoc'] = row['assoc']
     row_dict['redshift'] = rows_sed_tev[0]['REDSHIFT']
     row_dict['dloglike'] = model_dloglike
+    row_dict['prim_tev_emin'] = model_prim0_emin
+    row_dict['prim_tev_ectr'] = model_prim0_ectr
+    row_dict['prim_tev_emax'] = model_prim0_emax
+    row_dict['prim_tev_flux'] = model_prim0_flux
+    row_dict['prim_flux'] = model_prim1_flux
+    row_dict['casc_flux'] = model_casc_flux
+    row_dict['casc_r68'] = model_casc_r68
     row_dict['src_fit_pars'] = model_fit_pars
     row_dict['lcoh'] = lcoh_scan[:,np.newaxis]
     row_dict['igmf'] = igmf_scan[np.newaxis,:]
@@ -255,8 +307,6 @@ class CascLike(object):
         self._fn = fn
         self._sed_prim = sed_prim
         self._sed_casc = sed_casc        
-        #self._axis_prim = Axis('eobs',np.log10(sed_prim.ebins),
-        #                       np.log10(sed_prim.ectr))
         self._casc_r68 = None
         
 #        self._axis_prim = Axis('eobs',
