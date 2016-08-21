@@ -35,8 +35,12 @@ def main():
     model0 = { 'SpatialModel' : 'PointSource', 'Index' : 1.5 }
     model1 = { 'SpatialModel' : 'PointSource', 'Index' : 2.0 }
     model2 = { 'SpatialModel' : 'PointSource', 'Index' : 2.5 }
-    src_name = gta.roi.sources[0].name
-
+    #src_name = gta.roi.sources[0].name
+    if args.source is None:
+        src_name = gta.config['selection']['target']
+    else:
+        src_name = args.source
+        
     # -----------------------------------
     # Fit the Baseline Model
     # -----------------------------------
