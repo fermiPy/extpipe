@@ -9,6 +9,9 @@ import numpy as np
 def fit_region(gta,modelname,src_name,erange=None):
 
     gta.logger.info('Starting Region Fit %s'%(modelname))
+    lnl0 = -gta.like()    
+    gta.logger.info('%s Model Likelihood: %f'%(modelname,lnl0))
+    gta.print_params()
     
     if erange is not None:
         gta.set_energy_range(erange[0],erange[1])
@@ -58,11 +61,12 @@ def fit_region(gta,modelname,src_name,erange=None):
     gta._plotter.make_tsmap_plots(maps_model1_nosource, gta.roi,
                                   zoom=2,suffix='tsmap_zoom')    
 
-    lnl = -gta.like()
+    lnl1 = -gta.like()
 
     gta.print_params()
     
-    gta.logger.info('%s Model Likelihood: %f'%(modelname,lnl))
+    gta.logger.info('%s Model Likelihood: %f'%(modelname,lnl1))
+    gta.logger.info('%s Model Likelihood Delta: %f'%(modelname,lnl1-lnl0))
     gta.logger.info('Finished Region Fit %s'%(modelname))
 
 
@@ -185,8 +189,6 @@ def fit_halo_scan(gta,modelname,src_name,halo_width,
             gta.set_norm(halo_source_name,1.0,update_source=False)            
             gta.set_parameter(halo_source_name,'Index',-1.0*idx,
                               update_source=False)
-
-            gta.write_xml('prefit_%s_%02i_%02i'%(outprefix,i,j))
             
             gta.fit(update=False, optimizer=optimizer)
 
