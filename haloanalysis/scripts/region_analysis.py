@@ -25,8 +25,11 @@ def main():
     gta = GTAnalysis(args.config,logging={'verbosity' : 3},
                      fileio={'workdir_regex' : '\.xml$|\.npy$'})
 
-    gta.setup(overwrite=True)
+    gta.setup()
 
+    names = [s.name for s in gta.roi.sources if not s.diffuse]
+    self.reload_sources(names)
+    
     sqrt_ts_threshold=3
 
     halo_width = np.logspace(-1.25,0.25,13)
