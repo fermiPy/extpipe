@@ -93,6 +93,7 @@ def scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
         
     cols_dict = OrderedDict()
     cols_dict['name'] = dict(dtype='S32', format='%s', description='name')
+    cols_dict['SOURCE_FULL'] = dict(dtype='S32', format='%s', description='name')
     cols_dict['assoc'] = dict(dtype='S32', format='%s', description='assoc')
     cols_dict['redshift'] = dict(dtype='S32', format='%s', description='redshift')
     cols_dict['dloglike'] = dict(dtype='f8', format='%.3f',
@@ -124,6 +125,7 @@ def scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
     tab_scan = Table([Column(name=k, **v) for k, v in cols_dict.items()])
     row_dict = {}
     row_dict['name'] = row['name']
+    row_dict['SOURCE_FULL'] = rows_sed_tev[0]['SOURCE_FULL']
     row_dict['assoc'] = row['assoc']
     row_dict['redshift'] = rows_sed_tev[0]['REDSHIFT']
     row_dict['dloglike'] = model_dloglike
