@@ -28,12 +28,9 @@ def main():
     gta.setup()
 
     names = [s.name for s in gta.roi.sources if not s.diffuse]
-    self.reload_sources(names)
+    gta.reload_sources(names)
     
     sqrt_ts_threshold=3
-
-    halo_width = np.logspace(-1.25,0.25,13)
-    halo_index = np.array([1.5,1.75,2.0,2.25,2.5,2.75,3.0])
     
     model0 = { 'SpatialModel' : 'PointSource', 'Index' : 1.5 }
     model1 = { 'SpatialModel' : 'PointSource', 'Index' : 2.0 }
