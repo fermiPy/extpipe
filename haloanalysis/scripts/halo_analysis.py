@@ -9,6 +9,7 @@ from fermipy.utils import init_matplotlib_backend
 
 init_matplotlib_backend()
 
+from fermipy.batch import check_log
 from fermipy.gtanalysis import GTAnalysis
 from haloanalysis.fit_funcs import fit_halo_scan
     
@@ -25,6 +26,11 @@ def main():
     gta = GTAnalysis(args.config,logging={'verbosity' : 3},
                      fileio={'workdir_regex' : ['\.xml$|\.npy$']})
 
+    logfile = os.path.join(gta.outdir,'run-region-analysis.log')
+    if not check_log(logfile)=='Successful':
+        print('Region analysis incomplete.  Exiting.')
+        sys.exit(1)
+        
     gta.setup()
 
     halo_width = np.logspace(-1.25,0.25,13)
