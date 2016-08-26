@@ -138,15 +138,19 @@ class SED(object):
             
         return np.sum(nll_sum,axis=0)
 
-    def plot(self, ax=None):
+    def plot(self, ax=None, **kwargs):
 
         import matplotlib.pyplot as plt
         
-        ax = ax if ax is not None else plt.gca()        
+        ax = ax if ax is not None else plt.gca()
+
+        kwargs.setdefault('linestyle','None')
+        kwargs.setdefault('marker','o')
+        
         ax.errorbar(self._ectr/1E6,
                     self._ectr*self._flux,
                     self._ectr*self._flux_err,
-                    marker='o',linestyle='None')
+                    **kwargs)
 
 
 class HaloSED(object):
