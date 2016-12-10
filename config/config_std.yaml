@@ -53,9 +53,9 @@ components: null
 
 extension:
   width_min : 0.00316227766
-  width_max : 1.0
-  width_nstep : 26
-  spatial_model : 'GaussianSource'
+  width_max : 1.99526231
+  width_nstep : 29
+  spatial_model : 'RadialGaussian'
 
 plotting:
   loge_bounds: [[3.5,5.5],[4.0,5.5]]
@@ -69,3 +69,6 @@ localize:
 
 roiopt:
   shape_ts_threshold : 25.0
+
+optimizer:
+  optimizer : 'NEWTON'

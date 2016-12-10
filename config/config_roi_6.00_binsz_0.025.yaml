@@ -1,0 +1,13 @@
+
+binning:
+
+  # Binning
+  roiwidth   : 6.0
+  npix       : null
+  binsz      : 0.025 # spatial bin size in deg
+  binsperdec : 8   # nb energy bins per decade
+  coordsys   : 'GAL'
+  
+tsmap:
+
+  max_kernel_radius : 1.0
