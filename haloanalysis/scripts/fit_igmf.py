@@ -48,7 +48,10 @@ def main():
     parser.add_argument('--sedfile', default = False, required=True,
                         help='FITS file containing the TeV SEDs.')
     parser.add_argument('--nstep', default = 5, type=int)
+    parser.add_argument('--casc_scale', default = 1.0, type=float)
+    parser.add_argument('--casc_r68_scale', default = 1.0, type=float)
     parser.add_argument('--name', default = [], action='append')
+    parser.add_argument('--key', default = 'SOURCE')
     parser.add_argument('tables', nargs='+', default = None,
                         help='Extension and likelihood tables.')
 
@@ -74,7 +77,8 @@ def main():
 
         tab_casc = join(tables[0],tables[1])
         tab_casc = join(tab_casc,tables[2])
-        tab_casc = load_source_rows(tab_casc, src_names)
+        #if src_names:
+        #    tab_casc = load_source_rows(tab_casc, src_names)
 
     tab_sed_tev = Table.read(args.sedfile)
 
@@ -82,13 +86,14 @@ def main():
 
     for name in src_names:
 
-        rows_sed_tev = load_source_rows(tab_sed_tev, [name], key='SOURCE')
+        rows_sed_tev = load_source_rows(tab_sed_tev, [name], key=args.key)
         cat_names = [ '3FGL %s'%row['3FGL_NAME'] for row in rows_sed_tev ]
         cat_names = np.unique(np.array(cat_names))
-        rows_sed_gev = load_source_rows(tab_casc, cat_names, key='NAME')
+        rows_sed_gev = load_source_rows(tab_casc, cat_names, key='name')
         rows_casc = load_source_rows(tab_casc, cat_names, key='name')
         tab = scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
-                                   rows_casc, tab_pars, tab_ebounds, args.nstep)
+                                   rows_casc, tab_pars, tab_ebounds, args.nstep,
+                                   args.casc_scale, args.casc_r68_scale)
         tab_igmf += [tab]
 
     tab = vstack(tab_igmf)
