@@ -25,16 +25,17 @@ def fit_region(gta,modelname,src_name,erange=None):
     
     gta.optimize()
 
+    diff_sources = [s.name for s in self.roi.sources if s.diffuse]
     skydir = gta.roi[src_name].skydir
     
     gta.free_sources(False)
-    gta.free_sources(skydir=skydir,distance=1.0, exclude_diffuse=True)
+    gta.free_sources(skydir=skydir,distance=1.0, exclude=diff_sources)
     gta.free_sources(skydir=skydir,distance=1.0, pars='norm')
     gta.fit()
 
     gta.free_sources(False)
     gta.free_sources(skydir=skydir,distance=1.0, pars='norm',
-                     exclude_diffuse=True)
+                     exclude=diff_sources)
     
     gta.extension(src_name, optimizer={'optimizer' : 'NEWTON'})
     
@@ -93,8 +94,11 @@ def fit_halo_sed(gta,modelname,src_name,halo_width,
     if erange is not None:
         gta.set_energy_range(erange[0],erange[1])
 
+
+    diff_sources = [s.name for s in self.roi.sources if s.diffuse]
+        
     gta.free_sources(False)
-    gta.free_sources(distance=1.0,pars='norm', exclude_diffuse=True)
+    gta.free_sources(distance=1.0,pars='norm', exclude=diff_sources)
     gta.write_xml(modelname + '_base')
     
     for i, w in enumerate(halo_width):
@@ -145,9 +149,11 @@ def fit_halo_scan(gta,modelname,src_name,halo_width,
     #    gta.set_energy_range(erange[0],erange[1])
 
     skydir = gta.roi[src_name].skydir
+    diff_sources = [s.name for s in self.roi.sources if s.diffuse]
     
     gta.free_sources(False)
-    gta.free_sources(skydir=skydir,distance=1.0,pars='norm', exclude_diffuse=True)
+    gta.free_sources(skydir=skydir,distance=1.0,pars='norm',
+                     exclude=diff_sources)
     gta.write_xml(modelname + '_base')
         
     halo_data = []
@@ -238,8 +244,11 @@ def fit_halo(gta, modelname, src_name,
 #    if erange is not None:
 #        gta.set_energy_range(erange[0],erange[1])
 
+    diff_sources = [s.name for s in self.roi.sources if s.diffuse]
+    
     gta.free_sources(False)
-    gta.free_sources(distance=1.0,pars='norm', exclude_diffuse=True)
+    gta.free_sources(distance=1.0,pars='norm',
+                     exclude=diff_sources)
 
     # Find best-fit halo model
     halo_source_dict['SpatialWidth'] = 0.1
