@@ -17,7 +17,7 @@ from haloanalysis.sed import *
 
 def scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
                          rows_casc, tab_pars, tab_ebounds,
-                         nstep):
+                         nstep, casc_scale=1.0, casc_r68_scale=1.0):
     """This function uses the primary and cascade SEDs to scan the
     likelihood space in the IGMF parameter (B,L_coh).
 
@@ -59,16 +59,22 @@ def scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
 
     redshift = rows_sed_tev[0]['REDSHIFT']
     
-    null_fit = hl.fit([redshift,0.0,-12.0],fn.params,method='SLSQP', casc_scale=1E-10)
-    null_fit = hl.fit([redshift,0.0,-12.0],null_fit[1],method='SLSQP', casc_scale=1E-10)
+    null_fit = hl.fit([redshift,0.0,-12.0],fn.params,method='SLSQP',
+                      casc_scale=1E-10)
+    null_fit = hl.fit([redshift,0.0,-12.0],null_fit[1],method='SLSQP',
+                      casc_scale=1E-10)
 
     null_params = null_fit[1]
     
     for idx, x in np.ndenumerate(bpars[0]):
 
         p0 = [redshift,bpars[0][idx], bpars[1][idx]]
-        lnl, p1, o = hl.fit(p0,null_params,method='SLSQP')
-        lnl, p1, o = hl.fit(p0,p1,method='SLSQP')
+        lnl, p1, o = hl.fit(p0,null_params,method='SLSQP',
+                            casc_scale=casc_scale,
+                            casc_r68_scale=casc_r68_scale)
+        lnl, p1, o = hl.fit(p0,p1,method='SLSQP',
+                            casc_scale=casc_scale,
+                            casc_r68_scale=casc_r68_scale)
         dloglike = -(lnl - null_fit[0])
         
         model_dloglike[idx] = dloglike
@@ -342,7 +348,27 @@ class CascLike(object):
             nll += [sed.nll(prim_flux)]
         return reduce(lambda x,y: np.add(x,y),nll)
 
-    def lnl(self, p0, p1, casc_scale=1.0, cache=True):
+    def lnl_casc(self, p0, p1, casc_scale=1.0, casc_r68_scale=1.0, cache=True):
+        """Evaluate the likelihood for the cascade component.
+
+        """
+        
+        casc_flux = self._model.casc_flux(self._fn, p0, p1,
+                                          axis_eobs=self._axis_casc)
+
+        casc_flux *= casc_scale
+
+        if cache and self._casc_r68 is not None:
+            casc_r68 = self._casc_r68
+        else:
+            casc_r68 = self._model.casc_r68(self._fn, p0, p1,
+                                            axis_eobs=self._axis_casc)
+            self._casc_r68 = casc_r68
+
+        casc_r68 *= casc_r68_scale
+        return self._sed_casc(casc_flux, casc_r68)
+            
+    def lnl(self, p0, p1, casc_scale=1.0, casc_r68_scale=1.0, cache=True):
         """Evaluate the total likelihood.
 
         Parameters
@@ -359,27 +385,12 @@ class CascLike(object):
            Scaling factor to be applied to the cascade flux.
 
         """
-        casc_flux = self._model.casc_flux(self._fn, p0, p1,
-                                          axis_eobs=self._axis_casc)
-
-        casc_flux *= casc_scale
-
-        if cache and self._casc_r68 is not None:
-            casc_r68 = self._casc_r68
-        else:
-            casc_r68 = self._model.casc_r68(self._fn, p0, p1,
-                                            axis_eobs=self._axis_casc)
-            self._casc_r68 = casc_r68
         
         lnl_prim = self.lnl_prim(p0, p1)
-        lnl_casc = self._sed_casc(casc_flux, casc_r68)
-
-        #print lnl_prim, lnl_casc
-        #print casc_flux
-        
+        lnl_casc = self.lnl_casc(p0, p1, casc_scale, casc_r68_scale, cache)
         return lnl_prim + lnl_casc
 
-    def fit(self, p0, p1=None, method='SLSQP', casc_scale=1.0, cache=True):
+    def fit(self, p0, p1=None, method='SLSQP', casc_scale=1.0, casc_r68_scale=1.0, cache=True):
         """Perform a fit of the parameters of the primary spectrum while
         holding the IGMF parameters fixed."""
 
@@ -388,7 +399,9 @@ class CascLike(object):
         
         def fitfn(params):
             p = self._fn.log_to_params(params)
-            v = self.lnl(p0, p, casc_scale=casc_scale, cache=cache)
+            v = self.lnl(p0, p, casc_scale=casc_scale,
+                         casc_r68_scale=casc_r68_scale,
+                         cache=cache)
             #print params, v
             return v
         
@@ -404,6 +417,7 @@ class CascLike(object):
                                     method=method, tol=1e-4)
 
         p1 = self._fn.log_to_params(o['x'])
+        self.model.clear_pars()
         return o['fun'], p1, o
 
         
@@ -439,7 +453,11 @@ class CascModel(object):
         """Set the fixed IGMF and source parameters."""
         self._casc_flux_cache = self._casc_flux.slice(np.arange(2,2+len(p0)),p0) 
         self._casc_theta_flux_cache = self._casc_theta_flux.slice(np.arange(3,3+len(p0)),p0)
-    
+
+    def clear_pars(self):
+        self._casc_flux_cache = self._casc_flux
+        self._casc_theta_flux_cache = self._casc_theta_flux
+        
     def make_fits_template(self, fn, p0, p1):
         """Make a FITS template for the given spectral model and input
         paramters."""
@@ -725,7 +743,7 @@ class CascModel(object):
         nebin = len(tab1)
         nthbin = len(tab2)
         if 'z' in tab0.columns:        
-            model_shape = (17, 9, 9)
+            model_shape = (len(tab0), 9, 9)
             axis_offset = 1
         else:
             model_shape = (9, 9)
@@ -753,9 +771,12 @@ class CascModel(object):
 
         data_casc_flux = np.array(tab_casc_flux/tab_inj_flux[..., np.newaxis, np.newaxis])
         data_prim_flux = np.array(tab_prim_flux/tab_inj_flux)
-        
-        #data_avg = np.apply_over_axes(np.sum, data_prim_flux, axes=[0,1])/(model_shape[0]*model_shape[1])        
-        #data_prim_flux[:,:,:] = data_avg
+
+        data_prim_flux_avg = (np.apply_over_axes(np.sum,data_prim_flux,
+                                                 axes=[0+axis_offset,1+axis_offset])/
+                              (model_shape[0+axis_offset]*model_shape[1+axis_offset]))
+        data_prim_flux_avg = data_prim_flux_avg*np.ones(data_prim_flux.shape)
+        data_prim_flux = data_prim_flux_avg
         
         # Swap axes so that E_inj and E_obs are the first two
         # dimensions
