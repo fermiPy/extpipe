@@ -26,14 +26,16 @@ def create_lnl_from_errors(norm, norm_err):
 
 class SED(object):
 
-    def __init__(self, lnl, emin, ectr, emax, flux, flux_err):
+    def __init__(self, lnl, emin, ectr, emax, flux, flux_err, flux_ul95):
         
         self._emin = emin
         self._emax = emax
+        self._ewidth = emax-emin
         self._ectr = ectr
         self._ebins = np.insert(emax,0,emin[0])
         self._flux = flux
         self._flux_err = flux_err
+        self._flux_ul95 = flux_ul95
         self._lnl = lnl
         self._axis = Axis('eobs',np.log10(self._ebins),
                           np.log10(self._ectr))
@@ -51,6 +53,10 @@ class SED(object):
         return self._ectr
 
     @property
+    def ewidth(self):
+        return self._ewidth
+    
+    @property
     def ebins(self):
         return self._ebins
 
@@ -64,9 +70,11 @@ class SED(object):
         ref_flux = np.array(row['REF_FLUX'][0])
         norm = np.array(row['NORM'][0])
         norm_err = np.array(row['NORM_ERR'][0])
+        norm_ul = np.array(row['NORM_UL'][0])
                 
         flux = norm*ref_flux
         flux_err = norm_err*ref_flux
+        flux_ul = norm_ul*ref_flux
 
         ectr = np.array(tab_ebounds['E_REF'])
         emin = np.array(tab_ebounds['E_MIN'])
@@ -80,7 +88,7 @@ class SED(object):
             axis = Axis.create_from_centers('flux',norm_vals[i])
             lnl_maps += [MapND([axis], nll_vals[i])]
 
-        return SED(lnl_maps, emin, ectr, emax, flux, flux_err)
+        return SED(lnl_maps, emin, ectr, emax, flux, flux_err, flux_ul)
         
         
     @staticmethod
@@ -99,11 +107,13 @@ class SED(object):
         norm_errp = np.array(row['NORM_ERRP'].to(dfde_unit)[0])
         norm_errn = np.array(row['NORM_ERRN'].to(dfde_unit)[0])
         norm_err = 0.5 * (norm_errp + norm_errn)
+        norm_ul = 2.0*norm_errp
 
         m = np.isfinite(loge)
         loge = loge[m]
         norm = norm[m]
         norm_err = norm_err[m]
+        norm_ul = norm_ul[m]
 
         dloge = loge[1:] - loge[:-1]
         dloge = np.insert(dloge, 0, dloge[0])
@@ -113,6 +123,7 @@ class SED(object):
         deltae = emax - emin
         flux = norm * deltae
         flux_err = norm_err * deltae
+        flux_ul = norm_ul * deltae
         
         # Build Sequence of 1D likelihoods
         
@@ -124,7 +135,7 @@ class SED(object):
             axis = Axis.create_from_centers('flux',norm_vals[i])
             lnl_maps += [MapND([axis], nll_vals[i])]
 
-        return SED(lnl_maps, emin, ectr, emax, flux, flux_err)
+        return SED(lnl_maps, emin, ectr, emax, flux, flux_err, flux_ul)
             
     def __call__(self, flux):
         return self.nll(flux)
@@ -146,11 +157,27 @@ class SED(object):
 
         kwargs.setdefault('linestyle','None')
         kwargs.setdefault('marker','o')
+
+        efct = self._ectr**2/self._ewidth*1.602177e-06
+
+        m = self._flux_err > self._flux
         
-        ax.errorbar(self._ectr/1E6,
-                    self._ectr*self._flux,
-                    self._ectr*self._flux_err,
+        ax.errorbar(self._ectr[~m]/1E6,
+                    (efct*self._flux)[~m],
+                    (efct*self._flux_err)[~m],
                     **kwargs)
+        if np.any(m):
+
+            import copy
+            kw = copy.deepcopy(kwargs)
+            kw.pop('label')
+            
+            ax.errorbar(self._ectr[m]/1E6,
+                        (efct*self._flux_ul95)[m],
+                        0.5*(efct*self._flux_ul95)[m],
+                        uplims=True,
+                        **kw)
+        
 
 
 class HaloSED(object):

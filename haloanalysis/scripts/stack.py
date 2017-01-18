@@ -130,7 +130,7 @@ if __name__ == '__main__':
         # Sum over all sources
         halo_const_dlnl = np.sum(halo_eflux_dlnl,axis=0)
         halo_fhalo_dlnl = np.sum(halo_fhalo_dlnl,axis=0)
-        ext_dlnl =  np.sum(tab['fit_ext_scan_dlnl'],axis=0)
+        ext_dlnl = np.sum(tab['fit_ext_scan_dlnl'],axis=0)
         ext_dlnl -= ext_dlnl[0]
                 
         for i in range(len(halo_scan_width)):
