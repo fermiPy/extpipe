@@ -16,7 +16,7 @@ import matplotlib
 import fermipy.utils as utils
 from haloanalysis.utils import create_mask
 
-if __name__ == '__main__':
+def main():
 
     usage = "usage: %(prog)s"
     description = "Perform stacking analysis."
@@ -27,8 +27,7 @@ if __name__ == '__main__':
     parser.add_argument('--make_plots', default = False, action='store_true')
 
     parser.add_argument('tables', nargs='+', default = None,
-                        help='Run analyses in all subdirectories of this '
-                        'directory.')
+                        help='Run stacking analysis.')
 
     args = parser.parse_args()
 
@@ -318,3 +317,5 @@ if __name__ == '__main__':
 
         plt.savefig('composite_halo_fhalo_%s.png'%name)
         
+if __name__ == "__main__":
+    main()
