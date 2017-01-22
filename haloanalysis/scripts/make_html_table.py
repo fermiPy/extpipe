@@ -30,11 +30,8 @@ def main():
     
     html_table_cols = ['linkname','assoc','class','ra','dec','glon','glat',
                        'ts','npred',
-                       'fit1_ext_ts','fit1_halo_ts',
-                       'fit_ext_ts','fit_halo_ts',
-    #                   'fit1_dlike','fit_dlike',
-                       'fit_nsrc',
-                       'fit_dlike_ext','fit_dlike_halo','fit_mean_sep']
+                       'fit_ext_ts','fit_halo_ts', 'fit_ext_mle','fit_halo_width',
+                       'fit_nsrc']
 
     subs = {}
 
@@ -64,16 +61,18 @@ def main():
     tab2.columns['dec'].format='%.2f'
     tab2.columns['glon'].format='%.2f'
     tab2.columns['glat'].format='%.2f'
-    tab2.columns['fit1_ext_ts'].format='%.2f'
-    tab2.columns['fit1_halo_ts'].format='%.2f'
+    #tab2.columns['fit1_ext_ts'].format='%.2f'
+    #tab2.columns['fit1_halo_ts'].format='%.2f'
     #tab2.columns['fit1_dlike'].format='%.2f'
     tab2.columns['fit_ext_ts'].format='%.2f'
+    tab2.columns['fit_ext_mle'].format='%.3f'
     tab2.columns['fit_halo_ts'].format='%.2f'
+    tab2.columns['fit_halo_width'].format='%.3f'
     #tab2.columns['fit_dlike'].format='%.2f'
-    tab2.columns['fit_dlike_ext'].format='%.2f'
-    tab2.columns['fit_dlike_halo'].format='%.2f'
+    #tab2.columns['fit_dlike_ps_ext'].format='%.2f'
+    #tab2.columns['fit_dlike_ps_halo'].format='%.2f'
     tab2.columns['fit_nsrc'].format='%.2f'
-    tab2.columns['fit_mean_sep'].format='%.2f'
+    #tab2.columns['fit_mean_sep'].format='%.2f'
 
     tab2.columns['linkname'].name = 'name'
     tab2.write(args.output,format='html')
