@@ -25,81 +25,94 @@ def main():
     gta = GTAnalysis(args.config,logging={'verbosity' : 3},
                      fileio={'workdir_regex' : '\.xml$|\.npy$'})
 
+    if args.source is None:
+        src_name = gta.config['selection']['target']
+    else:
+        src_name = args.source
+    
+    # Delete unassociated sources
+    for s in gta.roi.sources:
+        if s.name == src_name:
+            continue        
+        if s['class'] == '' and not s.diffuse:
+            gta.delete_source(s.name)
+    
     gta.setup()
 
     names = [s.name for s in gta.roi.sources if not s.diffuse]
     gta.reload_sources(names)
+
+    gta.print_roi()
     
     sqrt_ts_threshold=3
     
     model0 = { 'SpatialModel' : 'PointSource', 'Index' : 1.5 }
     model1 = { 'SpatialModel' : 'PointSource', 'Index' : 2.0 }
     model2 = { 'SpatialModel' : 'PointSource', 'Index' : 2.5 }
-    #src_name = gta.roi.sources[0].name
-    if args.source is None:
-        src_name = gta.config['selection']['target']
-    else:
-        src_name = args.source
-        
+
+    newsrc_model = { 'SpectrumType' : 'LogParabola',
+                     'alpha' : 2.0,
+                     'beta' : {'value' : 0.0, 'min' : 0.0, 'max' : 5.0} }
+    
     # -----------------------------------
     # Fit the Baseline Model
     # -----------------------------------
 
-    # Get a reasonable starting point for the spectral model
-    gta.free_source(src_name)
-    gta.fit()
-    gta.free_source(src_name,False)
-
     gta.optimize()
+
+    gta.print_roi()
     
-    # Localize 3FGL sources
-    for s in gta.roi.sources:
+    # Localize all point sources
+    for s in sorted(gta.roi.sources, key=lambda t: t['ts'],reverse=True):
+#    for s in gta.roi.sources:
 
         if not s['SpatialModel'] == 'PointSource':
             continue
 
-        if s['offset'] < 0.5 or s['ts'] < 25.:
-            continue
+#        if s['offset'] < 0.5 or s['ts'] < 25.:
+#            continue
 
         if s['offset_roi_edge'] > -0.1:
             continue
         
         gta.localize(s.name,nstep=5,dtheta_max=0.5,update=True,
-                     prefix='base')
+                     prefix='base', make_plots=True)
 
         gta.free_source(s.name,False)
 
-    gta.tsmap('base',model=model1)
+    gta.tsmap('base_nosrcs',model=model1, make_plots=True)
 
     # Look for new point sources outside the inner 1.0 deg
 
-    gta.find_sources('base',model=model1,
+    gta.find_sources('base_pass0',model=newsrc_model,
                      search_skydir=gta.roi.skydir,
                      max_iter=5,min_separation=0.5,
                      sqrt_ts_threshold=sqrt_ts_threshold,
-                     search_minmax_radius=[1.0,None])
+                     search_minmax_radius=[1.0,None],
+                     free_params=['alpha','norm'])
     gta.optimize()
 
+    gta.find_sources('base_pass1',model=newsrc_model,
+                     search_skydir=gta.roi.skydir,
+                     max_iter=5,min_separation=0.5,
+                     sqrt_ts_threshold=sqrt_ts_threshold,
+                     search_minmax_radius=[1.0,None],
+                     free_params=['alpha','norm'])
+
+    
     gta.print_roi()
 
+    gta.tsmap('base',model=model1, make_plots=True)
+
     gta.write_roi('base')
-
-    # -----------------------------------
-    # Pass 0 - Source at Nominal Position
-    # -----------------------------------
-
-    fit_region(gta,'fit0',src_name)
 
     # -------------------------------------
     # Pass 1 - Source at Localized Position
     # -------------------------------------
 
-    gta.localize(src_name,nstep=5,dtheta_max=0.5,update=True,
-                 prefix='fit1')
-
-    fit_region(gta,'fit1',src_name)
-    fit_halo(gta,'fit1',src_name)
-    gta.load_roi('fit1')
+    fit_region(gta,'fit0',src_name)
+    #fit_halo(gta,'fit0',src_name)
+    gta.load_roi('fit0')
 
     # -------------------------------------
     # Pass 2 - 2+ Point Sources
@@ -108,32 +121,35 @@ def main():
     srcs = []
 
     # Fit up to 4 sources
-    for i in range(2,6):
+    for i in range(1,5):
 
         srcs_fit = gta.find_sources('fit%i'%i,
+                                    model=newsrc_model,
                                     search_skydir=gta.roi.skydir,
                                     max_iter=1,
                                     sources_per_iter=1,
                                     sqrt_ts_threshold=3,
                                     min_separation=0.5,
-                                    search_minmax_radius=[None,1.0])
+                                    search_minmax_radius=[None,1.0],
+                                    free_params=['alpha','norm'])
 
         if len(srcs_fit['sources']) == 0:
             break
 
         srcs += srcs_fit['sources']
-        best_fit_idx = i
         
         gta.localize(src_name,nstep=5,dtheta_max=0.4,
-                     update=True,prefix='fit%i'%i)
+                     update=True,prefix='fit%i'%i,
+                     free_radius=0.5, make_plots=True)
 
         # Relocalize new sources
         for s in sorted(srcs, key=lambda t: t['ts'],reverse=True):        
             gta.localize(s.name,nstep=5,dtheta_max=0.4,
-                         update=True,prefix='fit%i'%i)
+                         update=True,prefix='fit%i'%i,
+                         free_radius=0.5)
 
         fit_region(gta,'fit%i'%i,src_name)
-        fit_halo(gta,'fit%i'%i,src_name)
+        #fit_halo(gta,'fit%i'%i,src_name)
 
         gta.load_roi('fit%i'%i)
         

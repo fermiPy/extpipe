@@ -37,7 +37,7 @@ def main():
     halo_index = np.array([1.5,1.75,2.0,2.25,2.5,2.75,3.0,3.25,3.5])
     src_name = gta.roi.sources[0].name
 
-    for i in range(1,6):
+    for i in range(0,5):
 
         npy_file = os.path.join(gta.workdir,'fit%i.npy'%i)
 

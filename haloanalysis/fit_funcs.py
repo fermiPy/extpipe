@@ -6,15 +6,15 @@ import logging
 
 import numpy as np
     
-def fit_region(gta,modelname,src_name,erange=None):
+def fit_region(gta,modelname,src_name,loge_bounds=None):
 
     gta.logger.info('Starting Region Fit %s'%(modelname))
     lnl0 = -gta.like()    
     gta.logger.info('%s Model Likelihood: %f'%(modelname,lnl0))
     gta.print_params()
     
-    if erange is not None:
-        gta.set_energy_range(erange[0],erange[1])
+    if loge_bounds is not None:
+        gta.set_energy_range(loge_bounds[0],loge_bounds[1])
     
     model0 = { 'SpatialModel' : 'PointSource', 'Index' : 1.5 }
     model1 = { 'SpatialModel' : 'PointSource', 'Index' : 2.0 }
@@ -25,45 +25,61 @@ def fit_region(gta,modelname,src_name,erange=None):
     
     gta.optimize()
 
-    diff_sources = [s.name for s in self.roi.sources if s.diffuse]
+    diff_sources = [s.name for s in gta.roi.sources if s.diffuse]
     skydir = gta.roi[src_name].skydir
     
     gta.free_sources(False)
-    gta.free_sources(skydir=skydir,distance=1.0, exclude=diff_sources)
+    #gta.free_sources(skydir=skydir,distance=1.0, exclude=diff_sources)
     gta.free_sources(skydir=skydir,distance=1.0, pars='norm')
     gta.fit()
 
-    gta.free_sources(False)
     gta.free_sources(skydir=skydir,distance=1.0, pars='norm',
                      exclude=diff_sources)
-    
-    gta.extension(src_name, optimizer={'optimizer' : 'NEWTON'})
-    
-    gta.sed(src_name,prefix=modelname,
-            optimizer={'optimizer' : 'NEWTON'},
-            fix_background=False)
 
-    gta.sed(src_name,prefix=modelname + '_fixed',
-            optimizer={'optimizer' : 'NEWTON'},
-            fix_background=True)
+    gta.extension(src_name, outfile=modelname + '_ext_fixed',
+                  prefix=modelname + '_fixed',
+                  optimizer={'optimizer' : 'NEWTON'},
+                  fit_position=False, free_radius=1.0,
+                  make_plots=True)
     
-    gta.write_roi(modelname,make_plots=True)
-    gta.tsmap(modelname,model=model0,erange=erange)
-    #gta.tscube(modelname,model=model1)
-    maps_model1 = gta.tsmap(modelname,model=model1,erange=erange)
-    gta.tsmap(modelname,model=model2,erange=erange)
+    gta.extension(src_name, outfile=modelname + '_ext',
+                  prefix=modelname,
+                  optimizer={'optimizer' : 'NEWTON'},
+                  fit_position=True, free_radius=1.0,
+                  make_plots=True)
+
+    gta.sed(src_name, outfile=modelname + '_sed_fixed',
+            prefix=modelname + '_fixed',
+            optimizer={'optimizer' : 'NEWTON'},
+            make_plots=True)
+    
+    gta.sed(src_name, outfile=modelname + '_sed',
+            prefix=modelname,
+            optimizer={'optimizer' : 'NEWTON'},
+            free_radius=1.0, make_plots=True)
+
+    gta.write_roi(modelname, make_plots=True)
+    gta.tsmap(modelname, model=model0,
+              loge_bounds=loge_bounds, make_plots=True)
+    maps_model1 = gta.tsmap(modelname, model=model1,
+                            loge_bounds=loge_bounds, make_plots=True)
+    gta.tsmap(modelname, model=model2,
+              loge_bounds=loge_bounds, make_plots=True)
     maps_model1_nosource = gta.tsmap('%s_nosource'%modelname,
-              model=model1,exclude=[src_name],erange=erange)
-    gta.residmap(modelname,model=model3,erange=erange)
+                                     model=model1, exclude=[src_name],
+                                     loge_bounds=loge_bounds, make_plots=True)
+    gta.residmap(modelname, model=model3,
+                 loge_bounds=loge_bounds, make_plots=True)
 
     # Make zoom plots
-    gta._plotter.make_tsmap_plots(maps_model1, gta.roi,
+    gta.plotter.make_tsmap_plots(maps_model1, gta.roi,
                                   zoom=2,suffix='tsmap_zoom')
-    gta._plotter.make_tsmap_plots(maps_model1_nosource, gta.roi,
+    gta.plotter.make_tsmap_plots(maps_model1_nosource, gta.roi,
                                   zoom=2,suffix='tsmap_zoom')    
 
     lnl1 = -gta.like()
 
+    gta.print_roi()
     gta.print_params()
     
     gta.logger.info('%s Model Likelihood: %f'%(modelname,lnl1))
@@ -73,7 +89,7 @@ def fit_region(gta,modelname,src_name,erange=None):
 
 def fit_halo_sed(gta,modelname,src_name,halo_width,
                  halo_index,spatial_model='RadialGaussian',
-                 erange=None):
+                 loge_bounds=None):
 
     gta.logger.info('Starting Halo SED Fit %s'%(modelname))
     
@@ -91,11 +107,11 @@ def fit_halo_sed(gta,modelname,src_name,halo_width,
     halo_source_dict['dec'] = gta.roi[src_name]['dec']
 
     gta.load_roi(modelname)
-    if erange is not None:
-        gta.set_energy_range(erange[0],erange[1])
+    if loge_bounds is not None:
+        gta.set_energy_range(loge_bounds[0],loge_bounds[1])
 
 
-    diff_sources = [s.name for s in self.roi.sources if s.diffuse]
+    diff_sources = [s.name for s in gta.roi.sources if s.diffuse]
         
     gta.free_sources(False)
     gta.free_sources(distance=1.0,pars='norm', exclude=diff_sources)
@@ -122,9 +138,9 @@ def fit_halo_sed(gta,modelname,src_name,halo_width,
 
     gta.logger.info('Finished Halo SED Fit %s'%(modelname))
 
-def fit_halo_scan(gta,modelname,src_name,halo_width,
-                  halo_index,spatial_model='RadialGaussian',
-                  erange=None, optimizer='NEWTON'):
+def fit_halo_scan(gta, modelname, src_name, halo_width,
+                  halo_index, spatial_model='RadialGaussian',
+                  loge_bounds=None, optimizer='NEWTON'):
 
     gta.logger.info('Starting Halo Scan %s'%(modelname))
 
@@ -145,11 +161,11 @@ def fit_halo_scan(gta,modelname,src_name,halo_width,
     halo_source_dict['dec'] = gta.roi[src_name]['dec']
 
     #gta.load_roi(modelname)
-    #if erange is not None:
-    #    gta.set_energy_range(erange[0],erange[1])
+    #if loge_bounds is not None:
+    #    gta.set_energy_range(loge_bounds[0],loge_bounds[1])
 
     skydir = gta.roi[src_name].skydir
-    diff_sources = [s.name for s in self.roi.sources if s.diffuse]
+    diff_sources = [s.name for s in gta.roi.sources if s.diffuse]
     
     gta.free_sources(False)
     gta.free_sources(skydir=skydir,distance=1.0,pars='norm',
@@ -166,13 +182,13 @@ def fit_halo_scan(gta,modelname,src_name,halo_width,
         halo_source_dict['SpatialWidth'] = w
         gta.load_xml(modelname + '_base')
         
-        gta.add_source(halo_source_name,halo_source_dict,free=True)
+        gta.add_source(halo_source_name, halo_source_dict, free=True)
 
         # Free Index
         gta.free_norm(halo_source_name)
-        gta.fit(optimizer=optimizer)        
-        gta.sed(halo_source_name,prefix='%s_cov05_%02i'%(modelname,i),
-                fix_background=False, cov_scale=5.0,
+        gta.fit(optimizer=optimizer)
+        gta.sed(halo_source_name, prefix='%s_cov05_%02i'%(modelname,i),
+                free_radius=1.0, cov_scale=5.0,
                 optimizer={'optimizer' : optimizer})
         
         gta.free_parameter(halo_source_name,'Index')
@@ -192,8 +208,8 @@ def fit_halo_scan(gta,modelname,src_name,halo_width,
             gta.logger.info('Fitting Halo Index %.3f',idx)
             
             model_idx = i*len(halo_index) + j
-            gta.set_norm(halo_source_name,1.0,update_source=False)            
-            gta.set_parameter(halo_source_name,'Index',-1.0*idx,
+            gta.set_norm(halo_source_name, 1.0, update_source=False)            
+            gta.set_parameter(halo_source_name, 'Index', -1.0*idx,
                               update_source=False)
             
             gta.fit(update=False, optimizer=optimizer)
@@ -220,7 +236,7 @@ def fit_halo_scan(gta,modelname,src_name,halo_width,
     
 def fit_halo(gta, modelname, src_name,
              spatial_model='RadialGaussian',
-             erange=None, optimizer='NEWTON'):
+             loge_bounds=None, optimizer='NEWTON'):
 
     gta.logger.info('Starting Halo Fit %s'%(modelname))
     
@@ -241,10 +257,10 @@ def fit_halo(gta, modelname, src_name,
     halo_source_dict['dec'] = gta.roi[src_name]['dec']
 
 #    gta.load_roi(modelname)
-#    if erange is not None:
-#        gta.set_energy_range(erange[0],erange[1])
+#    if loge_bounds is not None:
+#        gta.set_energy_range(loge_bounds[0],loge_bounds[1])
 
-    diff_sources = [s.name for s in self.roi.sources if s.diffuse]
+    diff_sources = [s.name for s in gta.roi.sources if s.diffuse]
     
     gta.free_sources(False)
     gta.free_sources(distance=1.0,pars='norm',
@@ -255,22 +271,21 @@ def fit_halo(gta, modelname, src_name,
     gta.add_source(halo_source_name,halo_source_dict)
     gta.free_norm(halo_source_name)
     gta.extension(halo_source_name,update=True,
-                  optimizer={'optimizer' : optimizer})
+                  optimizer={'optimizer' : optimizer},
+                  free_radius=1.0)
 
     # Fit spectrum
     gta.free_parameter(halo_source_name,'Index')
     gta.fit()
 
     # Re-fit extension
-    gta.free_parameter(halo_source_name,'Index',False)
     gta.extension(halo_source_name,update=True,
-                  optimizer={'optimizer' : optimizer})    
+                  optimizer={'optimizer' : optimizer},
+                  free_radius=1.0)    
 
     # Re-fit Spectrum
-    gta.free_parameter(halo_source_name,'Index')
     gta.fit()
 
-    gta.free_parameter(halo_source_name,'Index',False)
     gta.update_source(halo_source_name,reoptimize=True,
                       optimizer={'optimizer' : optimizer})
 
