@@ -36,26 +36,42 @@ def fit_region(gta,modelname,src_name,loge_bounds=None):
     gta.free_sources(skydir=skydir,distance=1.0, pars='norm',
                      exclude=diff_sources)
 
-    gta.extension(src_name, outfile=modelname + '_ext_fixed',
-                  prefix=modelname + '_fixed',
+    gta.extension(src_name, outfile=modelname + '_ext_gauss_fixed',
+                  spatial_model='RadialGaussian',
+                  prefix=modelname + '_gauss_fixed',
                   optimizer={'optimizer' : 'NEWTON'},
                   fit_position=False, free_radius=1.0,
                   make_plots=True)
     
-    gta.extension(src_name, outfile=modelname + '_ext',
-                  prefix=modelname,
+    gta.extension(src_name, outfile=modelname + '_ext_gauss',
+                  spatial_model='RadialGaussian',
+                  prefix=modelname + '_gauss',
+                  optimizer={'optimizer' : 'NEWTON'},
+                  fit_position=True, free_radius=1.0,
+                  make_plots=True)
+
+    gta.extension(src_name, outfile=modelname + '_ext_disk_fixed',
+                  spatial_model='RadialDisk',
+                  prefix=modelname + '_disk_fixed',
+                  optimizer={'optimizer' : 'NEWTON'},
+                  fit_position=False, free_radius=1.0,
+                  make_plots=True)
+    
+    gta.extension(src_name, outfile=modelname + '_ext_disk',
+                  spatial_model='RadialDisk',
+                  prefix=modelname + '_disk',
                   optimizer={'optimizer' : 'NEWTON'},
                   fit_position=True, free_radius=1.0,
                   make_plots=True)
 
     gta.sed(src_name, outfile=modelname + '_sed_fixed',
             prefix=modelname + '_fixed',
-            optimizer={'optimizer' : 'NEWTON'},
+            optimizer={'optimizer' : 'MINUIT'},
             make_plots=True)
     
     gta.sed(src_name, outfile=modelname + '_sed',
             prefix=modelname,
-            optimizer={'optimizer' : 'NEWTON'},
+            optimizer={'optimizer' : 'MINUIT'},
             free_radius=1.0, make_plots=True)
 
     gta.write_roi(modelname, make_plots=True)
@@ -132,7 +148,7 @@ def fit_halo_sed(gta,modelname,src_name,halo_width,
         
         # SED w/ Index = 2.0
         gta.sed(halo_source_name,prefix='%s_%02i'%(modelname,i),
-                fix_background=False, cov_scale=5.0)    
+                fix_background=False, cov_scale=5.0)
         gta.write_roi('%s_halo_gauss_sed_%02i'%(modelname,i),
                       make_plots=False)
 
@@ -171,7 +187,8 @@ def fit_halo_scan(gta, modelname, src_name, halo_width,
     gta.free_sources(skydir=skydir,distance=1.0,pars='norm',
                      exclude=diff_sources)
     gta.write_xml(modelname + '_base')
-        
+
+    halo_tab = gta.roi.create_table([])
     halo_data = []
     halo_data_idx_free = []
         
@@ -189,7 +206,8 @@ def fit_halo_scan(gta, modelname, src_name, halo_width,
         gta.fit(optimizer=optimizer)
         gta.sed(halo_source_name, prefix='%s_cov05_%02i'%(modelname,i),
                 free_radius=1.0, cov_scale=5.0,
-                optimizer={'optimizer' : optimizer})
+                optimizer={'optimizer' : 'MINUIT'},
+                make_plots=True)
         
         gta.free_parameter(halo_source_name,'Index')
         gta.fit(optimizer=optimizer)
@@ -222,15 +240,21 @@ def fit_halo_scan(gta, modelname, src_name, halo_width,
             gta.logger.info('%s Halo Width: %6.3f Index: %6.2f TS: %6.2f',
                             modelname,w,idx,gta.roi[halo_source_name]['ts'])
     
-            gta.write_roi('%s_%02i_%02i'%(outprefix,i,j),make_plots=False)
+            #gta.write_roi('%s_%02i_%02i'%(outprefix,i,j),make_plots=False)
             halo_data += [copy.deepcopy(gta.roi[halo_source_name].data)]
+            gta.roi[halo_source_name].add_to_table(halo_tab)
             
         gta.delete_source(halo_source_name,save_template=False) 
 
     np.save(os.path.join(gta.workdir,'%s_data.npy'%outprefix),halo_data)
     np.save(os.path.join(gta.workdir,'%s_data_idx_free.npy'%outprefix),
             halo_data_idx_free)
-        
+
+    tab_halo_width, tab_halo_index = np.meshgrid(halo_width,halo_index,indexing='ij')
+    halo_tab['halo_width'] = np.ravel(tab_halo_width)
+    halo_tab['halo_index'] = np.ravel(tab_halo_index)
+    
+    halo_tab.write(os.path.join(gta.workdir,'%s_data.fits'%outprefix),overwrite=True)
     gta.logger.info('Finished Halo Scan %s'%(modelname))
     
     
