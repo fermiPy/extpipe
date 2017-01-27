@@ -52,12 +52,14 @@ def main():
 
     newsrc_model = { 'SpectrumType' : 'LogParabola',
                      'alpha' : 2.0,
-                     'beta' : {'value' : 0.0, 'min' : 0.0, 'max' : 5.0} }
+                     'beta' : {'value' : 0.0, 'min' : 0.0, 'max' : 1.0} }
+
+    skip_loc = ['3FGL J0534.5+2201s','3FGL J0534.5+2201']
     
     # -----------------------------------
     # Fit the Baseline Model
     # -----------------------------------
-
+    
     gta.optimize()
 
     gta.print_roi()
@@ -73,6 +75,9 @@ def main():
 #            continue
 
         if s['offset_roi_edge'] > -0.1:
+            continue
+
+        if s.name in skip_loc:
             continue
         
         gta.localize(s.name,nstep=5,dtheta_max=0.5,update=True,
@@ -137,19 +142,22 @@ def main():
             break
 
         srcs += srcs_fit['sources']
-        
-        gta.localize(src_name,nstep=5,dtheta_max=0.4,
-                     update=True,prefix='fit%i'%i,
-                     free_radius=0.5, make_plots=True)
+
+        if src_name in skip_loc:
+            gta.localize(src_name,nstep=5,dtheta_max=0.4,
+                         update=True,prefix='fit%i'%i,
+                         free_radius=0.5, make_plots=True)
 
         # Relocalize new sources
         for s in sorted(srcs, key=lambda t: t['ts'],reverse=True):        
             gta.localize(s.name,nstep=5,dtheta_max=0.4,
                          update=True,prefix='fit%i'%i,
-                         free_radius=0.5)
+                         free_radius=0.5, make_plots=True)
 
         fit_region(gta,'fit%i'%i,src_name)
-        #fit_halo(gta,'fit%i'%i,src_name)
+        tab = gta.roi.create_table([s.name for s in srcs])
+        tab.write(os.path.join(gta.workdir,'fit%i_new_source_data.fits'%i),
+                  overwrite=True)
 
         gta.load_roi('fit%i'%i)
         
@@ -160,7 +168,10 @@ def main():
 
     np.save(os.path.join(gta.workdir,'new_source_data.npy'),
             new_source_data)
-
+    tab = gta.roi.create_table([s.name for s in srcs])
+    tab.write(os.path.join(gta.workdir,'new_source_data.fits'),overwrite=True)
+    
+    
 
 if __name__ == '__main__':
 
