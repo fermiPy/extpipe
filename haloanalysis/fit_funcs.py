@@ -18,10 +18,10 @@ def fit_region(gta,modelname,src_name,loge_bounds=None):
     
     model0 = { 'SpatialModel' : 'PointSource', 'Index' : 1.5 }
     model1 = { 'SpatialModel' : 'PointSource', 'Index' : 2.0 }
-    model2 = { 'SpatialModel' : 'PointSource', 'Index' : 2.5 }
+    model2 = { 'SpatialModel' : 'PointSource', 'Index' : 2.7 }
 
     model3 = { 'SpatialModel' : 'Gaussian', 'Index' : 2.0,
-               'SpatialWidth' : 0.2 }
+               'SpatialWidth' : 0.15 }
     
     gta.optimize()
 

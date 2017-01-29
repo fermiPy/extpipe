@@ -33,8 +33,8 @@ def main():
     # Delete unassociated sources
     for s in gta.roi.sources:
         if s.name == src_name:
-            continue        
-        if s['class'] == '' and not s.diffuse:
+            continue
+        if s['class'] == '' and not s.diffuse and not s.extended:
             gta.delete_source(s.name)
     
     gta.setup()
@@ -116,7 +116,6 @@ def main():
     # -------------------------------------
 
     fit_region(gta,'fit0',src_name)
-    #fit_halo(gta,'fit0',src_name)
     gta.load_roi('fit0')
 
     # -------------------------------------
@@ -143,7 +142,7 @@ def main():
 
         srcs += srcs_fit['sources']
 
-        if src_name in skip_loc:
+        if not src_name in skip_loc and not gta.roi[src_name].extended:
             gta.localize(src_name,nstep=5,dtheta_max=0.4,
                          update=True,prefix='fit%i'%i,
                          free_radius=0.5, make_plots=True)
