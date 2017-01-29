@@ -47,7 +47,10 @@ model:
 
   # List of catalogs to be used in the model.
   catalogs : 
-    - '3FGL'
+    - '/u/gl/mdwood/fermi/catalogs/gll_psc_v16_ext.fit'
+    - 'lmc_psc_v0.fit'
+
+  extdir : '/u/gl/mdwood/fermi/catalogs/Extended_archive_v16'
 
 components: null
 
@@ -71,4 +74,4 @@ roiopt:
   shape_ts_threshold : 25.0
 
 optimizer:
-  optimizer : 'NEWTON'
+  optimizer : 'MINUIT'
