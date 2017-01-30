@@ -42,15 +42,19 @@ def main():
     for s in gta.roi.sources:
         if s.name == src_name:
             continue
-        if s.extended or s.diffuse:
+        if s.diffuse or s.extended:
             continue
         if s['class']:
             continue
 
-        m = cat['Source_Name'] == s.name
+        m = cat.table['Source_Name'] == s.name
 
-        if np.sum(m) and cat[m]['TS'] > 100 and (cat[m]['Flags']&flag_mask)==0:
+        if np.sum(m) and cat.table[m]['TS'] > 100 and (cat.table[m]['Flags']&flag_mask)==0:
             continue
+
+        if np.sum(m):
+            gta.logger.info('Deleting %s TS = %.2f Flags = %i',
+                            s.name,cat.table[m]['TS'],cat.table[m]['Flags'])
         
         gta.delete_source(s.name)
     
