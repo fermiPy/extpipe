@@ -29,13 +29,29 @@ def main():
         src_name = gta.config['selection']['target']
     else:
         src_name = args.source
+
+    cat = Catalog3FGL('/u/gl/mdwood/fermi/catalogs/gll_psc_v16_ext.fit')
+
+    flag_mask = 0
+    flags = [5,6,8]
+    for t in flags:
+        flag_mask += 2**t
     
-    # Delete unassociated sources
+    # Delete unassociated and low TS sources
     for s in gta.roi.sources:
         if s.name == src_name:
             continue
-        if s['class'] == '' and not s.diffuse and not s.extended:
-            gta.delete_source(s.name)
+        if s.extended or s.diffuse:
+            continue
+        if s['class']:
+            continue
+
+        m = cat['Source_Name'] == s.name
+
+        if np.sum(m) and cat[m]['TS'] > 100 and (cat[m]['Flags']&flag_mask)==0:
+            continue
+        
+        gta.delete_source(s.name)
     
     gta.setup()
 
