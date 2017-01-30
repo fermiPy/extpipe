@@ -10,6 +10,7 @@ from fermipy.utils import init_matplotlib_backend
 init_matplotlib_backend()
 
 from fermipy.gtanalysis import GTAnalysis
+from fermipy.catalog import Catalog3FGL
 from haloanalysis.fit_funcs import fit_region, fit_halo
 
 def main():
