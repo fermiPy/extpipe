@@ -21,6 +21,7 @@ def main():
 
     parser.add_argument('--config', default = 'sample_config.yaml')
     parser.add_argument('--source', default = None)
+    parser.add_argument('--radius', default = 1.0, type=float)
 
     args = parser.parse_args()
     gta = GTAnalysis(args.config,logging={'verbosity' : 3},
@@ -69,7 +70,7 @@ def main():
     
     model0 = { 'SpatialModel' : 'PointSource', 'Index' : 1.5 }
     model1 = { 'SpatialModel' : 'PointSource', 'Index' : 2.0 }
-    model2 = { 'SpatialModel' : 'PointSource', 'Index' : 2.5 }
+    model2 = { 'SpatialModel' : 'PointSource', 'Index' : 2.7 }
 
     newsrc_model = { 'SpectrumType' : 'LogParabola',
                      'alpha' : 2.0,
@@ -107,14 +108,14 @@ def main():
         gta.free_source(s.name,False)
 
     gta.tsmap('base_nosrcs',model=model1, make_plots=True)
+    gta.tsmap('base_nosrcs',model=model2, make_plots=True)
 
     # Look for new point sources outside the inner 1.0 deg
-
     gta.find_sources('base_pass0',model=newsrc_model,
                      search_skydir=gta.roi.skydir,
                      max_iter=5,min_separation=0.5,
                      sqrt_ts_threshold=sqrt_ts_threshold,
-                     search_minmax_radius=[1.0,None],
+                     search_minmax_radius=[args.radius,None],
                      free_params=['alpha','norm'])
     gta.optimize()
 
@@ -122,13 +123,14 @@ def main():
                      search_skydir=gta.roi.skydir,
                      max_iter=5,min_separation=0.5,
                      sqrt_ts_threshold=sqrt_ts_threshold,
-                     search_minmax_radius=[1.0,None],
+                     search_minmax_radius=[args.radius,None],
                      free_params=['alpha','norm'])
 
     
     gta.print_roi()
 
     gta.tsmap('base',model=model1, make_plots=True)
+    gta.tsmap('base',model=model2, make_plots=True)
 
     gta.write_roi('base')
 
@@ -155,7 +157,7 @@ def main():
                                     sources_per_iter=1,
                                     sqrt_ts_threshold=3,
                                     min_separation=0.5,
-                                    search_minmax_radius=[None,1.0],
+                                    search_minmax_radius=[None,args.radius],
                                     free_params=['alpha','norm'])
 
         if len(srcs_fit['sources']) == 0:
