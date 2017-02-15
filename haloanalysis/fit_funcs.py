@@ -91,7 +91,7 @@ def fit_region(gta,modelname,src_name,loge_bounds=None):
     gta.write_roi(modelname + '_ext_gauss_roi')
 
     # Disk Analysis
-    gta.load_roi(modelname)
+    gta.load_roi(modelname + '_roi')
     gta.reload_source(src_name)    
     gta.extension(src_name, outfile=modelname + '_ext_disk_ext',
                   spatial_model='RadialDisk',
@@ -112,7 +112,7 @@ def fit_region(gta,modelname,src_name,loge_bounds=None):
     gta.write_roi(modelname + '_ext_disk_roi')
     
     # TS Maps
-    gta.load_roi(modelname)
+    gta.load_roi(modelname + '_roi')
     gta.reload_source(src_name)    
     gta.logger.info('Finished Region Fit %s'%(modelname))
 
