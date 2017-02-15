@@ -199,8 +199,8 @@ class HaloSED(object):
 
         width = np.log10(np.array(tab_pars['halo_scan_width'][0]))
         index = np.log10(tab_pars['halo_scan_index'][0])
-        eobs = np.array(tab_ebounds['E_MAX'])
-        eobs = np.insert(eobs,0,tab_ebounds['E_MIN'][0])
+        eobs = np.array(tab_ebounds['e_max'])
+        eobs = np.insert(eobs,0,tab_ebounds['e_min'][0])
         eobs = np.log10(eobs)
         eflux = np.log10(np.array(tab_pars['halo_scan_eflux'][0]))
 
