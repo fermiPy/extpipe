@@ -7,12 +7,12 @@ import argparse
 def main():
 
     usage = "usage: %(prog)s [config files]"
-    description = "Merge tables."
+    description = "Merge IGMF model tables."
     parser = argparse.ArgumentParser(usage=usage,description=description)
 
     parser.add_argument('--output', default = None, required=True)   
     parser.add_argument('files', nargs='*', default = None,
-                        help='One or more FITS files containing BINTABLEs.')
+                        help='One or more FITS files containing IGMF model tables.')
 
     args = parser.parse_args()
 
