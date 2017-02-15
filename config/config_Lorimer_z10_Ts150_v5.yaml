@@ -1,0 +1,4 @@
+
+model:
+
+  galdiff  : '$FERMI_DIFFUSE_DIR/SNRCatalog/P302_v5/Lorimer_z10_Ts150_v5_mapcube_total_all_P8.fits.gz'

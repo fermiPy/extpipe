@@ -1,0 +1,10 @@
+
+
+binning:
+
+  roiwidth   : 12.0
+  
+model:
+
+  src_roiwidth : 16.0
+

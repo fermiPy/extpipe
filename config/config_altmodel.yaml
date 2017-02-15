@@ -1,0 +1,4 @@
+
+model:
+
+  galdiff  : '$FERMI_DIFFUSE_DIR/H2rings_H1rings_IC_ISO_Loop1_Moon_Sun_Bubbleinout_energy_reference.fits'
