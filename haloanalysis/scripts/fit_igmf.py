@@ -62,14 +62,16 @@ def main():
     
     casc_model = CascModel.create_from_fits(args.modelfile)
 
-    tab_pars = Table.read(args.tables[0],'SCAN_PARS')
-    tab_ebounds = Table.read(args.tables[0],'EBOUNDS')
+    tab_pars = Table.read(args.tables[0],hdu='SCAN_PARS')
+    tab_ebounds = Table.read(args.tables[0],hdu='EBOUNDS')
     
     # Use cached fits file
     if args.cache:
         tab_casc = load_cache(args.tables, src_names)
     else:
-        tables = [Table.read(t) for t in args.tables]
+        tables = [Table.read(args.tables[0],'CATALOG'),
+                  Table.read(args.tables[0],'LIKELIHOOD'),
+                  Table.read(args.tables[0],'SED')]
 
         for i, t in enumerate(tables):
             if 'NAME' in t.columns:
@@ -79,7 +81,7 @@ def main():
         tab_casc = join(tab_casc,tables[2])
         #if src_names:
         #    tab_casc = load_source_rows(tab_casc, src_names)
-
+        
     tab_sed_tev = Table.read(args.sedfile)
 
     tab_igmf = []
