@@ -59,10 +59,10 @@ def main():
         
         gta.delete_source(s.name)
     
-    gta.setup()
+    gta.setup(overwrite=True)
 
-    names = [s.name for s in gta.roi.sources if not s.diffuse]
-    gta.reload_sources(names)
+    #names = [s.name for s in gta.roi.sources if not s.diffuse]
+    #gta.reload_sources(names)
 
     gta.print_roi()
     
@@ -83,7 +83,6 @@ def main():
     # -----------------------------------
     
     gta.optimize()
-
     gta.print_roi()
     
     # Localize all point sources
@@ -132,14 +131,14 @@ def main():
     gta.tsmap('base',model=model1, make_plots=True)
     gta.tsmap('base',model=model2, make_plots=True)
 
-    gta.write_roi('base')
+    gta.write_roi('base_roi')
 
     # -------------------------------------
     # Pass 1 - Source at Localized Position
     # -------------------------------------
 
     fit_region(gta,'fit0',src_name)
-    gta.load_roi('fit0')
+    gta.load_roi('fit0_roi')
 
     # -------------------------------------
     # Pass 2 - 2+ Point Sources
@@ -181,7 +180,7 @@ def main():
         tab.write(os.path.join(gta.workdir,'fit%i_new_source_data.fits'%i),
                   overwrite=True)
 
-        gta.load_roi('fit%i'%i)
+        gta.load_roi('fit%i_roi'%i)
         
     new_source_data = []
     for s in srcs:

@@ -39,12 +39,12 @@ def main():
 
     for i in range(0,5):
 
-        npy_file = os.path.join(gta.workdir,'fit%i.npy'%i)
+        npy_file = os.path.join(gta.workdir,'fit%i_roi.npy'%i)
 
         if not os.path.isfile(npy_file):
             continue
 
-        gta.load_roi('fit%i'%i,reload_sources=True)
+        gta.load_roi('fit%i_roi'%i,reload_sources=True)
         fit_halo_scan(gta,'fit%i'%i,src_name,
                       halo_width,halo_index,optimizer='NEWTON')
 

@@ -29,82 +29,19 @@ def fit_region(gta,modelname,src_name,loge_bounds=None):
     skydir = gta.roi[src_name].skydir
     
     gta.free_sources(False)
-    #gta.free_sources(skydir=skydir,distance=1.0, exclude=diff_sources)
     gta.free_sources(skydir=skydir,distance=1.0, pars='norm')
+    gta.free_source(src_name)
     gta.fit()
+    gta.write_roi(modelname + '_roi', make_plots=True)
 
-    gta.free_sources(skydir=skydir,distance=1.0, pars='norm',
-                     exclude=diff_sources)
+    gta.print_roi()
+    gta.print_params()
 
-    gta.write_roi(modelname, make_plots=True)
-
-    # SED Analysis
-    gta.sed(src_name, outfile=modelname + '_sed_fixed',
-            prefix=modelname + '_fixed',
-            optimizer={'optimizer' : 'MINUIT'},
-            make_plots=True)
-    
-    gta.sed(src_name, outfile=modelname + '_sed',
-            prefix=modelname,
-            optimizer={'optimizer' : 'MINUIT'},
-            free_radius=1.0, make_plots=True)    
-    
-    # Gaussian Analysis
-    
-    gta.extension(src_name, outfile=modelname + '_ext_gauss_fixed',
-                  spatial_model='RadialGaussian',
-                  prefix=modelname + '_gauss_fixed',
-                  optimizer={'optimizer' : 'NEWTON'},
-                  fit_position=False, free_radius=1.0,
-                  make_plots=True)
-    
-    gta.extension(src_name, outfile=modelname + '_ext_gauss',
-                  spatial_model='RadialGaussian',
-                  prefix=modelname + '_gauss',
-                  optimizer={'optimizer' : 'NEWTON'},
-                  fit_position=True, free_radius=1.0,
-                  make_plots=True, update=True)
-
-    gta.sed(src_name,outfile=modelname + '_ext_gauss_sed',
-            prefix=modelname + '_gauss',
-            optimizer={'optimizer' : 'MINUIT'},
-            free_radius=1.0, make_plots=True)
-    
-    tab = gta.roi.create_table([src_name])
-    tab.write(os.path.join(gta.workdir, modelname + '_ext_gauss_data.fits'),
-              overwrite=True)
-
-    # Disk Analysis
-    gta.load_roi(modelname)
-    gta.reload_source(src_name)
-    
-    gta.extension(src_name, outfile=modelname + '_ext_disk_fixed',
-                  spatial_model='RadialDisk',
-                  prefix=modelname + '_disk_fixed',
-                  optimizer={'optimizer' : 'NEWTON'},
-                  fit_position=False, free_radius=1.0,
-                  make_plots=True)
-    
-    gta.extension(src_name, outfile=modelname + '_ext_disk',
-                  spatial_model='RadialDisk',
-                  prefix=modelname + '_disk',
-                  optimizer={'optimizer' : 'NEWTON'},
-                  fit_position=True, free_radius=1.0,
-                  make_plots=True, update=True)
-
-    gta.sed(src_name,outfile=modelname + '_ext_disk_sed',
-            prefix=modelname + '_disk',
-            optimizer={'optimizer' : 'MINUIT'},
-            free_radius=1.0, make_plots=True)
-    
-    tab = gta.roi.create_table([src_name])
-    tab.write(os.path.join(gta.workdir, modelname + '_ext_disk_data.fits'),
-              overwrite=True)    
+    lnl1 = -gta.like()
+    gta.logger.info('%s Model Likelihood: %f'%(modelname,lnl1))
+    gta.logger.info('%s Model Likelihood Delta: %f'%(modelname,lnl1-lnl0))
     
     # TS Maps
-    gta.load_roi(modelname)
-    gta.reload_source(src_name)
-    
     gta.tsmap(modelname, model=model0,
               loge_bounds=loge_bounds, make_plots=True)
     maps_model1 = gta.tsmap(modelname, model=model1,
@@ -116,20 +53,67 @@ def fit_region(gta,modelname,src_name,loge_bounds=None):
                                      loge_bounds=loge_bounds, make_plots=True)
     gta.residmap(modelname, model=model3,
                  loge_bounds=loge_bounds, make_plots=True)
-
+    
     # Make zoom plots
     gta.plotter.make_tsmap_plots(maps_model1, gta.roi,
-                                  zoom=2,suffix='tsmap_zoom')
+                                 zoom=2,suffix='tsmap_zoom')
     gta.plotter.make_tsmap_plots(maps_model1_nosource, gta.roi,
-                                  zoom=2,suffix='tsmap_zoom')    
+                                 zoom=2,suffix='tsmap_zoom')
+                                                                    
+    # SED Analysis
+    gta.sed(src_name, outfile=modelname + '_sed_fixed',
+            prefix=modelname + '_fixed',
+            optimizer={'optimizer' : 'MINUIT'},
+            make_plots=True)
+    
+    gta.sed(src_name, outfile=modelname + '_sed',
+            prefix=modelname,
+            optimizer={'optimizer' : 'MINUIT'},
+            free_radius=1.0, make_plots=True)    
+    
+    # Gaussian Analysis        
+    gta.extension(src_name, outfile=modelname + '_ext_gauss_ext',
+                  spatial_model='RadialGaussian',
+                  prefix=modelname + '_gauss',
+                  optimizer={'optimizer' : 'NEWTON'},
+                  fit_position=True, free_radius=1.0,
+                  make_plots=True, update=True)
 
-    lnl1 = -gta.like()
-
+    gta.free_source(src_name)
+    gta.fit()
     gta.print_roi()
     gta.print_params()
     
-    gta.logger.info('%s Model Likelihood: %f'%(modelname,lnl1))
-    gta.logger.info('%s Model Likelihood Delta: %f'%(modelname,lnl1-lnl0))
+    gta.sed(src_name,outfile=modelname + '_ext_gauss_sed',
+            prefix=modelname + '_gauss',
+            optimizer={'optimizer' : 'MINUIT'},
+            free_radius=1.0, make_plots=True)
+    gta.write_roi(modelname + '_ext_gauss_roi')
+
+    # Disk Analysis
+    gta.load_roi(modelname)
+    gta.reload_source(src_name)    
+    gta.extension(src_name, outfile=modelname + '_ext_disk_ext',
+                  spatial_model='RadialDisk',
+                  prefix=modelname + '_disk',
+                  optimizer={'optimizer' : 'NEWTON'},
+                  fit_position=True, free_radius=1.0,
+                  make_plots=True, update=True)
+
+    gta.free_source(src_name)
+    gta.fit()
+    gta.print_roi()
+    gta.print_params()
+    
+    gta.sed(src_name,outfile=modelname + '_ext_disk_sed',
+            prefix=modelname + '_disk',
+            optimizer={'optimizer' : 'MINUIT'},
+            free_radius=1.0, make_plots=True)
+    gta.write_roi(modelname + '_ext_disk_roi')
+    
+    # TS Maps
+    gta.load_roi(modelname)
+    gta.reload_source(src_name)    
     gta.logger.info('Finished Region Fit %s'%(modelname))
 
 
