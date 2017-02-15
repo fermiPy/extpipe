@@ -67,21 +67,21 @@ class SED(object):
     @staticmethod
     def create_from_row2(row, tab_ebounds):
 
-        ref_flux = np.array(row['REF_FLUX'][0])
-        norm = np.array(row['NORM'][0])
-        norm_err = np.array(row['NORM_ERR'][0])
-        norm_ul = np.array(row['NORM_UL'][0])
+        ref_flux = np.array(row['ref_flux'][0])
+        norm = np.array(row['norm'][0])
+        norm_err = np.array(row['norm_err'][0])
+        norm_ul = np.array(row['norm_ul'][0])
                 
         flux = norm*ref_flux
         flux_err = norm_err*ref_flux
         flux_ul = norm_ul*ref_flux
 
-        ectr = np.array(tab_ebounds['E_REF'])
-        emin = np.array(tab_ebounds['E_MIN'])
-        emax = np.array(tab_ebounds['E_MAX'])
+        ectr = np.array(tab_ebounds['e_ref'])
+        emin = np.array(tab_ebounds['e_min'])
+        emax = np.array(tab_ebounds['e_max'])
 
-        norm_vals = np.array(row['NORM_SCAN'][0])*ref_flux[:,np.newaxis]
-        nll_vals = -np.array(row['DLOGLIKE_SCAN'][0])
+        norm_vals = np.array(row['norm_scan'][0])*ref_flux[:,np.newaxis]
+        nll_vals = -np.array(row['dloglike_scan'][0])
         lnl_maps = []
         
         for i, x in enumerate(ectr):
@@ -94,18 +94,18 @@ class SED(object):
     @staticmethod
     def create_from_row(row):
 
-        row['E_REF'].unit = 'TeV'
-        row['NORM'].unit = 'ph / (m2 TeV s)'
-        row['NORM_ERRP'].unit = 'ph / (m2 TeV s)'
-        row['NORM_ERRN'].unit = 'ph / (m2 TeV s)'
+        row['e_ref'].unit = 'TeV'
+        row['norm'].unit = 'ph / (m2 TeV s)'
+        row['norm_errp'].unit = 'ph / (m2 TeV s)'
+        row['norm_errn'].unit = 'ph / (m2 TeV s)'
         
-        dfde = row['NORM']
+        dfde = row['norm']
         dfde_unit = u.ph / (u.MeV * u.cm ** 2 * u.s)
-        loge = np.log10(np.array(row['E_REF'].to(u.MeV)[0]))
+        loge = np.log10(np.array(row['e_ref'].to(u.MeV)[0]))
 
-        norm = np.array(row['NORM'].to(dfde_unit)[0])
-        norm_errp = np.array(row['NORM_ERRP'].to(dfde_unit)[0])
-        norm_errn = np.array(row['NORM_ERRN'].to(dfde_unit)[0])
+        norm = np.array(row['norm'].to(dfde_unit)[0])
+        norm_errp = np.array(row['norm_errp'].to(dfde_unit)[0])
+        norm_errn = np.array(row['norm_errn'].to(dfde_unit)[0])
         norm_err = 0.5 * (norm_errp + norm_errn)
         norm_ul = 2.0*norm_errp
 
