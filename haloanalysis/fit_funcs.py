@@ -6,8 +6,10 @@ import logging
 
 import numpy as np
     
-def fit_region(gta,modelname,src_name,loge_bounds=None):
+def fit_region(gta,modelname,src_name,loge_bounds=None, **kwargs):
 
+    skip_opt = kwargs.get('skip_opt',[])
+    
     gta.logger.info('Starting Region Fit %s'%(modelname))
     lnl0 = -gta.like()    
     gta.logger.info('%s Model Likelihood: %f'%(modelname,lnl0))
@@ -19,11 +21,10 @@ def fit_region(gta,modelname,src_name,loge_bounds=None):
     model0 = { 'SpatialModel' : 'PointSource', 'Index' : 1.5 }
     model1 = { 'SpatialModel' : 'PointSource', 'Index' : 2.0 }
     model2 = { 'SpatialModel' : 'PointSource', 'Index' : 2.7 }
-
     model3 = { 'SpatialModel' : 'Gaussian', 'Index' : 2.0,
                'SpatialWidth' : 0.15 }
     
-    gta.optimize()
+    gta.optimize(skip=skip_opt)
 
     diff_sources = [s.name for s in gta.roi.sources if s.diffuse]
     skydir = gta.roi[src_name].skydir
@@ -31,7 +32,7 @@ def fit_region(gta,modelname,src_name,loge_bounds=None):
     gta.free_sources(False)
     gta.free_sources(skydir=skydir,distance=1.0, pars='norm')
     gta.free_source(src_name)
-    gta.fit()
+    gta.fit(reoptimize=True)
     gta.write_roi(modelname + '_roi', make_plots=True)
 
     gta.print_roi()
@@ -42,14 +43,15 @@ def fit_region(gta,modelname,src_name,loge_bounds=None):
     gta.logger.info('%s Model Likelihood Delta: %f'%(modelname,lnl1-lnl0))
     
     # TS Maps
-    gta.tsmap(modelname, model=model0,
-              loge_bounds=loge_bounds, make_plots=True)
     maps_model1 = gta.tsmap(modelname, model=model1,
                             loge_bounds=loge_bounds, make_plots=True)
     gta.tsmap(modelname, model=model2,
               loge_bounds=loge_bounds, make_plots=True)
     maps_model1_nosource = gta.tsmap('%s_nosource'%modelname,
                                      model=model1, exclude=[src_name],
+                                     loge_bounds=loge_bounds, make_plots=True)
+    maps_model2_nosource = gta.tsmap('%s_nosource'%modelname,
+                                     model=model2, exclude=[src_name],
                                      loge_bounds=loge_bounds, make_plots=True)
     gta.residmap(modelname, model=model3,
                  loge_bounds=loge_bounds, make_plots=True)
@@ -80,7 +82,7 @@ def fit_region(gta,modelname,src_name,loge_bounds=None):
                   make_plots=True, update=True)
 
     gta.free_source(src_name)
-    gta.fit()
+    gta.fit(reoptimize=True)
     gta.print_roi()
     gta.print_params()
     
@@ -101,7 +103,7 @@ def fit_region(gta,modelname,src_name,loge_bounds=None):
                   make_plots=True, update=True)
 
     gta.free_source(src_name)
-    gta.fit()
+    gta.fit(reoptimize=True)
     gta.print_roi()
     gta.print_params()
     
@@ -111,7 +113,6 @@ def fit_region(gta,modelname,src_name,loge_bounds=None):
             free_radius=1.0, make_plots=True)
     gta.write_roi(modelname + '_ext_disk_roi')
     
-    # TS Maps
     gta.load_roi(modelname + '_roi')
     gta.reload_source(src_name)    
     gta.logger.info('Finished Region Fit %s'%(modelname))
