@@ -67,10 +67,10 @@ def main():
     gta.setup(overwrite=True)
     
     if '3FGL J0534.5+2201' in gta.roi:
-        gta.set_parameter('3FGL J0534.5+2201','Prefactor',0.6057114175,scale=1E-9)
-        gta.set_parameter('3FGL J0534.5+2201','Index1',2.237024994,scale=-1.0)
-        gta.set_parameter('3FGL J0534.5+2201','Cutoff',1.540488107,scale=10000.)
-        gta.set_parameter('3FGL J0534.5+2201','Scale',635.5911255,scale=1.0)
+        gta.set_parameter('3FGL J0534.5+2201','Prefactor',0.6057114175,scale=1E-9,true_value=False)
+        gta.set_parameter('3FGL J0534.5+2201','Index1',2.237024994,scale=-1.0,true_value=False)
+        gta.set_parameter('3FGL J0534.5+2201','Cutoff',1.540488107,scale=10000.,true_value=False)
+        gta.set_parameter('3FGL J0534.5+2201','Scale',635.5911255,scale=1.0,true_value=False)
 
     gta.print_roi()
     
