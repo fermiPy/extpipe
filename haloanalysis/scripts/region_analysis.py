@@ -47,9 +47,13 @@ def main():
             continue
         if s['class']:
             continue
-
+        if 'FHES' in s.name:
+            continue
+        if s['offset'] < 0.01:
+            continue
+        
         m = cat.table['Source_Name'] == s.name
-
+        
         if np.sum(m) and cat.table[m]['TS'] > 100 and (cat.table[m]['Flags']&flag_mask)==0:
             continue
 
@@ -58,11 +62,15 @@ def main():
                             s.name,cat.table[m]['TS'],cat.table[m]['Flags'])
         
         gta.delete_source(s.name)
-    
-    gta.setup(overwrite=True)
 
-    #names = [s.name for s in gta.roi.sources if not s.diffuse]
-    #gta.reload_sources(names)
+        
+    gta.setup(overwrite=True)
+    
+    if '3FGL J0534.5+2201' in gta.roi:
+        gta.set_parameter('3FGL J0534.5+2201','Prefactor',0.6057114175,scale=1E-9)
+        gta.set_parameter('3FGL J0534.5+2201','Index1',2.237024994,scale=-1.0)
+        gta.set_parameter('3FGL J0534.5+2201','Cutoff',1.540488107,scale=10000.)
+        gta.set_parameter('3FGL J0534.5+2201','Scale',635.5911255,scale=1.0)
 
     gta.print_roi()
     
@@ -76,24 +84,22 @@ def main():
                      'alpha' : 2.0,
                      'beta' : {'value' : 0.0, 'min' : 0.0, 'max' : 1.0} }
 
-    skip_loc = ['3FGL J0534.5+2201s','3FGL J0534.5+2201']
+    skip_loc = ['3FGL J0534.5+2201s']
+    skip_opt = ['3FGL J0534.5+2201s','3FGL J0534.5+2201']
     
     # -----------------------------------
     # Fit the Baseline Model
     # -----------------------------------
     
-    gta.optimize()
+    gta.optimize(skip=skip_opt)
     gta.print_roi()
     
     # Localize all point sources
     for s in sorted(gta.roi.sources, key=lambda t: t['ts'],reverse=True):
 #    for s in gta.roi.sources:
 
-        if not s['SpatialModel'] == 'PointSource':
+        if not s['SpatialModel'] in ['PointSource','RadialGaussian','RadialDisk']:
             continue
-
-#        if s['offset'] < 0.5 or s['ts'] < 25.:
-#            continue
 
         if s['offset_roi_edge'] > -0.1:
             continue
@@ -101,13 +107,19 @@ def main():
         if s.name in skip_loc:
             continue
         
-        gta.localize(s.name,nstep=5,dtheta_max=0.5,update=True,
-                     prefix='base', make_plots=True)
+        o = gta.localize(s.name,nstep=5,
+                         dtheta_max=max(0.5,s['SpatialWidth']),
+                         update=True,
+                         prefix='base', make_plots=True)
 
-        gta.free_source(s.name,False)
-
-    gta.tsmap('base_nosrcs',model=model1, make_plots=True)
-    gta.tsmap('base_nosrcs',model=model2, make_plots=True)
+        if s.name == src_name and ((not o['fit_success']) or (not o['fit_inbounds'])):
+            gta.localize(s.name,nstep=5,
+                         dtheta_max=max(1.0,s['SpatialWidth']),
+                         update=True,
+                         prefix='base', make_plots=True)
+            
+    gta.tsmap('base_nosrcs',model=model1, exclude=[src_name], make_plots=True)
+    gta.tsmap('base_nosrcs',model=model2, exclude=[src_name], make_plots=True)
 
     # Look for new point sources outside the inner 1.0 deg
     gta.find_sources('base_pass0',model=newsrc_model,
@@ -116,7 +128,7 @@ def main():
                      sqrt_ts_threshold=sqrt_ts_threshold,
                      search_minmax_radius=[args.radius,None],
                      free_params=['alpha','norm'])
-    gta.optimize()
+    gta.optimize(skip=skip_opt)
 
     gta.find_sources('base_pass1',model=newsrc_model,
                      search_skydir=gta.roi.skydir,
@@ -163,11 +175,13 @@ def main():
             break
 
         srcs += srcs_fit['sources']
-
-        if not src_name in skip_loc and not gta.roi[src_name].extended:
-            gta.localize(src_name,nstep=5,dtheta_max=0.4,
+        if (not src_name in skip_loc and
+            gta.roi[src_name]['SpatialModel'] in ['PointSource','RadialGaussian','RadialDisk']):
+            gta.localize(src_name,nstep=5,
+                         dtheta_max=max(0.4,gta.roi[src_name]['SpatialWidth']),
                          update=True,prefix='fit%i'%i,
-                         free_radius=0.5, make_plots=True)
+                         free_radius=max(0.5,gta.roi[src_name]['SpatialWidth']),
+                         make_plots=True)
 
         # Relocalize new sources
         for s in sorted(srcs, key=lambda t: t['ts'],reverse=True):        
@@ -175,7 +189,7 @@ def main():
                          update=True,prefix='fit%i'%i,
                          free_radius=0.5, make_plots=True)
 
-        fit_region(gta,'fit%i'%i,src_name)
+        fit_region(gta,'fit%i'%i,src_name,skip_opt=skip_opt)
         tab = gta.roi.create_table([s.name for s in srcs])
         tab.write(os.path.join(gta.workdir,'fit%i_new_source_data.fits'%i),
                   overwrite=True)
