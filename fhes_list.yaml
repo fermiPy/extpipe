@@ -1,0 +1,145 @@
+# 3FGL J0004.2+6757 3FGL J0008.5+6853 3FGL J2355.4+6939 3FGL J2356.9+6812
+
+fhes_j0001.3+6841:
+  model:
+    sources:
+    - {Index: 2.0, SpectrumType: PowerLaw, dec: 68.68311174744284, name: FHES J0001.3+6841,
+      ra: 0.3365549973070442}
+  selection: {target: FHES J0001.3+6841}
+
+# 3FGL J0007.0+7302 (CTA1)
+
+fhes_j0007.1+7303e:
+  model:
+    sources:
+    - {Index: 2.3911544693886975, SpatialModel: RadialGaussian, SpatialWidth: 0.6905943594282983,
+      SpectrumType: PowerLaw, dec: 73.04989624023438, name: FHES J0007.1+7303e, ra: 1.7655999660491941}
+  selection: {target: FHES J0007.1+7303e}
+
+# 3FGL J0238.0+5237
+
+fhes_j0238.0+5238e:
+  model:
+    sources:
+    - {Index: 1.880980798131578, SpatialModel: RadialGaussian, SpatialWidth: 1.0681275069709593,
+      SpectrumType: PowerLaw, dec: 52.6255989074707, name: FHES J0238.0+5238e, ra: 39.50490188598633}
+  selection: {target: FHES J0238.0+5238e}
+
+# 3FGL J0426.3+3510 3FGL J0429.8+3611c 3FGL J0431.7+3503
+
+fhes_j0429.3+3529:
+  model:
+    sources:
+    - {Index: 2.0, SpectrumType: PowerLaw, dec: 35.475047644615685, name: FHES J0429.3+3529,
+      ra: 67.32888933084136}
+  selection: {target: FHES J0429.3+3529}
+
+# 3FGL J0940.7-6102 (FSRQ)
+
+fhes_j0940.8-6103e:
+  model:
+    sources:
+    - {Index: 2.7360159157751243, SpatialModel: RadialGaussian, SpatialWidth: 1.1728857314053132,
+      SpectrumType: PowerLaw, dec: -61.04660034179688, name: FHES J0940.8-6103e, ra: 145.1876983642578}
+  selection: {target: FHES J0940.8-6103e}
+
+# 3FGL J1335.2-4056 3FGL J1334.3-4152
+# Extended
+
+fhes_j1334.8-4124:
+  model:
+    sources:
+    - {Index: 2.0, SpectrumType: PowerLaw, dec: -41.40200178043244, name: FHES J1334.8-4124,
+      ra: 203.69869217961318}
+  selection: {target: FHES J1334.8-4124}
+
+# 3FGL J1503.7-6426
+# Halo
+
+fhes_j1503.7-6427e:
+  model:
+    sources:
+    - {Index: 2.5629681653696865, SpatialModel: RadialGaussian, SpatialWidth: 0.7026096588928962,
+      SpectrumType: PowerLaw, dec: -64.44930267333984, name: FHES J1503.7-6427e, ra: 225.92869567871094}
+  selection: {target: FHES J1503.7-6427e}
+
+# 3FGL J1626.2-2428c 3FGL J1628.2-2431c
+
+fhes_j1627.3-2430:
+  model:
+    sources:
+    - {Index: 2.0, SpectrumType: PowerLaw, dec: -24.497653295647346, name: FHES J1627.3-2430,
+      ra: 246.82058780423844}
+  selection: {target: FHES J1627.3-2430}
+
+# 3FGL J1720.3-0428 3FGL J1722.7-0415
+
+fhes_j1721.6-0422:
+  model:
+    sources:
+    - {Index: 2.0, SpectrumType: PowerLaw, dec: -4.368608622099358, name: FHES J1721.6-0422,
+      ra: 260.39359596445746}
+  selection: {target: FHES J1721.6-0422}
+
+# Halo Candidate
+
+fhes_j1744.9-1558e:
+  model:
+    sources:
+    - {Index: 2.1380626635267763, SpatialModel: RadialGaussian, SpatialWidth: 0.8822703682143711,
+      SpectrumType: PowerLaw, dec: -15.958800315856939, name: FHES J1744.9-1558e,
+      ra: 266.215087890625}
+  selection: {target: FHES J1744.9-1558e}
+
+# Halo Candidate
+
+fhes_j1748.5-3912e:
+  model:
+    sources:
+    - {Index: 2.079028321895497, SpatialModel: RadialGaussian, SpatialWidth: 0.890328901189408,
+      SpectrumType: PowerLaw, dec: -39.206298828125, name: FHES J1748.5-3912e, ra: 267.13128662109375}
+  selection: {target: FHES J1748.5-3912e}
+
+
+# 3FGL J1820.4-3217
+# Marginal evidence for halo vs. PS
+
+fhes_j1820.4-3217e:
+  model:
+    sources:
+    - {Index: 2.686402440254813, SpatialModel: RadialGaussian, SpatialWidth: 0.6432373072757961,
+      SpectrumType: PowerLaw, dec: -32.2859992980957, name: FHES J1820.4-3217e, ra: 275.1033020019531}
+  selection: {target: FHES J1820.4-3217e}
+
+# 3FGL J2125.8+5832
+# Halo Candidate
+
+fhes_j2125.8+5833e:
+  model:
+    sources:
+    - {Index: 2.23446246267901, SpatialModel: RadialGaussian, SpatialWidth: 0.8109173832986395,
+      SpectrumType: PowerLaw, dec: 58.54899978637695, name: FHES J2125.8+5833e, ra: 321.4612121582031}
+  selection: {target: FHES J2125.8+5833e}
+
+# 3FGL J2206.5+6451 and 3FGL J2210.2+6509
+# Extended Candidate
+
+fhes_j2208.4+6501:
+  model:
+    sources:
+    - {Index: 2.0, SpectrumType: PowerLaw, dec: 65.01081100577576, name: FHES J2208.4+6501,
+      ra: 332.08825398002693}
+  selection: {target: FHES J2208.4+6501}
+
+# 3FGL J2309.0+5429
+# Halo Candidate
+
+fhes_j2309.0+5429e:
+  model:
+    sources:
+    - {Index: 2.0671239481582515, SpatialModel: RadialGaussian, SpatialWidth: 1.083030764702497,
+      SpectrumType: PowerLaw, dec: 54.475898742675774, name: FHES J2309.0+5429e, ra: 347.25201416015625}
+  selection: {target: FHES J2309.0+5429e}
+
+
+
