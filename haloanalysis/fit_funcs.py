@@ -23,6 +23,8 @@ def fit_region(gta,modelname,src_name,loge_bounds=None, **kwargs):
     model2 = { 'SpatialModel' : 'PointSource', 'Index' : 2.7 }
     model3 = { 'SpatialModel' : 'Gaussian', 'Index' : 2.0,
                'SpatialWidth' : 0.15 }
+
+    model4 = { 'SpatialModel' : 'RadialDisk', 'Index' : 2.0, 'SpatialWidth' : 0.1 }
     
     gta.optimize(skip=skip_opt)
 
@@ -53,6 +55,9 @@ def fit_region(gta,modelname,src_name,loge_bounds=None, **kwargs):
     maps_model2_nosource = gta.tsmap('%s_nosource'%modelname,
                                      model=model2, exclude=[src_name],
                                      loge_bounds=loge_bounds, make_plots=True)
+    maps_model4_nosource = gta.tsmap('%s_nosource'%modelname,
+                                     model=model4, exclude=[src_name],
+                                     loge_bounds=loge_bounds, make_plots=True)    
     gta.residmap(modelname, model=model3,
                  loge_bounds=loge_bounds, make_plots=True)
     
