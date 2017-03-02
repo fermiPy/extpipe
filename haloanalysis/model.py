@@ -15,6 +15,8 @@ from fermipy.spectrum import *
 from haloanalysis.utils import Axis, MapND
 from haloanalysis.sed import *
 
+from ebltable.tau_from_model import OptDepth
+
 def scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
                          rows_casc, tab_pars, tab_ebounds,
                          nstep, casc_scale=1.0, casc_r68_scale=1.0):
@@ -436,6 +438,14 @@ class CascModel(object):
 
         prim_flux : `~haloanalysis.utils.MapND`
 
+	{options}
+
+	eblmodel : str or None
+		If None, use simulation for prim. flux.
+		If str, init EBL model with this name and 
+		prim. flux will be analytically calculated through
+		inj_flux * exp(-tau)
+		where tau is the optical depth given by that EBL model
         """
         self._axes = axes
         self._casc_theta_flux = casc_flux
@@ -444,10 +454,18 @@ class CascModel(object):
 
         self._casc_flux_cache = self._casc_flux
         self._casc_theta_flux_cache = self._casc_theta_flux
+	self._eblmodel = None
+
         
     @property
     def axes(self):
         return self._axes
+
+    def set_eblmodel(self, eblmodel = 'dominguez'):
+	"""Initialize an EBL model to compute the opacity"""
+	self._eblmodel = eblmodel
+	if not self._eblmodel == None:
+	    self._tau = OptDepth.readmodel(eblmodel)
 
     def set_pars(self,p0):
         """Set the fixed IGMF and source parameters."""
@@ -669,7 +687,7 @@ class CascModel(object):
 
         return np.squeeze(casc_r68)
 
-    def prim_flux(self, fn, p0, p1=None, axis_eobs=None):
+    def prim_flux(self, fn, p0, p1=None, axis_eobs=None, use_analytic = True):
         """Calculate the primary flux given an injection spectrum and a
         sequence of observed energy bins.
 
@@ -690,26 +708,45 @@ class CascModel(object):
         axis_eobs : `~haloanalysis.utils.Axis`
            Tuple with lower and upper bin edges in observed energy.
            If none then the internal energy binning will be used.
+
+	{options}
+	use_analytic : bool
+	    if True and an eblmodel is specified, use the analytic function 
+	    to calculate the prim flux
         """
 
         inj_flux = np.squeeze(fn.flux(10**self.axes[0].lo,
                                       10**self.axes[0].hi, p1))
 
+	# centers of log energy bins in self.axes 
         vals = np.meshgrid(self.axes[0].centers,
                            indexing='ij', sparse=True)
 
-        for i, v in enumerate(vals):
-            vals[i] = vals[i][...,np.newaxis]
+	# use analytic formular for primary flux
+	if not self._eblmodel == None and use_analytic:
+	    if not len(p0) == 3:
+		raise ValueError("If you use analytic description for prim flux, redshift required")
+	    else:
+		if not np.isscalar(p0[0]):
+		    p0[0] = np.array(p0[0])
+		prim_flux = inj_flux * \
+				np.exp(-1. * self._tau.opt_depth(p0[0], 
+					    10.**(vals[0] - 6.)))
+		prim_flux = prim_flux.T
+	# else, get it from the simulation
+	else:
+	    for i, v in enumerate(vals):
+		vals[i] = vals[i][...,np.newaxis]
             
-        for i, ax in enumerate(self._prim_flux.axes[1:]):
-            p = np.array(p0[i], ndmin=1)
-            vals += [p[np.newaxis, ...]]
-            
-        prim_flux = self._prim_flux.interp(tuple(vals))
+	    for i, ax in enumerate(self._prim_flux.axes[1:]):
+		p = np.array(p0[i], ndmin=1)
+		vals += [p[np.newaxis, ...]]
+		
+	    prim_flux = self._prim_flux.interp(tuple(vals))
         
-        # Rescale to injected flux
-        inj_flux = expand_array(prim_flux,inj_flux)
-        prim_flux = inj_flux*prim_flux        
+	    # Rescale to injected flux
+	    inj_flux = expand_array(prim_flux,inj_flux)
+	    prim_flux = inj_flux*prim_flux        
         
         # Remap to binning defined by axis_eobs
         if axis_eobs is not None:
@@ -734,7 +771,7 @@ class CascModel(object):
         return tab
 
     @staticmethod
-    def create_from_fits(filename):
+    def create_from_fits(filename, eblmodel = None):
 
         tab0 = Table.read(filename)
         tab1 = Table.read(filename, 'ENERGIES')
