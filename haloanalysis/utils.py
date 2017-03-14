@@ -2,6 +2,7 @@ import copy
 import numpy as np
 from numpy.core import defchararray
 from scipy.interpolate import RegularGridInterpolator
+import re
 
 
 def load_source_rows(tab, names, key='assoc'):
@@ -60,7 +61,26 @@ def create_mask(tab, target_def):
             if 'max' in v:
                 m0 &= (tab[k] <= v['max'])
             m &= m0
-            
+
+        elif isinstance(v,str):
+	    p = re.compile('([a-zA-Z_2-9][^<>=&|!\d+()\s*.]+\d*)') 
+	# regular expression should capture all column names 
+	# that consist of a-z, A-Z, '_', and numbers at the end
+	# it should not capture pure numbers and numbers like '1e10'
+	    replaced = [] # check what already has been replaced
+	    for cname in p.findall(v):
+		if not cname in replaced:
+		    if tab.columns.has_key(cname):
+			tab[cname]
+			v = v.replace(cname, "tab['{0:s}']".format(cname))
+		    else:
+			v = v.replace(cname, "'{0:s}'".format(cname))
+		    replaced.append(cname)
+	    # all of the above in one line but does not work if column name starts with a number
+	    # or if expression is not a number
+	    #print 'Cutting on expression', p.sub(r"tab['\1']",v)
+	    print 'Cutting on expression', v
+	    m &= eval(v)
     return m
 
 def interp_map(z, axis0, axis1,dim=0):
