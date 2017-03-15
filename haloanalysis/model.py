@@ -16,24 +16,115 @@ from haloanalysis.utils import Axis, MapND
 from haloanalysis.sed import *
 
 from ebltable.tau_from_model import OptDepth
+class LogParabolaExpCutoff(SpectralFunction):
+    """Class that evaluates a function with the parameterization:
+
+    F(x) = p_0 * (x/x_s)^(p_1 - p_2*log(x/x_s) ) * exp(- x/p_3)
+
+    where x_s is a scale parameter.  The `params` array should be
+    defined with:
+    * params[0] : Prefactor (p_0)
+    * params[1] : Index (p_1)
+    * params[2] : Curvature (p_2)
+    * params[3] : Exponential cut-off energy (p_3)
+    """
+    def __init__(self, params=None, scale=1.0, extra_params=None):
+	params = (params if params is not None else
+	np.array([5e-13, -2.0, 0.0, 1E4]))
+	super(LogParabolaExpCutoff, self).__init__(params, scale)
+    @staticmethod
+    def nparam():
+	return 4
+									    
+    @staticmethod
+    def params_to_log(params):
+	return [np.log10(params[0]),
+		params[1], params[2],
+		np.log10(params[3])]
+
+    @staticmethod
+    def log_to_params(params):
+	return [10**params[0],
+	    params[1],params[2],
+	    10**params[3]]
+
+    @staticmethod
+    def _eval_dnde(x, params, scale=1.0, extra_params=None):
+	return (params[0] * (x / scale) **
+	    (params[1] - params[2] * np.log(x / scale))) * np.exp(-x / params[3])
+
+    @staticmethod
+    def _eval_dfde(x, params, scale=1.0, extra_params=None):
+	return (params[0] * (x / scale) **
+	    (params[1] - params[2] * np.log(x / scale))) * np.exp(-x / params[3])
 
 def scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
                          rows_casc, tab_pars, tab_ebounds,
-                         nstep, casc_scale=1.0, casc_r68_scale=1.0):
+                         nstep, casc_scale=1.0, casc_r68_scale=1.0,
+			 p0 = [1E-13,-1.5,1E7], scale = 1E3, 
+			 fint = PLExpCutoff):
     """This function uses the primary and cascade SEDs to scan the
     likelihood space in the IGMF parameter (B,L_coh).
 
     Parameters
     ----------
     casc_model : `haloanalysis.model.CascModel`
+    		cascade model table
 
     rows_sed_tev : `astropy.table.Table`
+    		row of table with all TeV sources
+
+    rows_sed_gev : `astropy.table.Table`
+    		row of table with SEDs from likelihood scan
+
+    rows_casc : `astropy.table.Table`
+    		row of table with likelihood scan of extended sources
+		(in latest catalog version, this is also included in rows_sed_gev)
+
+    tab_pars : `astropy.table.Table`
+    		table with likelihood scan parameters of catalog
+
+    tab_ebounds : `astropy.table.Table`
+    		table with energy bounds of likelihood scan
+    
+    nstep : int
+    	Number of tested IGMF strengths and coherence lengths
+
+    {options}
+
+    calc_scale : float (default : 1.)
+
+    calc_r68_scale : float (default : 1.)
+
+    p0 : list (default : [1E-13,-1.5,1E7])
+    	initial guess for intrinisc spectrum fit parameters
+    
+    scale : float
+        pivot energy of initial spectrum
+
+    fint : `~fermipy.spectrum.Spectrum` or None
+        fermipy spectrum function pointer of initial spectrum. 
+	If None, use power law with exponential cut- off.
     """
     
-    fn = PLExpCutoff([1E-13,-1.5,1E7],scale=1E3)
+    fn = fint(p0,scale=scale)
 
-    lcoh_scan = np.linspace(-4,4,nstep)
-    igmf_scan = np.linspace(-20,-12,nstep)    
+    # get the scan width from bin 
+    # centers of the right axes:
+    if casc_model.axes[-2].name == 'log_lcoh':
+	lcoh_scan = np.linspace(casc_model.axes[-2].centers[0],
+				casc_model.axes[-2].centers[-1],
+				nstep)    
+    else:
+	lcoh_scan = np.linspace(-4,4,nstep)
+
+    if casc_model.axes[-1].name == 'log_igmf':
+	igmf_scan = np.linspace(casc_model.axes[-1].centers[0],
+				casc_model.axes[-1].centers[-1],
+				nstep)    
+    else:
+	igmf_scan = np.linspace(-20,-12,nstep)    
+
     bpars = np.meshgrid(lcoh_scan, igmf_scan, indexing='ij')
 
     sed_prim0 = SED.create_from_row(rows_sed_tev)
@@ -43,6 +134,9 @@ def scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
 
     sed_prim0_nbin = 25
     
+    halo_flux_ul = np.zeros(bpars[0].shape + tab_ebounds['e_ref'].shape)*np.nan
+
+    model_loglike_comp = np.zeros(bpars[0].shape + (3,))*np.nan
     model_dloglike = np.zeros(bpars[0].shape)*np.nan
     model_fit_pars = np.zeros(bpars[0].shape + (4,))*np.nan
     model_prim0_emin = np.zeros((1,1,sed_prim0_nbin))*np.nan
@@ -61,38 +155,66 @@ def scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
 
     redshift = rows_sed_tev[0]['REDSHIFT']
     
+    # fit over null hypothesis
+    if fn.nparam() == 3:
+	bounds = [(-14., -8.0),(-3.0, -1.5),(5., 9.)]
+
+    elif fn.nparam() == 4:
+	bounds = [(-14., -8.0),(-3.0, -1.5),(0.0, 5.0),(5., 9.)]
     null_fit = hl.fit([redshift,0.0,-12.0],fn.params,method='SLSQP',
-                      casc_scale=1E-10)
+                      casc_scale=1E-10, bounds = bounds)
     null_fit = hl.fit([redshift,0.0,-12.0],null_fit[1],method='SLSQP',
-                      casc_scale=1E-10)
+                      casc_scale=1E-10, bounds = bounds)
 
     null_params = null_fit[1]
     
+    flux = np.logspace(-14,-9,200)
+    ff, ee = np.meshgrid(flux, 10.**sed_casc.axes[1].centers)
+
     for idx, x in np.ndenumerate(bpars[0]):
 
         p0 = [redshift,bpars[0][idx], bpars[1][idx]]
+
+	# fit over all B fields. Use best parameters of null fit 
+	# as initial guesses
         lnl, p1, o = hl.fit(p0,null_params,method='SLSQP',
                             casc_scale=casc_scale,
-                            casc_r68_scale=casc_r68_scale)
+                            casc_r68_scale=casc_r68_scale, bounds = bounds)
         lnl, p1, o = hl.fit(p0,p1,method='SLSQP',
                             casc_scale=casc_scale,
-                            casc_r68_scale=casc_r68_scale)
+                            casc_r68_scale=casc_r68_scale, bounds = bounds)
         dloglike = -(lnl - null_fit[0])
         
+	# get the results and theoretical fluxes
         model_dloglike[idx] = dloglike
-        model_fit_pars[idx][:3] = p1
+	model_loglike_comp[idx] = hl._nll_prim + [hl._lnl_casc]
+        model_fit_pars[idx][:fn.nparam()] = p1
 
         sed_prim0_flux = casc_model.prim_flux(fn,p0,p1,
                                               axis_eobs=sed_prim0.axis)
         
         model_prim0_flux[idx][:len(sed_prim0_flux)] = sed_prim0_flux
+
         model_prim1_flux[idx] = casc_model.prim_flux(fn,p0,p1,
                                                      axis_eobs=sed_prim1.axis)
         model_casc_flux[idx] = casc_model.casc_flux(fn,p0,p1,
                                                     axis_eobs=sed_casc.axes[1])
         model_casc_r68[idx] = casc_model.casc_r68(fn,p0,p1,
                                                   axis_eobs=sed_casc.axes[1])
+	# calculate the flux upper limit of the halo for a 
+	# halo with same r68 as best fit cascade
+	ff, rr = np.meshgrid(flux,model_casc_r68[idx])
+	# get a log l grid over large flux array and r68 array for each energy bin
+	lnl = sed_casc.nll_bin(ff,rr)
+	# find the bin closet to 4. which corresponds to 2sigma ul
+	# use 3.84 for 95% ul
+	ul_id = np.argmin(np.abs(2. * (lnl - np.min(lnl, axis = 0)) - 4.), axis = 1 )
+	m = np.min(np.abs(2. * (lnl - np.min(lnl, axis = 0)) - 4.), axis = 1) > 0.5
+	# get the flux 
+	halo_flux_ul[idx] = np.diag(ff[:,ul_id])
+	halo_flux_ul[idx][m] = np.max(ff, axis = 1)[m]
         print(idx, dloglike, p0, p1)
+
         #print bpars, lnl, p1
 
     model_prim0_emin[0,0][:sed_prim0.axis.nbin] = 10**sed_prim0.axis.lo
@@ -106,6 +228,8 @@ def scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
     cols_dict['redshift'] = dict(dtype='S32', format='%s', description='redshift')
     cols_dict['dloglike'] = dict(dtype='f8', format='%.3f',
                                        shape=model_dloglike.shape)
+    cols_dict['loglike_comp'] = dict(dtype='f8', format='%.3f',
+                                       shape=model_loglike_comp.shape)
     cols_dict['prim_tev_emin'] = dict(dtype='f8', format='%.3f',
                                       shape=model_prim0_emin.shape)
     cols_dict['prim_tev_ectr'] = dict(dtype='f8', format='%.3f',
@@ -121,11 +245,13 @@ def scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
     cols_dict['casc_r68'] = dict(dtype='f8', format='%.3f',
                                  shape=model_casc_r68.shape)
     cols_dict['src_fit_pars'] = dict(dtype='f8', 
-                                     shape=model_dloglike.shape + (4,))
+                                     shape=model_dloglike.shape + (fn.nparam(),))
     cols_dict['lcoh'] = dict(dtype='f8', format='%.3f', shape=(nstep,1))
     cols_dict['igmf'] = dict(dtype='f8', format='%.3f', shape=(1,nstep))
     cols_dict['casc_flux'] = dict(dtype='f8', format='%.3f',
                                   shape=(nstep,nstep) + (sed_casc.axes[1].nbin,))
+    cols_dict['halo_flux_ul'] = dict(dtype='f8', format='%.3f', 
+				    shape=halo_flux_ul.shape)
 
     
     row = rows_casc[0]
@@ -137,6 +263,7 @@ def scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
     row_dict['assoc'] = row['assoc']
     row_dict['redshift'] = rows_sed_tev[0]['REDSHIFT']
     row_dict['dloglike'] = model_dloglike
+    row_dict['loglike_comp'] = model_loglike_comp
     row_dict['prim_tev_emin'] = model_prim0_emin
     row_dict['prim_tev_ectr'] = model_prim0_ectr
     row_dict['prim_tev_emax'] = model_prim0_emax
@@ -147,6 +274,7 @@ def scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
     row_dict['src_fit_pars'] = model_fit_pars
     row_dict['lcoh'] = lcoh_scan[:,np.newaxis]
     row_dict['igmf'] = igmf_scan[np.newaxis,:]
+    row_dict['halo_flux_ul'] = halo_flux_ul
     tab_scan.add_row([row_dict[k] for k in cols_dict.keys()])
 
     return tab_scan
@@ -348,6 +476,10 @@ class CascLike(object):
             prim_flux = self._model.prim_flux(self._fn, p0, p1,
                                               axis_eobs=sed.axis)
             nll += [sed.nll(prim_flux)]
+
+	# save the likelihood for the individual seds
+	self._nll_prim = nll
+
         return reduce(lambda x,y: np.add(x,y),nll)
 
     def lnl_casc(self, p0, p1, casc_scale=1.0, casc_r68_scale=1.0, cache=True):
@@ -390,9 +522,18 @@ class CascLike(object):
         
         lnl_prim = self.lnl_prim(p0, p1)
         lnl_casc = self.lnl_casc(p0, p1, casc_scale, casc_r68_scale, cache)
+
+	# save likelihood of cascade width
+	self._lnl_casc = lnl_casc
+
         return lnl_prim + lnl_casc
 
-    def fit(self, p0, p1=None, method='SLSQP', casc_scale=1.0, casc_r68_scale=1.0, cache=True):
+    def fit(self, p0, p1=None, 
+	    method='SLSQP', 
+	    casc_scale=1.0, casc_r68_scale=1.0, 
+	    cache=True,
+	    bounds = [(-14., -8.0),(-3.0, -1.5),(5., 9.)],
+	    tol = 1e-4):
         """Perform a fit of the parameters of the primary spectrum while
         holding the IGMF parameters fixed."""
 
@@ -413,10 +554,8 @@ class CascLike(object):
             p1 = self._fn.params_to_log(p1)
 
         o = scipy.optimize.minimize(fitfn, p1,
-                                    bounds=[(-14., -8.0),
-                                            (-3.0, -1.5),
-                                            (5., 9.)],
-                                    method=method, tol=1e-4)
+                                    bounds=bounds,
+                                    method=method, tol=tol)
 
         p1 = self._fn.log_to_params(o['x'])
         self.model.clear_pars()
@@ -749,7 +888,7 @@ class CascModel(object):
 	    prim_flux = inj_flux*prim_flux        
         
         # Remap to binning defined by axis_eobs
-        if axis_eobs is not None:
+        if axis_eobs is not None and self._eblmodel is not None and use_analytic:
             prim_flux = interp_flux(prim_flux, self.axes[1], axis_eobs)
         
         return np.squeeze(prim_flux)
