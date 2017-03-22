@@ -12,11 +12,12 @@ from astropy.modeling.models import Gaussian1D
 from astropy.convolution import convolve
 
 from fermipy.spectrum import *
+from fermipy import spectrum 
 from haloanalysis.utils import Axis, MapND
 from haloanalysis.sed import *
 
 from ebltable.tau_from_model import OptDepth
-class LogParabolaExpCutoff(SpectralFunction):
+class LogParabolaExpCutoff(spectrum.SpectralFunction):
     """Class that evaluates a function with the parameterization:
 
     F(x) = p_0 * (x/x_s)^(p_1 - p_2*log(x/x_s) ) * exp(- x/p_3)
@@ -32,6 +33,8 @@ class LogParabolaExpCutoff(SpectralFunction):
 	params = (params if params is not None else
 	np.array([5e-13, -2.0, 0.0, 1E4]))
 	super(LogParabolaExpCutoff, self).__init__(params, scale)
+	return
+
     @staticmethod
     def nparam():
 	return 4
@@ -136,9 +139,15 @@ def scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
     
     halo_flux_ul = np.zeros(bpars[0].shape + tab_ebounds['e_ref'].shape)*np.nan
 
+    try:
+	fn.nparam()
+    except AttributeError: # assume the PLExpCutoff
+	def nparam(): return 3
+	fn.nparam = nparam
+
     model_loglike_comp = np.zeros(bpars[0].shape + (3,))*np.nan
     model_dloglike = np.zeros(bpars[0].shape)*np.nan
-    model_fit_pars = np.zeros(bpars[0].shape + (4,))*np.nan
+    model_fit_pars = np.zeros(bpars[0].shape + (fn.nparam(),))*np.nan
     model_prim0_emin = np.zeros((1,1,sed_prim0_nbin))*np.nan
     model_prim0_ectr = np.zeros((1,1,sed_prim0_nbin))*np.nan
     model_prim0_emax = np.zeros((1,1,sed_prim0_nbin))*np.nan
@@ -161,6 +170,7 @@ def scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
 
     elif fn.nparam() == 4:
 	bounds = [(-14., -8.0),(-3.0, -1.5),(0.0, 5.0),(5., 9.)]
+
     null_fit = hl.fit([redshift,0.0,-12.0],fn.params,method='SLSQP',
                       casc_scale=1E-10, bounds = bounds)
     null_fit = hl.fit([redshift,0.0,-12.0],null_fit[1],method='SLSQP',
@@ -170,6 +180,10 @@ def scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
     
     flux = np.logspace(-14,-9,200)
     ff, ee = np.meshgrid(flux, 10.**sed_casc.axes[1].centers)
+
+    #full_loge = Axis.create_from_centers('eobs',
+		    #np.concatenate((sed_casc.axes[1].centers,
+		    #sed_prim0.axis.centers)))
 
     for idx, x in np.ndenumerate(bpars[0]):
 
@@ -199,12 +213,15 @@ def scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
                                                      axis_eobs=sed_prim1.axis)
         model_casc_flux[idx] = casc_model.casc_flux(fn,p0,p1,
                                                     axis_eobs=sed_casc.axes[1])
+                                                    #axis_eobs=full_loge)
         model_casc_r68[idx] = casc_model.casc_r68(fn,p0,p1,
                                                   axis_eobs=sed_casc.axes[1])
+                                                  #axis_eobs=full_loge)
 	# calculate the flux upper limit of the halo for a 
 	# halo with same r68 as best fit cascade
 	ff, rr = np.meshgrid(flux,model_casc_r68[idx])
-	# get a log l grid over large flux array and r68 array for each energy bin
+	# get a log l grid over large flux array and 
+	#r68 array for each energy bin
 	lnl = sed_casc.nll_bin(ff,rr)
 	# find the bin closet to 4. which corresponds to 2sigma ul
 	# use 3.84 for 95% ul

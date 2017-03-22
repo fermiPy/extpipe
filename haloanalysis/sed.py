@@ -94,18 +94,25 @@ class SED(object):
     @staticmethod
     def create_from_row(row):
 
-        row['e_ref'].unit = 'TeV'
-        row['norm'].unit = 'ph / (m2 TeV s)'
-        row['norm_errp'].unit = 'ph / (m2 TeV s)'
-        row['norm_errn'].unit = 'ph / (m2 TeV s)'
-        
-        dfde = row['norm']
-        dfde_unit = u.ph / (u.MeV * u.cm ** 2 * u.s)
-        loge = np.log10(np.array(row['e_ref'].to(u.MeV)[0]))
+	keys = 'e_ref','norm','norm_errp','norm_errn'
 
-        norm = np.array(row['norm'].to(dfde_unit)[0])
-        norm_errp = np.array(row['norm_errp'].to(dfde_unit)[0])
-        norm_errn = np.array(row['norm_errn'].to(dfde_unit)[0])
+	try:
+	    row[keys[0]].unit = 'TeV'
+	except KeyError:
+	    keys = [k.upper() for k in keys]
+	    row[keys[0]].unit = 'TeV'
+
+        row[keys[1]].unit = 'ph / (m2 TeV s)'
+        row[keys[2]].unit = 'ph / (m2 TeV s)'
+        row[keys[3]].unit = 'ph / (m2 TeV s)'
+        
+        dfde = row[keys[1]]
+        dfde_unit = u.ph / (u.MeV * u.cm ** 2 * u.s)
+        loge = np.log10(np.array(row[keys[0]].to(u.MeV)[0]))
+
+        norm = np.array(row[keys[1]].to(dfde_unit)[0])
+        norm_errp = np.array(row[keys[2]].to(dfde_unit)[0])
+        norm_errn = np.array(row[keys[3]].to(dfde_unit)[0])
         norm_err = 0.5 * (norm_errp + norm_errn)
         norm_ul = 2.0*norm_errp
 
@@ -197,7 +204,7 @@ class HaloSED(object):
     @staticmethod
     def create_from_fits(row, tab_ebounds, tab_pars):
 
-        width = np.log10(np.array(tab_pars['halo_scan_width'][0]))
+        width = np.log10(np.array(tab_pars['halo_scan_r68'][0]))
         index = np.log10(tab_pars['halo_scan_index'][0])
         eobs = np.array(tab_ebounds['e_max'])
         eobs = np.insert(eobs,0,tab_ebounds['e_min'][0])
@@ -208,7 +215,8 @@ class HaloSED(object):
         axis1 = Axis('eobs',eobs)
         axis2 = Axis.create_from_centers('eflux',eflux)
 
-        sed = MapND([axis0,axis1,axis2],-np.array(row['fit_halo_sed_scan_dlnl']))
+        sed = MapND([axis0,axis1,axis2],
+		-np.array(np.squeeze(row['fit_halo_sed_scan_dlnl'])))
 
         return HaloSED(sed)
         
@@ -237,3 +245,24 @@ class HaloSED(object):
         
         return np.sum(self._sed.interp(args),axis=0)
         
+    def nll_bin(self, flux, width):
+        """Evaluate the negative log-likelihood function in each bin."""
+        
+        ectr = self._sed.axes[1].centers
+
+        if flux.ndim > 1:
+            ectr = np.expand_dims(ectr,-1)
+
+        log_eflux = np.log10(flux*10**ectr)
+        log_width = np.log10(width)
+        
+        log_eflux[log_eflux < self.axes[2].edges[0] ] = self.axes[2].edges[0]
+        log_width[log_width < self.axes[0].edges[0] ] = self.axes[0].edges[0]
+        
+        args = (log_width, ectr, log_eflux)
+
+#        print 'log_eflux: ', log_eflux
+#        print 'log_width: ', log_width
+#        print self._sed.interp(args)
+        
+        return self._sed.interp(args)
