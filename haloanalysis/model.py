@@ -936,11 +936,12 @@ class CascModel(object):
         nebin = len(tab1)
         nthbin = len(tab2)
         if 'z' in tab0.columns:        
-            model_shape = (len(tab0), 9, 9)
+            model_shape = (len(tab0), np.unique(tab0['lcoh'][0]).shape[0], np.unique(tab0['igmf'][0]).shape[0])
             axis_offset = 1
         else:
-            model_shape = (9, 9)
+            model_shape = (np.unique(tab0['lcoh'][0]).shape[0], np.unique(tab0['igmf'][0]).shape[0])
             axis_offset = 0
+	print model_shape, 'here'
             
         emin = np.array(tab1['E_ledge']/1E6)
         emax = np.array(tab1['E_redge']/1E6)
@@ -988,7 +989,13 @@ class CascModel(object):
         axes = [axis_einj, axis_eobs, axis_theta]
 
         if 'z' in tab0.columns:
-            tab_z = np.unique(np.array(tab0['z'].reshape(model_shape)))
+	    # too many z values
+	    if not tab0['z'].shape[1] == np.prod(model_shape[1:]):
+		tabz = tab0['z'][:,:np.prod(model_shape[1:])]
+	    else:
+		tabz = tab0['z']
+
+            tab_z = np.unique(np.array(tabz.reshape(model_shape)))
             axis_z = Axis.create_from_centers('z', tab_z)            
             model_axes = [axis_z] + model_axes
         
