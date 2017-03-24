@@ -101,6 +101,35 @@ fhes_j1748.5-3912e:
   selection: {target: FHES J1748.5-3912e}
 
 
+#351.0 -5.0
+
+fhes_j1743.6-3912e:
+  model:
+    sources:
+    - {Index: 2.0, SpatialModel: RadialDisk, SpatialWidth: 1.0,
+      SpectrumType: PowerLaw, glat: -5.0, name: FHES J1743.6-3912e, glon: 351.0 }
+  selection: {target: FHES J1743.6-3912e}
+
+#350.5 -5.0
+
+fhes_j1742.2-3938e:
+  model:
+    sources:
+    - {Index: 2.0, SpatialModel: RadialDisk, SpatialWidth: 1.0,
+      SpectrumType: PowerLaw, glat: -5.0, name: FHES J1742.2-3938e, glon: 350.5 }
+  selection: {target: FHES J1742.2-3938e}
+
+#351.0 -4.5
+
+fhes_j1741.4-3857e:
+  model:
+    sources:
+    - {Index: 2.0, SpatialModel: RadialDisk, SpatialWidth: 1.0,
+      SpectrumType: PowerLaw, glat: -4.5, name: FHES J1741.4-3857e, glon: 351.0 }
+  selection: {target: FHES J1741.4-3857e}
+
+
+
 # 3FGL J1820.4-3217
 # Marginal evidence for halo vs. PS
 
