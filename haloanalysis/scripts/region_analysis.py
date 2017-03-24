@@ -95,11 +95,27 @@ def main():
                      'beta' : {'value' : 0.0, 'min' : 0.0, 'max' : 1.0} }
 
     skip_loc = ['3FGL J0534.5+2201s']
-    
+
+    for s in gta.roi.sources:
+        if s['SpectrumType'] == 'LogParabola':
+            gta.set_parameter_bounds(s.name, 'beta', [0.0,1.0])
+        
     # -----------------------------------
     # Fit the Baseline Model
     # -----------------------------------
+    gta.free_norm(src_name)
+    gta.fit()
+    gta.free_norm(src_name,False)
     
+    gta.optimize()
+    gta.print_roi()
+
+    for s in sorted(gta.roi.sources, key=lambda t: t['ts'],reverse=True):
+        if s['ts'] > 1000. and s['SpectrumType'] == 'PowerLaw':
+            gta.set_source_spectrum(s.name, spectrum_type='LogParabola',
+                                    spectrum_pars={'beta' : {'value' : 0.0, 'scale' : 1.0,
+                                                             'min' : 0.0, 'max' : 1.0}})
+
     gta.optimize()
     gta.print_roi()
     
