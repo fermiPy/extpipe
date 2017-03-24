@@ -5,6 +5,7 @@ import itertools
 import logging
 
 import numpy as np
+from fermipy.utils import get_parameter_limits
     
 def fit_region(gta,modelname,src_name,loge_bounds=None, **kwargs):
 
@@ -271,7 +272,7 @@ def fit_halo_scan(gta, modelname, src_name, halo_width,
             gta.logger.info('Fitting Halo Index %.3f',idx)
             
             model_idx = i*len(halo_index) + j
-            gta.set_norm(halo_source_name, 1.0, update_source=False)            
+            gta.set_norm(halo_source_name, 0.1, update_source=False)            
             gta.set_parameter(halo_source_name, 'Index', -1.0*idx,
                               update_source=False)
             
@@ -282,8 +283,18 @@ def fit_halo_scan(gta, modelname, src_name, halo_width,
             gta.update_source(halo_source_name,reoptimize=True,
                               optimizer={'optimizer' : optimizer})
 
-            gta.logger.info('%s Halo Width: %6.3f Index: %6.2f TS: %6.2f',
-                            modelname,w,idx,gta.roi[halo_source_name]['ts'])
+            ul_flux = get_parameter_limits(gta.roi[halo_source_name]['flux_scan'],
+                                           gta.roi[halo_source_name]['loglike_scan'])
+            ul_eflux = get_parameter_limits(gta.roi[halo_source_name]['eflux_scan'],
+                                            gta.roi[halo_source_name]['loglike_scan'])
+
+            gta.roi[halo_source_name]['flux_err'] = ul_flux['err']
+            gta.roi[halo_source_name]['eflux_err'] = ul_eflux['err']
+            
+            gta.logger.info('%s Halo Width: %6.3f Index: %6.2f TS: %6.2f Flux: %8.4g',
+                            modelname,w,idx,
+                            gta.roi[halo_source_name]['ts'],
+                            gta.roi[halo_source_name]['flux'])
     
             #gta.write_roi('%s_%02i_%02i'%(outprefix,i,j),make_plots=False)
             halo_data += [copy.deepcopy(gta.roi[halo_source_name].data)]
