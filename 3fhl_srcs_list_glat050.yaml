@@ -1,15 +1,3 @@
-3fhl_j0002.1-6728:
-  model:
-    sources:
-    - {Index: 1.810941457748413, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
-      dec: -67.48248291015625, name: 3FHL J0002.1-6728, ra: 0.528261661529541}
-  selection: {target: 3FHL J0002.1-6728}
-3fhl_j0007.9+4711:
-  model:
-    sources:
-    - {Index: 2.678279161453247, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
-      dec: 47.191978454589844, name: 3FHL J0007.9+4711, ra: 1.9931458234786987}
-  selection: {target: 3FHL J0007.9+4711}
 3fhl_j0009.7-4319:
   model:
     sources:
@@ -142,12 +130,6 @@
     - {Index: 1.9431190490722656, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
       dec: -17.393901824951172, name: 3FHL J0219.1-1723, ra: 34.79247283935547}
   selection: {target: 3FHL J0219.1-1723}
-3fhl_j0228.0-3101:
-  model:
-    sources:
-    - {Index: 3.0, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw, dec: -31.026853561401367,
-      name: 3FHL J0228.0-3101, ra: 37.0230712890625}
-  selection: {target: 3FHL J0228.0-3101}
 3fhl_j0233.0+3742:
   model:
     sources:
@@ -202,12 +184,6 @@
     - {Index: 1.5, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw, dec: 6.34342622756958,
       name: 3FHL J0314.3+0620, ra: 48.58072280883789}
   selection: {target: 3FHL J0314.3+0620}
-3fhl_j0316.5-2610:
-  model:
-    sources:
-    - {Index: 2.2202184200286865, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
-      dec: -26.167448043823242, name: 3FHL J0316.5-2610, ra: 49.132057189941406}
-  selection: {target: 3FHL J0316.5-2610}
 3fhl_j0319.2-7045:
   model:
     sources:
@@ -226,12 +202,6 @@
     - {Index: 2.2104389667510986, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
       dec: -57.236534118652344, name: 3FHL J0329.2-5714, ra: 52.305992126464844}
   selection: {target: 3FHL J0329.2-5714}
-3fhl_j0333.8+7849:
-  model:
-    sources:
-    - {Index: 2.1516425609588623, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
-      dec: 78.82921600341797, name: 3FHL J0333.8+7849, ra: 53.46925354003906}
-  selection: {target: 3FHL J0333.8+7849}
 3fhl_j0336.4-0348:
   model:
     sources:
@@ -286,12 +256,6 @@
     - {Index: 1.7391620874404907, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
       dec: 64.55644226074219, name: 3FHL J0402.9+6433, ra: 60.73297119140625}
   selection: {target: 3FHL J0402.9+6433}
-3fhl_j0403.2-2428:
-  model:
-    sources:
-    - {Index: 1.5, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw, dec: -24.47618865966797,
-      name: 3FHL J0403.2-2428, ra: 60.8146858215332}
-  selection: {target: 3FHL J0403.2-2428}
 3fhl_j0411.0+4217:
   model:
     sources:
@@ -310,12 +274,6 @@
     - {Index: 1.743282675743103, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
       dec: 40.198421478271484, name: 3FHL J0420.2+4011, ra: 65.0606460571289}
   selection: {target: 3FHL J0420.2+4011}
-3fhl_j0422.3+1949:
-  model:
-    sources:
-    - {Index: 1.5, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw, dec: 19.818735122680664,
-      name: 3FHL J0422.3+1949, ra: 65.58159637451172}
-  selection: {target: 3FHL J0422.3+1949}
 3fhl_j0441.6+1504:
   model:
     sources:
@@ -364,12 +322,6 @@
     - {Index: 1.5, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw, dec: -11.246214866638184,
       name: 3FHL J0503.5-1114, ra: 75.8868179321289}
   selection: {target: 3FHL J0503.5-1114}
-3fhl_j0506.7-0858:
-  model:
-    sources:
-    - {Index: 2.3827121257781982, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
-      dec: -8.979496002197266, name: 3FHL J0506.7-0858, ra: 76.6874771118164}
-  selection: {target: 3FHL J0506.7-0858}
 3fhl_j0507.4-3347:
   model:
     sources:
@@ -382,12 +334,6 @@
     - {Index: 3.0, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw, dec: -0.8494899272918701,
       name: 3FHL J0526.0-0050, ra: 81.50122833251953}
   selection: {target: 3FHL J0526.0-0050}
-3fhl_j0531.8-6639e:
-  model:
-    sources:
-    - {Index: 1.9566024541854858, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
-      dec: -66.6500015258789, name: 3FHL J0531.8-6639e, ra: 82.97000122070312}
-  selection: {target: 3FHL J0531.8-6639e}
 3fhl_j0536.2+1733:
   model:
     sources:
@@ -418,12 +364,6 @@
     - {Index: 3.0, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw, dec: -48.928707122802734,
       name: 3FHL J0541.1-4855, ra: 85.2945327758789}
   selection: {target: 3FHL J0541.1-4855}
-3fhl_j0545.8+6015:
-  model:
-    sources:
-    - {Index: 2.74678635597229, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
-      dec: 60.25480651855469, name: 3FHL J0545.8+6015, ra: 86.4725341796875}
-  selection: {target: 3FHL J0545.8+6015}
 3fhl_j0550.4-4356:
   model:
     sources:
@@ -484,18 +424,6 @@
     - {Index: 2.0490429401397705, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
       dec: -30.1413516998291, name: 3FHL J0709.7-3008, ra: 107.43539428710938}
   selection: {target: 3FHL J0709.7-3008}
-3fhl_j0715.7-4530:
-  model:
-    sources:
-    - {Index: 1.6239835023880005, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
-      dec: -45.51466369628906, name: 3FHL J0715.7-4530, ra: 108.93698120117188}
-  selection: {target: 3FHL J0715.7-4530}
-3fhl_j0725.4+0217:
-  model:
-    sources:
-    - {Index: 2.411599636077881, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
-      dec: 2.2939670085906982, name: 3FHL J0725.4+0217, ra: 111.3669204711914}
-  selection: {target: 3FHL J0725.4+0217}
 3fhl_j0725.5-0504:
   model:
     sources:
@@ -556,12 +484,6 @@
     - {Index: 2.9646663665771484, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
       dec: 28.356523513793945, name: 3FHL J0812.5+2821, ra: 123.14689636230469}
   selection: {target: 3FHL J0812.5+2821}
-3fhl_j0817.8+3243:
-  model:
-    sources:
-    - {Index: 3.0, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw, dec: 32.723506927490234,
-      name: 3FHL J0817.8+3243, ra: 124.46742248535156}
-  selection: {target: 3FHL J0817.8+3243}
 3fhl_j0818.4+2816:
   model:
     sources:
@@ -592,12 +514,6 @@
     - {Index: 2.674070358276367, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
       dec: 40.10730743408203, name: 3FHL J0838.5+4006, ra: 129.62606811523438}
   selection: {target: 3FHL J0838.5+4006}
-3fhl_j0842.0-6101:
-  model:
-    sources:
-    - {Index: 3.0, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw, dec: -61.02298355102539,
-      name: 3FHL J0842.0-6101, ra: 130.51173400878906}
-  selection: {target: 3FHL J0842.0-6101}
 3fhl_j0842.8+6656:
   model:
     sources:
@@ -610,24 +526,12 @@
     - {Index: 1.633431315422058, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
       dec: -55.85805892944336, name: 3FHL J0845.8-5551, ra: 131.45240783691406}
   selection: {target: 3FHL J0845.8-5551}
-3fhl_j0848.0-0702:
-  model:
-    sources:
-    - {Index: 2.3515825271606445, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
-      dec: -7.047689437866211, name: 3FHL J0848.0-0702, ra: 132.0034942626953}
-  selection: {target: 3FHL J0848.0-0702}
 3fhl_j0848.7+0508:
   model:
     sources:
     - {Index: 1.5, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw, dec: 5.137899875640869,
       name: 3FHL J0848.7+0508, ra: 132.1829376220703}
   selection: {target: 3FHL J0848.7+0508}
-3fhl_j0850.6+3454:
-  model:
-    sources:
-    - {Index: 1.7518892288208008, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
-      dec: 34.90697479248047, name: 3FHL J0850.6+3454, ra: 132.65191650390625}
-  selection: {target: 3FHL J0850.6+3454}
 3fhl_j0852.5-3124:
   model:
     sources:
@@ -706,12 +610,6 @@
     - {Index: 3.0, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw, dec: 59.230831146240234,
       name: 3FHL J1020.3+5913, ra: 155.0897674560547}
   selection: {target: 3FHL J1020.3+5913}
-3fhl_j1023.7+0040:
-  model:
-    sources:
-    - {Index: 1.5089399814605713, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
-      dec: 0.669625461101532, name: 3FHL J1023.7+0040, ra: 155.94686889648438}
-  selection: {target: 3FHL J1023.7+0040}
 3fhl_j1033.7+3707:
   model:
     sources:
@@ -742,24 +640,12 @@
     - {Index: 1.5, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw, dec: -1.4282503128051758,
       name: 3FHL J1055.6-0125, ra: 163.9000701904297}
   selection: {target: 3FHL J1055.6-0125}
-3fhl_j1058.5-8005:
-  model:
-    sources:
-    - {Index: 2.916557788848877, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
-      dec: -80.09971618652344, name: 3FHL J1058.5-8005, ra: 164.64913940429688}
-  selection: {target: 3FHL J1058.5-8005}
 3fhl_j1105.8+3944:
   model:
     sources:
     - {Index: 3.0, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw, dec: 39.74899673461914,
       name: 3FHL J1105.8+3944, ra: 166.4540252685547}
   selection: {target: 3FHL J1105.8+3944}
-3fhl_j1115.2-0705:
-  model:
-    sources:
-    - {Index: 2.524448871612549, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
-      dec: -7.085596084594727, name: 3FHL J1115.2-0705, ra: 168.81292724609375}
-  selection: {target: 3FHL J1115.2-0705}
 3fhl_j1130.7-3137:
   model:
     sources:
@@ -778,12 +664,6 @@
     - {Index: 2.431265115737915, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
       dec: 28.625377655029297, name: 3FHL J1152.1+2837, ra: 178.0487060546875}
   selection: {target: 3FHL J1152.1+2837}
-3fhl_j1154.0+4038:
-  model:
-    sources:
-    - {Index: 2.071322441101074, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
-      dec: 40.639034271240234, name: 3FHL J1154.0+4038, ra: 178.52215576171875}
-  selection: {target: 3FHL J1154.0+4038}
 3fhl_j1208.1+6120:
   model:
     sources:
@@ -832,12 +712,6 @@
     - {Index: 2.210869789123535, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
       dec: -39.573158264160156, name: 3FHL J1253.6-3934, ra: 193.42190551757812}
   selection: {target: 3FHL J1253.6-3934}
-3fhl_j1257.2+3645:
-  model:
-    sources:
-    - {Index: 1.5900981426239014, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
-      dec: 36.75798034667969, name: 3FHL J1257.2+3645, ra: 194.32078552246094}
-  selection: {target: 3FHL J1257.2+3645}
 3fhl_j1311.7+3954:
   model:
     sources:
@@ -898,12 +772,6 @@
     - {Index: 2.2650492191314697, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
       dec: 38.59921646118164, name: 3FHL J1412.0+3835, ra: 213.01564025878906}
   selection: {target: 3FHL J1412.0+3835}
-3fhl_j1418.0+2543:
-  model:
-    sources:
-    - {Index: 1.6843287944793701, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
-      dec: 25.7291259765625, name: 3FHL J1418.0+2543, ra: 214.50094604492188}
-  selection: {target: 3FHL J1418.0+2543}
 3fhl_j1421.5-1654:
   model:
     sources:
@@ -940,12 +808,6 @@
     - {Index: 2.200509548187256, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
       dec: -25.41660499572754, name: 3FHL J1439.4-2524, ra: 219.8724822998047}
   selection: {target: 3FHL J1439.4-2524}
-3fhl_j1439.9-1530:
-  model:
-    sources:
-    - {Index: 2.0719852447509766, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
-      dec: -15.51301383972168, name: 3FHL J1439.9-1530, ra: 219.9918670654297}
-  selection: {target: 3FHL J1439.9-1530}
 3fhl_j1440.2-2343:
   model:
     sources:
@@ -1306,12 +1168,6 @@
     - {Index: 2.136331558227539, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
       dec: 9.111916542053223, name: 3FHL J1949.5+0906, ra: 297.3985900878906}
   selection: {target: 3FHL J1949.5+0906}
-3fhl_j1954.5-1126:
-  model:
-    sources:
-    - {Index: 2.8098626136779785, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
-      dec: -11.447492599487305, name: 3FHL J1954.5-1126, ra: 298.6318359375}
-  selection: {target: 3FHL J1954.5-1126}
 3fhl_j1959.9-4606:
   model:
     sources:
@@ -1414,12 +1270,6 @@
     - {Index: 2.300478219985962, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
       dec: -7.552133560180664, name: 3FHL J2148.1-0733, ra: 327.0264892578125}
   selection: {target: 3FHL J2148.1-0733}
-3fhl_j2153.1-0041:
-  model:
-    sources:
-    - {Index: 2.019890069961548, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
-      dec: -0.686768651008606, name: 3FHL J2153.1-0041, ra: 328.2919616699219}
-  selection: {target: 3FHL J2153.1-0041}
 3fhl_j2156.4-0036:
   model:
     sources:
@@ -1450,12 +1300,6 @@
     - {Index: 2.518599033355713, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
       dec: -8.059000968933105, name: 3FHL J2225.8-0803, ra: 336.4580078125}
   selection: {target: 3FHL J2225.8-0803}
-3fhl_j2232.7+1143:
-  model:
-    sources:
-    - {Index: 3.0, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw, dec: 11.73045539855957,
-      name: 3FHL J2232.7+1143, ra: 338.181396484375}
-  selection: {target: 3FHL J2232.7+1143}
 3fhl_j2239.5-2439:
   model:
     sources:
@@ -1474,18 +1318,6 @@
     - {Index: 3.0, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw, dec: -17.570459365844727,
       name: 3FHL J2245.5-1734, ra: 341.38275146484375}
   selection: {target: 3FHL J2245.5-1734}
-3fhl_j2245.9+1545:
-  model:
-    sources:
-    - {Index: 1.5, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw, dec: 15.757474899291992,
-      name: 3FHL J2245.9+1545, ra: 341.4849853515625}
-  selection: {target: 3FHL J2245.9+1545}
-3fhl_j2247.5-0000:
-  model:
-    sources:
-    - {Index: 1.8713014125823975, Prefactor: 1.0e-13, Scale: 1000.0, SpectrumType: PowerLaw,
-      dec: -0.009342221543192863, name: 3FHL J2247.5-0000, ra: 341.8890380859375}
-  selection: {target: 3FHL J2247.5-0000}
 3fhl_j2254.9-2724:
   model:
     sources:
