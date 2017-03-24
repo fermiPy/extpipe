@@ -19,6 +19,9 @@ from haloanalysis.utils import create_mask, load_source_rows
 from haloanalysis.sed import HaloSED
 from haloanalysis.model import CascModel, CascLike
 from haloanalysis.model import scan_igmf_likelihood
+from haloanalysis.model import LogParabolaExpCutoff
+from fermipy.spectrum import PLExpCutoff
+
 
 
 def load_cache(tables, names, cachefile='cache.fits'):
@@ -51,7 +54,10 @@ def main():
     parser.add_argument('--casc_scale', default = 1.0, type=float)
     parser.add_argument('--casc_r68_scale', default = 1.0, type=float)
     parser.add_argument('--name', default = [], action='append')
-    parser.add_argument('--key', default = 'SOURCE')
+    parser.add_argument('--key', default = 'SOURCE_FULL')
+    parser.add_argument('--int_spec', default = 'PLExpCutOff',
+    			help='intrinsic source spec. as in fermipy.spectrum',
+			choices=['LogParabolaExpCutoff','PLExpCutoff'])
     parser.add_argument('tables', nargs='+', default = None,
                         help='Extension and likelihood tables.')
 
@@ -61,9 +67,20 @@ def main():
     src_names = args.name
     
     casc_model = CascModel.create_from_fits(args.modelfile)
+    casc_model.set_eblmodel(eblmodel = 'dominguez')
 
     tab_pars = Table.read(args.tables[0],hdu='SCAN_PARS')
     tab_ebounds = Table.read(args.tables[0],hdu='EBOUNDS')
+
+    # intrinsic spec
+    if args.int_spec == 'PLExpCutOff':
+	fint = sp.PLExpCutoff  # intrinsic spectrum
+	p0 = [1E-13,-1.5,1E7]  # initial parameters
+	scale = 1E3            # pivot energy
+    elif args.int_spec == 'LogParabolaExpCutoff':
+	fint = LogParabolaExpCutoff  # intrinsic spectrum
+	p0 = [1E-13,-1.5,0.,1E7]  # initial parameters
+	scale = 1E3            # pivot energy
     
     # Use cached fits file
     if args.cache:
@@ -89,13 +106,23 @@ def main():
     for name in src_names:
 
         rows_sed_tev = load_source_rows(tab_sed_tev, [name], key=args.key)
-        cat_names = [ '3FGL %s'%row['3FGL_NAME'] for row in rows_sed_tev ]
+        #cat_names = [ '3FGL %s'%row['3FGL_NAME'] for row in rows_sed_tev ]
+        cat_names = [ row['3FGL_NAME'] for row in rows_sed_tev ]
         cat_names = np.unique(np.array(cat_names))
-        rows_sed_gev = load_source_rows(tab_casc, cat_names, key='name')
-        rows_casc = load_source_rows(tab_casc, cat_names, key='name')
-        tab = scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
-                                   rows_casc, tab_pars, tab_ebounds, args.nstep,
-                                   args.casc_scale, args.casc_r68_scale)
+        #rows_sed_gev = load_source_rows(tab_casc, cat_names, key='name')
+        #rows_casc = load_source_rows(tab_casc, cat_names, key='name')
+        rows_sed_gev = load_source_rows(tab_casc, cat_names, key='name_3fgl')
+        rows_casc = load_source_rows(tab_casc, cat_names, key='name_3fgl')
+        #tab = scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
+                                   #rows_casc, tab_pars, tab_ebounds, args.nstep,
+                                   #args.casc_scale, args.casc_r68_scale)
+	tab = scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
+				    rows_casc, tab_pars, tab_ebounds, args.nstep,
+				    casc_scale = args.casc_scale, 
+				    casc_r68_scale = args.casc_r68_scale,
+				    p0 = p0,
+				    scale = scale,
+				    fint = fint)
         tab_igmf += [tab]
 
     tab = vstack(tab_igmf)

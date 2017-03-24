@@ -1,0 +1,12 @@
+cat: '/u/gl/mmeyer/projects/python/haloanalysis/data/table_std_psf0123_joint2a_stdmodel_lnl_v15.fits'
+basedir: '/nfs/farm/g/glast/u/mmeyer/projects/FermiHalo/Output/EBLm6/'
+cat_tev: '/u/gl/mmeyer/projects/python/haloanalysis/data/TeV_sources_cut_var_zsafe.fits'
+tmax: 1.e+4
+kind: elmag
+th_jet: 6.
+int_spec: LogParabolaExpCutoff
+nstep: 17
+casc_scale: 1.
+casc_r68_scale: 1.
+outdir: '/u/gl/mmeyer/projects/python/haloanalysis/fit_igmf/results/'
+ebl_model: dominguez

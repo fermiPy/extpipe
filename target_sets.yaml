@@ -104,3 +104,6 @@ bll_ts10000:
 
   class: ['bll','BLL']
   ts : { min : 10000 }
+
+XBHLs:
+  xhbl: "(class_sed == HSP) & (nupeak > 1e17 ) & (var_index < 100.) & (3lac_fx_fr > 1e4)"
