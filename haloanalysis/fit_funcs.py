@@ -77,14 +77,28 @@ def fit_region(gta,modelname,src_name,loge_bounds=None, **kwargs):
             prefix=modelname,
             optimizer={'optimizer' : 'MINUIT'},
             free_radius=1.0, make_plots=True)    
+
+    psf_syst_scale = np.array([0.05,0.05,0.2])
+    psf_fnlo = ([3.0,4.0,5.5],list(-1.0*psf_syst_scale))
+    psf_fnhi = ([3.0,4.0,5.5],list(1.0*psf_syst_scale))
     
-    # Gaussian Analysis        
+    # Gaussian Analysis
+    kw = dict(spatial_model='RadialGaussian',
+              optimizer={'optimizer' : 'NEWTON'},
+              free_radius=1.0, fit_ebin=True)
+    
     gta.extension(src_name, outfile=modelname + '_ext_gauss_ext',
-                  spatial_model='RadialGaussian',
                   prefix=modelname + '_gauss',
-                  optimizer={'optimizer' : 'NEWTON'},
-                  fit_position=True, free_radius=1.0,
-                  make_plots=True, update=True)
+                  fit_position=True,
+                  make_plots=True, update=True, **kw)
+
+    gta.extension(src_name, outfile=modelname + '_ext_gauss_ext_psflo',
+                  prefix=modelname + '_gauss_psflo',
+                  psf_scale_fn=psf_fnlo)
+
+    gta.extension(src_name, outfile=modelname + '_ext_gauss_ext_psfhi',
+                  prefix=modelname + '_gauss_psfhi',
+                  psf_scale_fn=psf_fnhi)
 
     gta.free_source(src_name)
     gta.fit(reoptimize=True)
@@ -99,14 +113,25 @@ def fit_region(gta,modelname,src_name,loge_bounds=None, **kwargs):
 
     # Disk Analysis
     gta.load_roi(modelname + '_roi')
-    gta.reload_source(src_name)    
-    gta.extension(src_name, outfile=modelname + '_ext_disk_ext',
-                  spatial_model='RadialDisk',
-                  prefix=modelname + '_disk',
-                  optimizer={'optimizer' : 'NEWTON'},
-                  fit_position=True, free_radius=1.0,
-                  make_plots=True, update=True)
+    gta.reload_source(src_name)
 
+    kw = dict(spatial_model='RadialDisk',
+              optimizer={'optimizer' : 'NEWTON'},
+              free_radius=1.0, fit_ebin=True)
+    
+    gta.extension(src_name, outfile=modelname + '_ext_disk_ext',
+                  prefix=modelname + '_disk',
+                  fit_position=True, 
+                  make_plots=True, update=True, **kw)
+
+    gta.extension(src_name, outfile=modelname + '_ext_disk_ext_psflo',
+                  prefix=modelname + '_disk_psflo',
+                  psf_scale_fn=psf_fnlo)
+
+    gta.extension(src_name, outfile=modelname + '_ext_disk_ext_psfhi',
+                  prefix=modelname + '_disk_psfhi',
+                  psf_scale_fn=psf_fnhi)
+ 
     gta.free_source(src_name)
     gta.fit(reoptimize=True)
     gta.print_roi()
@@ -227,7 +252,7 @@ def fit_halo_scan(gta, modelname, src_name, halo_width,
         gta.sed(halo_source_name, prefix='%s_cov05_%02i'%(modelname,i),
                 free_radius=1.0, cov_scale=5.0,
                 optimizer={'optimizer' : 'MINUIT'},
-                make_plots=True)
+                make_plots=False)
         
         gta.free_parameter(halo_source_name,'Index')
         gta.fit(optimizer=optimizer)
