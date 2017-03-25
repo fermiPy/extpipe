@@ -32,6 +32,11 @@ def main():
     else:
         src_name = args.source
 
+    if 'FHES' in src_name or src_name in ['3FGL J0007.0+7302']:
+        args.radius = 1.5
+    elif src_name == '3FGL J0425.8+5600':
+        args.radius = 2.0
+        
     cat = Catalog3FGL('/u/gl/mdwood/fermi/catalogs/gll_psc_v16_ext.fit')
 
     flag_mask = 0
@@ -71,7 +76,11 @@ def main():
         gta.set_parameter('3FGL J0534.5+2201','Index1',2.237024994,scale=-1.0,true_value=False)
         gta.set_parameter('3FGL J0534.5+2201','Cutoff',1.540488107,scale=10000.,true_value=False)
         gta.set_parameter('3FGL J0534.5+2201','Scale',635.5911255,scale=1.0,true_value=False)
+        gta.lock_source('3FGL J0534.5+2201')
 
+    if '3FGL J0534.5+2201s' in gta.roi:
+        gta.lock_source('3FGL J0534.5+2201s')
+        
     gta.print_roi()
     
     sqrt_ts_threshold=3
@@ -79,19 +88,35 @@ def main():
     model0 = { 'SpatialModel' : 'PointSource', 'Index' : 1.5 }
     model1 = { 'SpatialModel' : 'PointSource', 'Index' : 2.0 }
     model2 = { 'SpatialModel' : 'PointSource', 'Index' : 2.7 }
+    model3 = { 'SpatialModel' : 'RadialDisk', 'Index' : 2.0, 'SpatialWidth' : 0.1 }
 
     newsrc_model = { 'SpectrumType' : 'LogParabola',
                      'alpha' : 2.0,
                      'beta' : {'value' : 0.0, 'min' : 0.0, 'max' : 1.0} }
 
     skip_loc = ['3FGL J0534.5+2201s']
-    skip_opt = ['3FGL J0534.5+2201s','3FGL J0534.5+2201']
-    
+
+    for s in gta.roi.sources:
+        if s['SpectrumType'] == 'LogParabola':
+            gta.set_parameter_bounds(s.name, 'beta', [0.0,1.0])
+        
     # -----------------------------------
     # Fit the Baseline Model
     # -----------------------------------
+    gta.free_norm(src_name)
+    gta.fit()
+    gta.free_norm(src_name,False)
     
-    gta.optimize(skip=skip_opt)
+    gta.optimize()
+    gta.print_roi()
+
+    for s in sorted(gta.roi.sources, key=lambda t: t['ts'],reverse=True):
+        if s['ts'] > 1000. and s['SpectrumType'] == 'PowerLaw':
+            gta.set_source_spectrum(s.name, spectrum_type='LogParabola',
+                                    spectrum_pars={'beta' : {'value' : 0.0, 'scale' : 1.0,
+                                                             'min' : 0.0, 'max' : 1.0}})
+
+    gta.optimize()
     gta.print_roi()
     
     # Localize all point sources
@@ -128,7 +153,7 @@ def main():
                      sqrt_ts_threshold=sqrt_ts_threshold,
                      search_minmax_radius=[args.radius,None],
                      free_params=['alpha','norm'])
-    gta.optimize(skip=skip_opt)
+    gta.optimize()
 
     gta.find_sources('base_pass1',model=newsrc_model,
                      search_skydir=gta.roi.skydir,
@@ -189,7 +214,7 @@ def main():
                          update=True,prefix='fit%i'%i,
                          free_radius=0.5, make_plots=True)
 
-        fit_region(gta,'fit%i'%i,src_name,skip_opt=skip_opt)
+        fit_region(gta,'fit%i'%i,src_name)
         tab = gta.roi.create_table([s.name for s in srcs])
         tab.write(os.path.join(gta.workdir,'fit%i_new_source_data.fits'%i),
                   overwrite=True)

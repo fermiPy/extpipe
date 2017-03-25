@@ -5,6 +5,7 @@ import itertools
 import logging
 
 import numpy as np
+from fermipy.utils import get_parameter_limits
     
 def fit_region(gta,modelname,src_name,loge_bounds=None, **kwargs):
 
@@ -77,14 +78,28 @@ def fit_region(gta,modelname,src_name,loge_bounds=None, **kwargs):
             prefix=modelname,
             optimizer={'optimizer' : 'MINUIT'},
             free_radius=1.0, make_plots=True)    
+
+    psf_syst_scale = np.array([0.05,0.05,0.2])
+    psf_fnlo = ([3.0,4.0,5.5],list(-1.0*psf_syst_scale))
+    psf_fnhi = ([3.0,4.0,5.5],list(1.0*psf_syst_scale))
     
-    # Gaussian Analysis        
+    # Gaussian Analysis
+    kw = dict(spatial_model='RadialGaussian',
+              optimizer={'optimizer' : 'NEWTON'},
+              free_radius=1.0, fit_ebin=True)
+    
     gta.extension(src_name, outfile=modelname + '_ext_gauss_ext',
-                  spatial_model='RadialGaussian',
                   prefix=modelname + '_gauss',
-                  optimizer={'optimizer' : 'NEWTON'},
-                  fit_position=True, free_radius=1.0,
-                  make_plots=True, update=True)
+                  fit_position=True,
+                  make_plots=True, update=True, **kw)
+
+    gta.extension(src_name, outfile=modelname + '_ext_gauss_ext_psflo',
+                  prefix=modelname + '_gauss_psflo',
+                  psf_scale_fn=psf_fnlo)
+
+    gta.extension(src_name, outfile=modelname + '_ext_gauss_ext_psfhi',
+                  prefix=modelname + '_gauss_psfhi',
+                  psf_scale_fn=psf_fnhi)
 
     gta.free_source(src_name)
     gta.fit(reoptimize=True)
@@ -99,14 +114,25 @@ def fit_region(gta,modelname,src_name,loge_bounds=None, **kwargs):
 
     # Disk Analysis
     gta.load_roi(modelname + '_roi')
-    gta.reload_source(src_name)    
-    gta.extension(src_name, outfile=modelname + '_ext_disk_ext',
-                  spatial_model='RadialDisk',
-                  prefix=modelname + '_disk',
-                  optimizer={'optimizer' : 'NEWTON'},
-                  fit_position=True, free_radius=1.0,
-                  make_plots=True, update=True)
+    gta.reload_source(src_name)
 
+    kw = dict(spatial_model='RadialDisk',
+              optimizer={'optimizer' : 'NEWTON'},
+              free_radius=1.0, fit_ebin=True)
+    
+    gta.extension(src_name, outfile=modelname + '_ext_disk_ext',
+                  prefix=modelname + '_disk',
+                  fit_position=True, 
+                  make_plots=True, update=True, **kw)
+
+    gta.extension(src_name, outfile=modelname + '_ext_disk_ext_psflo',
+                  prefix=modelname + '_disk_psflo',
+                  psf_scale_fn=psf_fnlo)
+
+    gta.extension(src_name, outfile=modelname + '_ext_disk_ext_psfhi',
+                  prefix=modelname + '_disk_psfhi',
+                  psf_scale_fn=psf_fnhi)
+ 
     gta.free_source(src_name)
     gta.fit(reoptimize=True)
     gta.print_roi()
@@ -227,7 +253,7 @@ def fit_halo_scan(gta, modelname, src_name, halo_width,
         gta.sed(halo_source_name, prefix='%s_cov05_%02i'%(modelname,i),
                 free_radius=1.0, cov_scale=5.0,
                 optimizer={'optimizer' : 'MINUIT'},
-                make_plots=True)
+                make_plots=False)
         
         gta.free_parameter(halo_source_name,'Index')
         gta.fit(optimizer=optimizer)
@@ -246,7 +272,7 @@ def fit_halo_scan(gta, modelname, src_name, halo_width,
             gta.logger.info('Fitting Halo Index %.3f',idx)
             
             model_idx = i*len(halo_index) + j
-            gta.set_norm(halo_source_name, 1.0, update_source=False)            
+            gta.set_norm(halo_source_name, 0.1, update_source=False)            
             gta.set_parameter(halo_source_name, 'Index', -1.0*idx,
                               update_source=False)
             
@@ -257,8 +283,18 @@ def fit_halo_scan(gta, modelname, src_name, halo_width,
             gta.update_source(halo_source_name,reoptimize=True,
                               optimizer={'optimizer' : optimizer})
 
-            gta.logger.info('%s Halo Width: %6.3f Index: %6.2f TS: %6.2f',
-                            modelname,w,idx,gta.roi[halo_source_name]['ts'])
+            ul_flux = get_parameter_limits(gta.roi[halo_source_name]['flux_scan'],
+                                           gta.roi[halo_source_name]['loglike_scan'])
+            ul_eflux = get_parameter_limits(gta.roi[halo_source_name]['eflux_scan'],
+                                            gta.roi[halo_source_name]['loglike_scan'])
+
+            gta.roi[halo_source_name]['flux_err'] = ul_flux['err']
+            gta.roi[halo_source_name]['eflux_err'] = ul_eflux['err']
+            
+            gta.logger.info('%s Halo Width: %6.3f Index: %6.2f TS: %6.2f Flux: %8.4g',
+                            modelname,w,idx,
+                            gta.roi[halo_source_name]['ts'],
+                            gta.roi[halo_source_name]['flux'])
     
             #gta.write_roi('%s_%02i_%02i'%(outprefix,i,j),make_plots=False)
             halo_data += [copy.deepcopy(gta.roi[halo_source_name].data)]
