@@ -225,8 +225,8 @@ def scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
 	lnl = sed_casc.nll_bin(ff,rr)
 	# find the bin closet to 4. which corresponds to 2sigma ul
 	# use 3.84 for 95% ul
-	ul_id = np.argmin(np.abs(2. * (lnl - np.min(lnl, axis = 0)) - 4.), axis = 1 )
-	m = np.min(np.abs(2. * (lnl - np.min(lnl, axis = 0)) - 4.), axis = 1) > 0.5
+	ul_id = np.argmin(np.abs(2. * (lnl - np.min(lnl, axis = 0)) - 2.71), axis = 1 )
+	m = np.min(np.abs(2. * (lnl - np.min(lnl, axis = 0)) - 2.71), axis = 1) > 0.5
 	# get the flux 
 	halo_flux_ul[idx] = np.diag(ff[:,ul_id])
 	halo_flux_ul[idx][m] = np.max(ff, axis = 1)[m]

@@ -59,9 +59,9 @@ if __name__ == '__main__':
         filename = path.join(config['basedir'],
 	                'th_jet{0[th_jet]:.2f}/gam-2.00/results_merged_z_th{0[th_jet]:.0f}d_t{1:s}.fits'.format(
 			config, tmax_str))
-    elif kind == 'analytic':
+    elif config['kind'] == 'analytic':
 	filename = path.join(basedir,
-			'th_jet{0[th_jet]:.2f}/gam-2.00/results_analytical_merged_z_th{0[th_jet]:.0f}d_t{1:s}.fits'.format(
+			'th_jet{0[th_jet]:.2f}/gam-2.00/results_analytic_merged_z_th{0[th_jet]:.0f}d_t{1:s}.fits'.format(
 			config, tmax_str))
 	      
     filename = utils.copy2scratch(filename, tmpdir)
