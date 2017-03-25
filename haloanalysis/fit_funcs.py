@@ -22,10 +22,9 @@ def fit_region(gta,modelname,src_name,loge_bounds=None, **kwargs):
     model0 = { 'SpatialModel' : 'PointSource', 'Index' : 1.5 }
     model1 = { 'SpatialModel' : 'PointSource', 'Index' : 2.0 }
     model2 = { 'SpatialModel' : 'PointSource', 'Index' : 2.7 }
-    model3 = { 'SpatialModel' : 'Gaussian', 'Index' : 2.0,
-               'SpatialWidth' : 0.15 }
-
-    model4 = { 'SpatialModel' : 'RadialDisk', 'Index' : 2.0, 'SpatialWidth' : 0.1 }
+    model3 = { 'SpatialModel' : 'Gaussian', 'Index' : 2.0, 'SpatialWidth' : 0.1 }
+    model4 = { 'SpatialModel' : 'RadialDisk', 'Index' : 2.0,
+               'SpatialWidth' : 0.1 * 0.8246211251235321 }
     
     gta.optimize(skip=skip_opt)
 

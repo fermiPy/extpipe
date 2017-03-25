@@ -146,9 +146,10 @@ def main():
                          dtheta_max=max(1.0,s['SpatialWidth']),
                          update=True,
                          prefix='base', make_plots=True)
-            
-    gta.tsmap('base_nosrcs',model=model1, exclude=[src_name], make_plots=True)
-    gta.tsmap('base_nosrcs',model=model2, exclude=[src_name], make_plots=True)
+
+    gta.tsmap('base0',model=model1, make_plots=True)
+    gta.tsmap('base0_nosource',model=model1, exclude=[src_name], make_plots=True)
+    gta.tsmap('base0_nosource',model=model2, exclude=[src_name], make_plots=True)
 
     # Look for new point sources outside the inner 1.0 deg
     gta.find_sources('base_pass0',model=newsrc_model,
