@@ -139,20 +139,21 @@ def main():
         o = gta.localize(s.name,nstep=5,
                          dtheta_max=max(0.5,s['SpatialWidth']),
                          update=True,
-                         prefix='base', make_plots=True)
+                         prefix='base0', make_plots=True)
 
         if s.name == src_name and ((not o['fit_success']) or (not o['fit_inbounds'])):
             gta.localize(s.name,nstep=5,
                          dtheta_max=max(1.0,s['SpatialWidth']),
                          update=True,
-                         prefix='base', make_plots=True)
+                         prefix='base0', make_plots=True)
 
+    gta.write_roi('base0_roi')            
     gta.tsmap('base0',model=model1, make_plots=True)
     gta.tsmap('base0_nosource',model=model1, exclude=[src_name], make_plots=True)
     gta.tsmap('base0_nosource',model=model2, exclude=[src_name], make_plots=True)
 
     # Look for new point sources outside the inner 1.0 deg
-    gta.find_sources('base_pass0',model=newsrc_model,
+    gta.find_sources('base1_pass0',model=newsrc_model,
                      search_skydir=gta.roi.skydir,
                      max_iter=5,min_separation=0.5,
                      sqrt_ts_threshold=sqrt_ts_threshold,
@@ -160,7 +161,7 @@ def main():
                      free_params=['alpha','norm'])
     gta.optimize()
 
-    gta.find_sources('base_pass1',model=newsrc_model,
+    gta.find_sources('base1_pass1',model=newsrc_model,
                      search_skydir=gta.roi.skydir,
                      max_iter=5,min_separation=0.5,
                      sqrt_ts_threshold=sqrt_ts_threshold,
@@ -170,17 +171,17 @@ def main():
     
     gta.print_roi()
 
-    gta.tsmap('base',model=model1, make_plots=True)
-    gta.tsmap('base',model=model2, make_plots=True)
+    gta.tsmap('base1',model=model1, make_plots=True)
+    gta.tsmap('base1',model=model2, make_plots=True)
 
-    gta.write_roi('base_roi')
+    gta.write_roi('base1_roi')
 
     # -------------------------------------
     # Pass 1 - Source at Localized Position
     # -------------------------------------
 
     fit_region(gta,'fit0',src_name)
-    gta.load_roi('fit0_roi')
+    #gta.load_roi('fit0_roi')
 
     # -------------------------------------
     # Pass 2 - 2+ Point Sources
@@ -224,7 +225,7 @@ def main():
         tab.write(os.path.join(gta.workdir,'fit%i_new_source_data.fits'%i),
                   overwrite=True)
 
-        gta.load_roi('fit%i_roi'%i)
+        #gta.load_roi('fit%i_roi'%i)
         
     new_source_data = []
     for s in srcs:
