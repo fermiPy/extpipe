@@ -111,6 +111,10 @@ def main():
     gta.print_roi()
 
     for s in sorted(gta.roi.sources, key=lambda t: t['ts'],reverse=True):
+
+        if s.diffuse:
+            continue
+        
         if s['ts'] > 1000. and s['SpectrumType'] == 'PowerLaw':
             gta.set_source_spectrum(s.name, spectrum_type='LogParabola',
                                     spectrum_pars={'beta' : {'value' : 0.0, 'scale' : 1.0,
