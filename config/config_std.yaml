@@ -21,7 +21,7 @@ selection:
 
   # Data selections
   logemin    : 3.0
-  logemax    : 5.75
+  logemax    : 6.0
   zmax    : 100
   evclass : 128
   evtype  : 3
@@ -48,7 +48,7 @@ model:
   src_roiwidth : 10.0
 
   galdiff  : '$FERMI_DIFFUSE_DIR/v5r0/gll_iem_ext_v06.fits'
-  isodiff  : 'iso_P8R2_SOURCE_V6_v06.txt'
+  isodiff  : '$FERMI_DIFFUSE_DIR/v5r0/iso_P8R2_SOURCE_V6_v06_ext.txt'
   limbdiff : null
 
   merge_sources : False
