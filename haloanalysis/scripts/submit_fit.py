@@ -26,7 +26,6 @@ if __name__ == '__main__':
 
     outfile = 'fit_igmf_th_jet{0[th_jet]:.0f}_tmax{0[tmax]:.0e}_lp_{0[kind]:s}_0*.fits'.format(config)
     outfile = path.join(config['outdir'],outfile)
-    print outfile
     missing = utils.missing_files(outfile, njobs, num = 4, split = '.fits')
 
     if len(missing) < njobs:
@@ -37,7 +36,8 @@ if __name__ == '__main__':
     if len(missing):
 	script = path.join(path.dirname(haloanalysis.__file__), 'scripts/run_fit.py')
 	lsf.submit_lsf(script,
-	    config,'',njobs, jname = 'fit', logdir = path.join(config['outdir'],'log/'))
+	    config,'',njobs, jname = 'th{0[th_jet]:.0f}t{0[tmax]:.0e}'.format(config),
+	       logdir = path.join(config['outdir'],'log/'))
     else:
 	logging.info("All files present.")
 	files = glob(outfile)
