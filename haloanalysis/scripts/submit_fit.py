@@ -26,7 +26,6 @@ if __name__ == '__main__':
 
     outfile = 'fit_igmf_th_jet{0[th_jet]:.0f}_tmax{0[tmax]:.0e}_lp_{0[kind]:s}_0*.fits'.format(config)
     outfile = path.join(config['outdir'],outfile)
-    print outfile
     missing = utils.missing_files(outfile, njobs, num = 4, split = '.fits')
 
     if len(missing) < njobs:
