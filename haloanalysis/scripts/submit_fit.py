@@ -36,7 +36,7 @@ if __name__ == '__main__':
     if len(missing):
 	script = path.join(path.dirname(haloanalysis.__file__), 'scripts/run_fit.py')
 	lsf.submit_lsf(script,
-	    config,'',njobs, jname = 'th{0[th_jet]:.0f}t{0[tmax]:.0e}{0[kind]:s}'.format(config),
+	    config,'',njobs, jname = 'th{0[th_jet]:.0f}t{0[tmax]:.0e}'.format(config),
 	       logdir = path.join(config['outdir'],'log/'))
     else:
 	logging.info("All files present.")
