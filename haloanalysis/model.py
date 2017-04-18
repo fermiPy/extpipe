@@ -12,7 +12,8 @@ from astropy.modeling.models import Gaussian1D
 from astropy.convolution import convolve
 
 from fermipy.spectrum import *
-from fermipy import spectrum 
+from fermipy import spectrum
+from fermipy.utils import get_parameter_limits
 from haloanalysis.utils import Axis, MapND
 from haloanalysis.sed import *
 
@@ -223,15 +224,22 @@ def scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
 	# get a log l grid over large flux array and 
 	#r68 array for each energy bin
 	lnl = sed_casc.nll_bin(ff,rr)
-	# find the bin closet to 4. which corresponds to 2sigma ul
-	# use 3.84 for 95% ul
-	ul_id = np.argmin(np.abs(2. * (lnl - np.min(lnl, axis = 0)) - 2.71), axis = 1 )
-	m = np.min(np.abs(2. * (lnl - np.min(lnl, axis = 0)) - 2.71), axis = 1) > 0.5
-	# get the flux 
-	halo_flux_ul[idx] = np.diag(ff[:,ul_id])
-	halo_flux_ul[idx][m] = np.max(ff, axis = 1)[m]
+
+        flux_ul = []        
+        for i in range(len(sed_casc.axes[1].centers)):
+            lims = get_parameter_limits(flux,-1.0*lnl[i])
+            flux_ul += [lims['ul']]
+                         
+        halo_flux_ul[idx] = np.array(flux_ul)
         print(idx, dloglike, p0, p1)
 
+	# find the bin closet to 4. which corresponds to 2sigma ul
+	# use 3.84 for 95% ul
+	#ul_id = np.argmin(np.abs(2. * (lnl - np.min(lnl, axis = 0)) - 2.71), axis = 1 )
+	#m = np.min(np.abs(2. * (lnl - np.min(lnl, axis = 0)) - 2.71), axis = 1) > 0.5
+	# get the flux 
+	#halo_flux_ul[idx] = np.diag(ff[:,ul_id])
+	#halo_flux_ul[idx][m] = np.max(ff, axis = 1)[m]
         #print bpars, lnl, p1
 
     model_prim0_emin[0,0][:sed_prim0.axis.nbin] = 10**sed_prim0.axis.lo
