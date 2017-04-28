@@ -44,7 +44,7 @@ def main():
     for t in flags:
         flag_mask += 2**t
     
-    # Delete unassociated and low TS sources
+    # Delete unassociated and low TS 3FGL sources
     for s in gta.roi.sources:
         if s.name == src_name:
             continue
@@ -52,7 +52,7 @@ def main():
             continue
         if s['class']:
             continue
-        if 'FHES' in s.name:
+        if not '3FGL' in s.name:
             continue
         if s['offset'] < 0.01:
             continue
