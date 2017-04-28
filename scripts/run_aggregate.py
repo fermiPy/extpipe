@@ -17,7 +17,7 @@ for i in range(njob):
     outfile = os.path.join(prefix,'table_%s_%02i.fits'%(prefix,i))
     outlog = os.path.splitext(outfile)[0] + '.log'
     
-    cmd = 'bsub -W 500 -R rhel60 '
+    cmd = 'bsub -W 500 -R "bullet,kiso,hequ" '
     cmd += '-oo %s haloanalysis-aggregate %s --output=%s'%(outlog, job_files,
                                                            outfile)
 
@@ -29,7 +29,7 @@ sys.exit(0)
                   
 for i in range(24):
     
-    cmd = 'bsub -W 500 -R rhel60 '
+    cmd = 'bsub -W 500 -R "bullet,kiso,hequ" '
     cmd += '-oo table_%s_%02i.log haloanalysis-aggregate %s/3fgl_j%02i* --output=table_%s_%02i.fits'%(prefix,
                                                                                                       i,prefix,
                                                                                                       i,prefix,i)
