@@ -32,9 +32,9 @@ def main():
     else:
         src_name = args.source
 
-    if 'FHES' in src_name or src_name in ['3FGL J0007.0+7302']:
+    if 'FHES' in src_name or src_name in ['3FGL J0007.0+7302','3FGL J1725.0-0513']:
         args.radius = 1.5
-    elif src_name == '3FGL J0425.8+5600':
+    elif src_name in ['3FGL J0425.8+5600','3FGL J2125.8+5832']:
         args.radius = 2.0
         
     cat = Catalog3FGL('/u/gl/mdwood/fermi/catalogs/gll_psc_v16_ext.fit')
