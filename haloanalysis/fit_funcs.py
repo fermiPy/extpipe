@@ -111,6 +111,11 @@ def fit_region(gta,modelname,src_name,loge_bounds=None, **kwargs):
             free_radius=1.0, make_plots=True)
     gta.write_roi(modelname + '_ext_gauss_roi')
 
+    gta.tsmap(modelname + 'ext_gauss', model=model1,
+              loge_bounds=loge_bounds, make_plots=True)
+    gta.tsmap(modelname + 'ext_gauss', model=model2,
+              loge_bounds=loge_bounds, make_plots=True)
+    
     # Disk Analysis
     gta.load_roi(modelname + '_roi')
     gta.reload_source(src_name)
