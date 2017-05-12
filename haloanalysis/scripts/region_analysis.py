@@ -36,6 +36,9 @@ def main():
         args.radius = 1.5
     elif src_name in ['3FGL J0425.8+5600','3FGL J2125.8+5832']:
         args.radius = 2.0
+
+    if src_name == 'FHES J0042.5+4117e':
+        gta.delete_source('3FGL J0042.5+4117')
         
     cat = Catalog3FGL('/u/gl/mdwood/fermi/catalogs/gll_psc_v16_ext.fit')
 
@@ -103,9 +106,9 @@ def main():
     # -----------------------------------
     # Fit the Baseline Model
     # -----------------------------------
-    gta.free_norm(src_name)
+    gta.free_sources(skydir=gta.roi[src_name].skydir,distance=1.5, pars='norm')
     gta.fit()
-    gta.free_norm(src_name,False)
+    gta.free_sources(False, pars='norm')
     
     gta.optimize()
     gta.print_roi()
@@ -121,6 +124,13 @@ def main():
                                                              'min' : 0.0, 'max' : 1.0}})
 
     gta.optimize()
+
+    gta.free_sources(False)
+    gta.free_sources(skydir=gta.roi[src_name].skydir,distance=1.5, pars='norm')
+    gta.free_source(src_name)
+    gta.fit()
+    gta.free_sources(False)
+    
     gta.print_roi()
     
     # Localize all point sources
