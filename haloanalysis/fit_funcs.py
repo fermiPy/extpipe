@@ -32,7 +32,7 @@ def fit_region(gta,modelname,src_name,loge_bounds=None, **kwargs):
     skydir = gta.roi[src_name].skydir
     
     gta.free_sources(False)
-    gta.free_sources(skydir=skydir,distance=1.0, pars='norm')
+    gta.free_sources(skydir=skydir,distance=1.5, pars='norm')
     gta.free_source(src_name)
     gta.fit(reoptimize=True)
     gta.write_roi(modelname + '_roi', make_plots=True)
@@ -111,9 +111,9 @@ def fit_region(gta,modelname,src_name,loge_bounds=None, **kwargs):
             free_radius=1.0, make_plots=True)
     gta.write_roi(modelname + '_ext_gauss_roi')
 
-    gta.tsmap(modelname + 'ext_gauss', model=model1,
+    gta.tsmap(modelname + '_ext_gauss', model=model1,
               loge_bounds=loge_bounds, make_plots=True)
-    gta.tsmap(modelname + 'ext_gauss', model=model2,
+    gta.tsmap(modelname + '_ext_gauss', model=model2,
               loge_bounds=loge_bounds, make_plots=True)
     
     # Disk Analysis
