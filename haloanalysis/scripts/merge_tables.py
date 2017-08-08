@@ -14,7 +14,7 @@ def main():
 
     parser.add_argument('--output', default = None, required=True)
     parser.add_argument('--filter', default = None, type=str)
-    parser.add_argument('--ts_threshold', default = 16.0, type=float)   
+    parser.add_argument('--ts_threshold', default = None, type=float)   
     parser.add_argument('files', nargs='*', default = None,
                         help='One or more FITS files containing BINTABLEs.')
 
@@ -50,10 +50,9 @@ def main():
 
         if 'exclusive' in cuts:
             m &= ~create_mask(tables['CATALOG'],cuts['exclusive']) 
-        
-    m &= ((cat['fit_ts'] > args.ts_threshold) |
-          (cat['fit_ext_disk_ts'] > args.ts_threshold) |
-          (cat['fit_ext_gauss_ts'] > args.ts_threshold))
+
+    if args.ts_threshold is not None:
+        m &= ((cat['fitn_ts'][:,0] > args.ts_threshold))
     
     tab_hdus = []
     for t in hdu_names[1:]:
