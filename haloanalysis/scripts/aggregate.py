@@ -17,15 +17,16 @@ from fermipy.utils import fit_parabola, get_parameter_limits, create_source_name
 from haloanalysis.batch import *
 
 
-ext_colnames = ['ts_ext',
-                'r68','r68_err','r68_ul95',
+ext_colnames = ['ts_ext','sys_ts_ext',
+                'r68', 'r68_err', 'r68_sys_err', 'r68_ul95', 'r68_sys_ul95',
                 'flux','flux_err','eflux','eflux_err',
                 'flux100','flux100_err','eflux100','eflux100_err',
                 'flux1000','flux1000_err','eflux1000','eflux1000_err',
                 'flux10000','flux10000_err','eflux10000','eflux10000_err',
                 'ts','npred',
                 'loglike','index','index_err',
-                'ra','dec','glon','glat']
+                'ra','dec','glon','glat',
+                'ra_err','dec_err','glon_err','glat_err']
 
 halo_colnames = ['ts','r68','index','r68_err','index_err',
                  'eflux','eflux_err', 'eflux_ul95', 'flux','flux_err','flux_ul95']
@@ -169,7 +170,7 @@ def extract_halo_sed(halo_data,halo_scan_shape):
     return o
 
 
-def extract_ext_data(row_dict, prefix, src_name, ext_data, ext_roi):
+def extract_ext_data(row_dict, prefix, src_name, ext_data, ext_roi, ext_data_psfhi, ext_data_psflo):
 
     for i, (ext,ext_roi) in enumerate(zip(ext_data,ext_roi)):
 
@@ -179,8 +180,23 @@ def extract_ext_data(row_dict, prefix, src_name, ext_data, ext_roi):
         row_dict['fitn_%s_r68_ul95'%prefix][i] = ext['ext_ul95']            
         row_dict['fitn_%s_ra'%prefix][i] = ext['ra']
         row_dict['fitn_%s_dec'%prefix][i] = ext['dec']
+        row_dict['fitn_%s_glon'%prefix][i] = ext['glon']
+        row_dict['fitn_%s_glat'%prefix][i] = ext['glat']
+        row_dict['fitn_%s_ra_err'%prefix][i] = ext['ra_err']
+        row_dict['fitn_%s_dec_err'%prefix][i] = ext['dec_err']
+        row_dict['fitn_%s_glon_err'%prefix][i] = ext['glon_err']
+        row_dict['fitn_%s_glat_err'%prefix][i] = ext['glat_err']
+                
         row_dict['fitn_%s_loglike'%prefix][i] = ext['loglike_ext']
-
+        if ext_data_psfhi:
+            row_dict['fitn_%s_sys_ts_ext'%prefix][i] = max(0,min(ext_data_psfhi[i]['ts_ext'],
+                                                                 ext['ts_ext'],
+                                                                 ext_data_psflo[i]['ts_ext']))
+            row_dict['fitn_%s_r68_sys_err'%prefix][i] = 0.5*np.abs(ext_data_psfhi[i]['ext'] - ext_data_psflo[i]['ext'])
+            row_dict['fitn_%s_r68_sys_ul95'%prefix][i] = max(ext_data_psfhi[i]['ext_ul95'],
+                                                            ext['ext_ul95'],
+                                                            ext_data_psflo[i]['ext_ul95'])
+        
         src = ext_roi['sources'][src_name]
 
         for x in ['','100','1000','10000']:
@@ -318,7 +334,11 @@ def create_tables(nebins, next_bins, halo_scan_shape, eflux_scan_pts):
     cols_dict_lnl['name'] = dict(dtype='S20', format='%s',description='Source Name')
 
     cols_dict_lnl['fit_ext_gauss_scan_dlnl'] = dict(dtype='f8', format='%.3f',shape=(next_bins))
+    cols_dict_lnl['fit_ext_gauss_scan_psfhi_dlnl'] = dict(dtype='f8', format='%.3f',shape=(next_bins))
+    cols_dict_lnl['fit_ext_gauss_scan_psflo_dlnl'] = dict(dtype='f8', format='%.3f',shape=(next_bins))
     cols_dict_lnl['fit_ext_disk_scan_dlnl'] = dict(dtype='f8', format='%.3f',shape=(next_bins))
+    cols_dict_lnl['fit_ext_disk_scan_psfhi_dlnl'] = dict(dtype='f8', format='%.3f',shape=(next_bins))
+    cols_dict_lnl['fit_ext_disk_scan_psflo_dlnl'] = dict(dtype='f8', format='%.3f',shape=(next_bins))
     cols_dict_lnl['fit_halo_scan_dlnl'] = dict(dtype='f8', format='%.3f',
                                                shape=halo_scan_shape + (len(eflux_scan_pts),))
     cols_dict_lnl['fit_halo_sed_scan_dlnl'] = dict(dtype='f8', format='%.3f',
@@ -381,6 +401,7 @@ def create_tables(nebins, next_bins, halo_scan_shape, eflux_scan_pts):
     cols_dict['fit_glon'] = dict(dtype='f8', format='%.2f')
     cols_dict['fit_glat'] = dict(dtype='f8', format='%.2f')
     cols_dict['spatial_model'] = dict(dtype='S32', format='%s')
+    cols_dict['fit_ext_model'] = dict(dtype='S32', format='%s')
     
     for t in ['dnde','flux','eflux']:        
         for x in ['','100','1000','10000']:        
@@ -401,7 +422,8 @@ def create_tables(nebins, next_bins, halo_scan_shape, eflux_scan_pts):
             fmt = '%.5g'
         else:
             fmt = '%.2f'
-            
+
+        cols_dict['fit_ext_%s'%k] = dict(dtype='f8', format=fmt)
         cols_dict['fitn_ext_gauss_%s'%k] = dict(dtype='f8', format=fmt,shape=(nfit,))    
         cols_dict['fit_ext_gauss_%s'%k] = dict(dtype='f8', format=fmt)
         cols_dict['fitn_ext_disk_%s'%k] = dict(dtype='f8', format=fmt,shape=(nfit,))    
@@ -422,11 +444,12 @@ def create_tables(nebins, next_bins, halo_scan_shape, eflux_scan_pts):
     cols_dict['fitn_aic_ps'] = dict(dtype='f8', format='%.2f',shape=(nfit,))
 
     # Best-fit model
-    for k in ['ext_gauss','ext_disk','halo']:    
+    for k in ['ext_gauss','ext_disk','ext','halo']:    
         cols_dict['fit_dlike_%s'%k] = dict(dtype='f8', format='%.2f')
         cols_dict['fit_dlike1_%s'%k] = dict(dtype='f8', format='%.2f')
         cols_dict['fit_dlike_ps_%s'%k] = dict(dtype='f8', format='%.2f')
         cols_dict['fit_daic_ps_%s'%k] = dict(dtype='f8', format='%.2f')
+        cols_dict['fit_aic_%s'%k] = dict(dtype='f8', format='%.2f')
     
     cols_dict['fit_halo_scan_ts'] = dict(dtype='f8', format='%.2f',shape=halo_scan_shape)
     cols_dict['fit_halo_scan_eflux_ul95'] = dict(dtype='f8', format='%.4g',shape=halo_scan_shape)
@@ -438,6 +461,7 @@ def create_tables(nebins, next_bins, halo_scan_shape, eflux_scan_pts):
     cols_dict['fit_idx'] = dict(dtype='i8')
     cols_dict['fit_idx_ext_gauss'] = dict(dtype='i8')
     cols_dict['fit_idx_ext_disk'] = dict(dtype='i8')
+    cols_dict['fit_idx_ext'] = dict(dtype='i8')
     cols_dict['fit_idx_halo'] = dict(dtype='i8')
     cols_dict['fit_mean_sep'] = dict(dtype='f8', format='%.3f')
     cols_dict['fit_min_sep'] = dict(dtype='f8', format='%.3f')
@@ -463,7 +487,7 @@ def load_npy_files(dirname, suffix, wildcard=False):
     for i in range(5):
         infile = os.path.join(dirname,'fit%i%s.npy'%(i,suffix))
         if wildcard:
-            files = glob.glob(infile)
+            files = sorted(glob.glob(infile))
             if len(files) == 0:
                 break
             
@@ -543,7 +567,7 @@ def aggregate(dirs,output,suffix=''):
     nebins = 20
     next_bins = 30
     halo_scan_shape = (15,9)
-    eflux_scan_pts = np.logspace(-9,-5,41)
+    eflux_scan_pts = np.logspace(-10,-4,61)
     
     row_dict = {}
     row_dict_lnl = {}
@@ -622,10 +646,13 @@ def aggregate(dirs,output,suffix=''):
         tab_new_src_data = [Table()] + load_tables(d,'%s_new_source_data'%(suffix))
         
         halo_data = load_npy_files(d,'%s_%s_data'%(suffix,halo_name))
-        #halo_data_sed = load_npy_files(d,'%s_%s_data_idx_free'%(suffix,halo_name))        
         ext_gauss_data = load_npy_files(d,'%s_ext_gauss_ext'%suffix)
+        ext_gauss_data_psfhi = load_npy_files(d,'%s_ext_gauss_ext_psfhi'%suffix)
+        ext_gauss_data_psflo = load_npy_files(d,'%s_ext_gauss_ext_psflo'%suffix)
         ext_gauss_roi = load_npy_files(d,'%s_ext_gauss_roi'%suffix)
         ext_disk_data = load_npy_files(d,'%s_ext_disk_ext'%suffix)
+        ext_disk_data_psfhi = load_npy_files(d,'%s_ext_disk_ext_psfhi'%suffix)
+        ext_disk_data_psflo = load_npy_files(d,'%s_ext_disk_ext_psflo'%suffix)
         ext_disk_roi = load_npy_files(d,'%s_ext_disk_roi'%suffix)
         sed_data = load_npy_files(d,'%s_sed'%suffix)
         halo_data_sed = load_npy_files(d,'_cov05_*_halo_radialgaussian_sed',wildcard=True)
@@ -635,6 +662,7 @@ def aggregate(dirs,output,suffix=''):
             continue
 
         src_name = fit_data[0]['config']['selection']['target']
+        nebins = len(fit_data[0]['roi']['log_energies'])-1
         src = fit_data[0]['sources'][src_name]
         src_data = []
         new_srcs = []
@@ -673,10 +701,10 @@ def aggregate(dirs,output,suffix=''):
             ext_r68 += [ext['width']]
 
         extract_ext_data(row_dict, 'ext_gauss', src_name,
-                         ext_gauss_data, ext_gauss_roi)
+                         ext_gauss_data, ext_gauss_roi, ext_gauss_data_psfhi, ext_gauss_data_psflo)
 
         extract_ext_data(row_dict, 'ext_disk', src_name,
-                         ext_disk_data, ext_disk_roi)
+                         ext_disk_data, ext_disk_roi, ext_disk_data_psfhi, ext_disk_data_psflo)
                     
         halo_scan_r68 = np.array(tab_halo_data[0]['halo_width']).reshape(halo_scan_shape)
         halo_scan_index = np.array(tab_halo_data[0]['halo_index']).reshape(halo_scan_shape)
@@ -892,10 +920,37 @@ def aggregate(dirs,output,suffix=''):
             row_dict['fit_ext_gauss_%s'%k] = row_dict['fitn_ext_gauss_%s'%k][fit_idx_ext_gauss]
             row_dict['fit_ext_disk_%s'%k] = row_dict['fitn_ext_disk_%s'%k][fit_idx_ext_disk]
 
-        if row_dict['fit_ext_disk_ts_ext'] > row_dict['fit_ext_gauss_ts_ext']:
-            fit_ext_model = 'ext_disk'
-        else:
+        for k in ['dlike_ps_halo','dlike1_halo','dlike_halo','daic_ps_halo']:
+            row_dict['fit_%s'%k] = row_dict['fitn_%s'%k][fit_idx_halo]
+
+        for k in ['dlike_ps','dlike1','dlike','daic_ps', 'aic']:
+            row_dict['fit_%s_ext_gauss'%k] = row_dict['fitn_%s_ext_gauss'%k][fit_idx_ext_gauss]
+            row_dict['fit_%s_ext_disk'%k] = row_dict['fitn_%s_ext_disk'%k][fit_idx_ext_disk]
+
+
+        if max(row_dict['fit_ext_disk_ts_ext'],row_dict['fit_ext_disk_ts_ext']) < 16.:
             fit_ext_model = 'ext_gauss'
+            row_dict['fit_ext_model'] = 'gauss'
+        elif fit_idx_ext_disk != fit_idx_ext_gauss:
+            if fit_idx_ext_disk < fit_idx_ext_gauss:
+                fit_ext_model = 'ext_disk'
+                row_dict['fit_ext_model'] = 'disk'
+            else:
+                fit_ext_model = 'ext_gauss'
+                row_dict['fit_ext_model'] = 'gauss'
+        else:
+            if row_dict['fit_aic_ext_disk'] > row_dict['fit_aic_ext_gauss']:
+                fit_ext_model = 'ext_disk'
+                row_dict['fit_ext_model'] = 'disk'
+            else:
+                fit_ext_model = 'ext_gauss'
+                row_dict['fit_ext_model'] = 'gauss'
+
+        for k in ext_colnames:
+            row_dict['fit_ext_%s'%k] = row_dict['fit_%s_%s'%(fit_ext_model, k)]
+
+        for k in ['dlike_ps','dlike1','dlike','daic_ps', 'aic']:
+            row_dict['fit_%s_ext'%k] = row_dict['fit_%s_%s'%(k,fit_ext_model)]
             
         print('best halo', fit_idx_halo)
         print('best ext gauss', fit_idx_ext_gauss)
@@ -1022,21 +1077,17 @@ def aggregate(dirs,output,suffix=''):
         #row_dict['dnde1000_index_err'] = src_data[0]['dnde1000_index_err']
         row_dict['spectrum_type'] = src_data[0]['SpectrumType']
 
-        for k in ['dlike_ps_halo','dlike1_halo','dlike_halo','daic_ps_halo']:
-            row_dict['fit_%s'%k] = row_dict['fitn_%s'%k][fit_idx_halo]
-
-        for k in ['dlike_ps','dlike1','dlike','daic_ps']:
-            row_dict['fit_%s_ext_gauss'%k] = row_dict['fitn_%s_ext_gauss'%k][fit_idx_ext_gauss]
-            row_dict['fit_%s_ext_disk'%k] = row_dict['fitn_%s_ext_disk'%k][fit_idx_ext_disk]
-
+            
         row_dict['fit_mean_sep'] = fit_mean_sep
         row_dict['fit_min_sep'] = fit_min_sep
         row_dict['fit_idx'] = fit_idx
         row_dict['fit_idx_halo'] = fit_idx_halo
         row_dict['fit_idx_ext_gauss'] = fit_idx_ext_gauss
         row_dict['fit_idx_ext_disk'] = fit_idx_ext_disk
-
-
+        if row_dict['fit_ext_model'] == 'disk':
+            row_dict['fit_idx_ext'] = fit_idx_ext_disk
+        else:
+            row_dict['fit_idx_ext'] = fit_idx_ext_gauss
                         
         from scipy.interpolate import UnivariateSpline
 
@@ -1052,16 +1103,23 @@ def aggregate(dirs,output,suffix=''):
                 continue
             
             for j in range(nebins):
-                sp = UnivariateSpline(halo_seds[fit_idx_halo]['dlnl_eflux'][i,j],
-                                      halo_seds[fit_idx_halo]['dlnl'][i,j],k=2,s=0.001)
-                fit_sed_dlnl_interp[i,j] = sp(eflux_scan_pts)
+                x = halo_seds[fit_idx_halo]['dlnl_eflux'][i,j]
+                y = halo_seds[fit_idx_halo]['dlnl'][i,j]
+                isort = np.argsort(x)
+                sp = UnivariateSpline(x[isort], y[isort], k=2, s=0.001)
+                ys = sp(eflux_scan_pts)
+                fit_sed_dlnl_interp[i,j] = ys 
+
+                if np.any(~np.isfinite(sp(eflux_scan_pts))):
+                    print(i,j,fit_idx_halo,x, y)
+                    print(i,j,sp(eflux_scan_pts))
                 
             
             for j in range(halo_scan_shape[1]):                
                 sp = UnivariateSpline(fit_halo_eflux[i,j],
                                       fit_halo_dloglike[i,j],k=2,s=0.001)
                 fit_dlnl_interp[i,j] = sp(eflux_scan_pts)
-
+                
         row_dict_lnl['fit_src_sed_scan_dlnl'] = sed_data[fit_idx_halo]['dloglike_scan']
         row_dict_lnl['fit_src_sed_scan_eflux'] = sed_data[fit_idx_halo]['norm_scan'].copy()
         row_dict_lnl['fit_src_sed_scan_eflux'] *= sed_data[fit_idx_halo]['ref_eflux'][:,None]
@@ -1081,7 +1139,11 @@ def aggregate(dirs,output,suffix=''):
             
         row_dict_lnl['name'] = row_dict['name']        
         row_dict_lnl['fit_ext_gauss_scan_dlnl'] = ext_gauss_data[fit_idx_ext_gauss]['dloglike']
+        row_dict_lnl['fit_ext_gauss_scan_psfhi_dlnl'] = ext_gauss_data_psfhi[fit_idx_ext_gauss]['dloglike']
+        row_dict_lnl['fit_ext_gauss_scan_psflo_dlnl'] = ext_gauss_data_psflo[fit_idx_ext_gauss]['dloglike']
         row_dict_lnl['fit_ext_disk_scan_dlnl'] = ext_disk_data[fit_idx_ext_disk]['dloglike']
+        row_dict_lnl['fit_ext_disk_scan_psfhi_dlnl'] = ext_disk_data_psfhi[fit_idx_ext_disk]['dloglike']
+        row_dict_lnl['fit_ext_disk_scan_psflo_dlnl'] = ext_disk_data_psflo[fit_idx_ext_disk]['dloglike']
         row_dict_lnl['fit_halo_scan_dlnl'] = fit_dlnl_interp
         row_dict_lnl['fit_halo_sed_scan_dlnl'] = fit_sed_dlnl_interp
         
