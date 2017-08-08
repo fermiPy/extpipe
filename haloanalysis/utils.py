@@ -63,18 +63,20 @@ def create_mask(tab, target_def):
             m &= m0
 
         elif isinstance(v,str):
-	    p = re.compile('([a-zA-Z_2-9][^<>=&|!\d+()\s*.]+\d*)') 
+	    p = re.compile('([a-zA-Z_2-9][^"<>=&|!()\s*.]+)') 
 	# regular expression should capture all column names 
 	# that consist of a-z, A-Z, '_', and numbers at the end
 	# it should not capture pure numbers and numbers like '1e10'
 	    replaced = [] # check what already has been replaced
 	    for cname in p.findall(v):
+                print(cname)
+                
 		if not cname in replaced:
 		    if tab.columns.has_key(cname):
 			tab[cname]
 			v = v.replace(cname, "tab['{0:s}']".format(cname))
-		    else:
-			v = v.replace(cname, "'{0:s}'".format(cname))
+		    #else:
+	#		v = v.replace(cname, "'{0:s}'".format(cname))
 		    replaced.append(cname)
 	    # all of the above in one line but does not work if column name starts with a number
 	    # or if expression is not a number
