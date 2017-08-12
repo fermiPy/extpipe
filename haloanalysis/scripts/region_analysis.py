@@ -4,6 +4,7 @@ import copy
 import numpy as np
 import itertools
 import argparse
+import logging
 
 from fermipy.utils import init_matplotlib_backend
 
@@ -12,6 +13,35 @@ init_matplotlib_backend()
 from fermipy.gtanalysis import GTAnalysis
 from fermipy.catalog import Catalog3FGL
 from haloanalysis.fit_funcs import fit_region, fit_halo
+
+def optimize_source(gta, name):
+    """Optimize and individual source while keeping all other
+    sources in the model fixed."""
+        
+    # preserve free parameters
+    free = gta.get_free_param_vector()
+
+    # Fix all parameters
+    gta.free_sources(free=False, loglevel=logging.DEBUG)
+    gta.free_source(name)
+    gta.fit()
+    gta.set_free_param_vector(free)
+
+def update_to_lp(gta, ts_threshold, names=None):
+
+    for src in sorted(gta.roi.sources, key=lambda t: t['ts'],reverse=True):
+
+        if src.diffuse:
+            continue
+
+        if names is not None and src.name not in names:
+            continue
+        
+        if src['ts'] > ts_threshold and src['SpectrumType'] == 'PowerLaw':
+            gta.set_source_spectrum(src.name, spectrum_type='LogParabola',
+                                    spectrum_pars={'beta' : {'value' : 0.0, 'scale' : 1.0,
+                                                             'min' : 0.0, 'max' : 1.0}})
+            optimize_source(gta, src.name)
 
 def main():
         
@@ -93,9 +123,8 @@ def main():
     model2 = { 'SpatialModel' : 'PointSource', 'Index' : 2.7 }
     model3 = { 'SpatialModel' : 'RadialDisk', 'Index' : 2.0, 'SpatialWidth' : 0.1 }
 
-    newsrc_model = { 'SpectrumType' : 'LogParabola',
-                     'alpha' : 2.0,
-                     'beta' : {'value' : 0.0, 'min' : 0.0, 'max' : 1.0} }
+    newsrc_model = { 'SpectrumType' : 'PowerLaw', 'Index' : 2.0 }
+#                     'beta' : {'value' : 0.0, 'min' : 0.0, 'max' : 1.0} }
 
     skip_loc = ['3FGL J0534.5+2201s']
 
@@ -112,17 +141,7 @@ def main():
     
     gta.optimize()
     gta.print_roi()
-
-    for s in sorted(gta.roi.sources, key=lambda t: t['ts'],reverse=True):
-
-        if s.diffuse:
-            continue
-        
-        if s['ts'] > 1000. and s['SpectrumType'] == 'PowerLaw':
-            gta.set_source_spectrum(s.name, spectrum_type='LogParabola',
-                                    spectrum_pars={'beta' : {'value' : 0.0, 'scale' : 1.0,
-                                                             'min' : 0.0, 'max' : 1.0}})
-
+    update_to_lp(gta,100.)
     gta.optimize()
 
     gta.free_sources(False)
@@ -163,21 +182,20 @@ def main():
     gta.tsmap('base0_nosource',model=model2, exclude=[src_name], make_plots=True)
 
     # Look for new point sources outside the inner 1.0 deg
-    gta.find_sources('base1_pass0',model=newsrc_model,
+    o = gta.find_sources('base1_pass0',model=newsrc_model,
                      search_skydir=gta.roi.skydir,
                      max_iter=5,min_separation=0.5,
                      sqrt_ts_threshold=sqrt_ts_threshold,
-                     search_minmax_radius=[args.radius,None],
-                     free_params=['alpha','norm'])
+                     search_minmax_radius=[args.radius,None])
+    update_to_lp(gta,100., names=[src.name for src in o['sources']])
     gta.optimize()
 
-    gta.find_sources('base1_pass1',model=newsrc_model,
+    o = gta.find_sources('base1_pass1',model=newsrc_model,
                      search_skydir=gta.roi.skydir,
                      max_iter=5,min_separation=0.5,
                      sqrt_ts_threshold=sqrt_ts_threshold,
-                     search_minmax_radius=[args.radius,None],
-                     free_params=['alpha','norm'])
-
+                     search_minmax_radius=[args.radius,None])
+    update_to_lp(gta,100., names=[src.name for src in o['sources']])
     
     gta.print_roi()
 
@@ -209,9 +227,9 @@ def main():
                                     sources_per_iter=1,
                                     sqrt_ts_threshold=3,
                                     min_separation=0.5,
-                                    search_minmax_radius=[None,args.radius],
-                                    free_params=['alpha','norm'])
-
+                                    search_minmax_radius=[None,args.radius])
+        update_to_lp(gta,100., names=[src.name for src in srcs_fit['sources']])
+        
         if len(srcs_fit['sources']) == 0:
             break
 
