@@ -187,6 +187,7 @@ def extract_ext_data(row_dict, prefix, src_name, ext_data, ext_roi, ext_data_psf
         row_dict['fitn_%s_glon_err'%prefix][i] = ext['glon_err']
         row_dict['fitn_%s_glat_err'%prefix][i] = ext['glat_err']
                 
+        #row_dict['fitn_%s_loglike'%prefix][i] = ext_roi['roi']['loglike']
         row_dict['fitn_%s_loglike'%prefix][i] = ext['loglike_ext']
         if ext_data_psfhi:
             row_dict['fitn_%s_sys_ts_ext'%prefix][i] = max(0,min(ext_data_psfhi[i]['ts_ext'],

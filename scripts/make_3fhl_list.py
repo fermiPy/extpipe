@@ -6,7 +6,7 @@ from fermipy.utils import *
 
 
 
-tab0 = Table.read('/u/gl/mdwood/fermi/catalogs/gll_psch_v11.fit.gz')
+tab0 = Table.read('/u/gl/mdwood/fermi/catalogs/gll_psch_v11.fit')
 cat_3fgl = Table.read('/u/gl/mdwood/fermi/catalogs/gll_psc_v16_ext.fit')
 
 skydir_3fgl = SkyCoord(cat_3fgl['RAJ2000'],cat_3fgl['DEJ2000'],unit='deg')

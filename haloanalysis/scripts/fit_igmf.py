@@ -74,7 +74,7 @@ def main():
 
     # intrinsic spec
     if args.int_spec == 'PLExpCutOff':
-	fint = sp.PLExpCutoff  # intrinsic spectrum
+	fint = PLExpCutoff  # intrinsic spectrum
 	p0 = [1E-13,-1.5,1E7]  # initial parameters
 	scale = 1E3            # pivot energy
     elif args.int_spec == 'LogParabolaExpCutoff':
