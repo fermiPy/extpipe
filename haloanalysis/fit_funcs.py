@@ -20,8 +20,8 @@ def fit_region(gta,modelname,src_name,loge_bounds=None, **kwargs):
         gta.set_energy_range(loge_bounds[0],loge_bounds[1])
     
     model0 = { 'SpatialModel' : 'PointSource', 'Index' : 1.5 }
-    model1 = { 'SpatialModel' : 'PointSource', 'Index' : 2.0 }
-    model2 = { 'SpatialModel' : 'PointSource', 'Index' : 2.7 }
+    model_pl20 = { 'SpatialModel' : 'PointSource', 'Index' : 2.0 }
+    model_pl27 = { 'SpatialModel' : 'PointSource', 'Index' : 2.7 }
     model3 = { 'SpatialModel' : 'Gaussian', 'Index' : 2.0, 'SpatialWidth' : 0.1 }
     model4 = { 'SpatialModel' : 'RadialDisk', 'Index' : 2.0,
                'SpatialWidth' : 0.1 * 0.8246211251235321 }
@@ -33,6 +33,7 @@ def fit_region(gta,modelname,src_name,loge_bounds=None, **kwargs):
     
     gta.free_sources(False)
     gta.free_sources(skydir=skydir,distance=1.5, pars='norm')
+    gta.free_sources(skydir=skydir,distance=1.0, pars='shape')
     gta.free_source(src_name)
     gta.fit(reoptimize=True)
     gta.write_roi(modelname + '_roi', make_plots=True)
@@ -45,26 +46,26 @@ def fit_region(gta,modelname,src_name,loge_bounds=None, **kwargs):
     gta.logger.info('%s Model Likelihood Delta: %f'%(modelname,lnl1-lnl0))
     
     # TS Maps
-    maps_model1 = gta.tsmap(modelname, model=model1,
+    maps_model_pl20 = gta.tsmap(modelname, model=model_pl20,
                             loge_bounds=loge_bounds, make_plots=True)
-    gta.tsmap(modelname, model=model2,
+    gta.tsmap(modelname, model=model_pl27,
               loge_bounds=loge_bounds, make_plots=True)
-    maps_model1_nosource = gta.tsmap('%s_nosource'%modelname,
-                                     model=model1, exclude=[src_name],
+    maps_model_pl20_nosource = gta.tsmap('%s_nosource'%modelname,
+                                     model=model_pl20, exclude=[src_name],
                                      loge_bounds=loge_bounds, make_plots=True)
-    maps_model2_nosource = gta.tsmap('%s_nosource'%modelname,
-                                     model=model2, exclude=[src_name],
+    maps_model_pl27_nosource = gta.tsmap('%s_nosource'%modelname,
+                                     model=model_pl27, exclude=[src_name],
                                      loge_bounds=loge_bounds, make_plots=True)
-    maps_model4_nosource = gta.tsmap('%s_nosource'%modelname,
-                                     model=model4, exclude=[src_name],
-                                     loge_bounds=loge_bounds, make_plots=True)    
+    #maps_model4_nosource = gta.tsmap('%s_nosource'%modelname,
+    #                                 model=model4, exclude=[src_name],
+    #                                 loge_bounds=loge_bounds, make_plots=True)    
     gta.residmap(modelname, model=model3,
                  loge_bounds=loge_bounds, make_plots=True)
     
     # Make zoom plots
-    gta.plotter.make_tsmap_plots(maps_model1, gta.roi,
+    gta.plotter.make_tsmap_plots(maps_model_pl20, gta.roi,
                                  zoom=2,suffix='tsmap_zoom')
-    gta.plotter.make_tsmap_plots(maps_model1_nosource, gta.roi,
+    gta.plotter.make_tsmap_plots(maps_model_pl20_nosource, gta.roi,
                                  zoom=2,suffix='tsmap_zoom')
                                                                     
     # SED Analysis
@@ -84,12 +85,12 @@ def fit_region(gta,modelname,src_name,loge_bounds=None, **kwargs):
     
     # Gaussian Analysis
     kw = dict(spatial_model='RadialGaussian',
-              optimizer={'optimizer' : 'NEWTON'},
+#              optimizer={'optimizer' : 'NEWTON'},
               free_radius=1.0, fit_ebin=True)
     
     gta.extension(src_name, outfile=modelname + '_ext_gauss_ext',
                   prefix=modelname + '_gauss',
-                  fit_position=True,
+                  fit_position=True, free_background=True,
                   make_plots=True, update=True, **kw)
 
     gta.extension(src_name, outfile=modelname + '_ext_gauss_ext_psflo',
@@ -111,9 +112,9 @@ def fit_region(gta,modelname,src_name,loge_bounds=None, **kwargs):
             free_radius=1.0, make_plots=True)
     gta.write_roi(modelname + '_ext_gauss_roi')
 
-    gta.tsmap(modelname + '_ext_gauss', model=model1,
+    gta.tsmap(modelname + '_ext_gauss', model=model_pl20,
               loge_bounds=loge_bounds, make_plots=True)
-    gta.tsmap(modelname + '_ext_gauss', model=model2,
+    gta.tsmap(modelname + '_ext_gauss', model=model_pl27,
               loge_bounds=loge_bounds, make_plots=True)
     
     # Disk Analysis
@@ -121,12 +122,12 @@ def fit_region(gta,modelname,src_name,loge_bounds=None, **kwargs):
     gta.reload_source(src_name)
 
     kw = dict(spatial_model='RadialDisk',
-              optimizer={'optimizer' : 'NEWTON'},
+#              optimizer={'optimizer' : 'NEWTON'},
               free_radius=1.0, fit_ebin=True)
     
     gta.extension(src_name, outfile=modelname + '_ext_disk_ext',
                   prefix=modelname + '_disk',
-                  fit_position=True, 
+                  fit_position=True,  free_background=True,
                   make_plots=True, update=True, **kw)
 
     gta.extension(src_name, outfile=modelname + '_ext_disk_ext_psflo',
