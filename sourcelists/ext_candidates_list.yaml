@@ -1,45 +1,41 @@
 3fgl_j0002.2-4152:
   selection: {target: 3FGL J0002.2-4152}
-3fgl_j0004.2+6757:
-  selection: {target: 3FGL J0004.2+6757}
 3fgl_j0007.0+7302:
   selection: {target: 3FGL J0007.0+7302}
-3fgl_j0008.5+6853:
-  selection: {target: 3FGL J0008.5+6853}
 3fgl_j0042.5+4117:
   selection: {target: 3FGL J0042.5+4117}
-3fgl_j0059.0-7242e:
-  selection: {target: 3FGL J0059.0-7242e}
 3fgl_j0107.0-1208:
   selection: {target: 3FGL J0107.0-1208}
-3fgl_j0127.9+2551:
-  selection: {target: 3FGL J0127.9+2551}
-3fgl_j0226.7-4747:
-  selection: {target: 3FGL J0226.7-4747}
+3fgl_j0222.6+4301:
+  selection: {target: 3FGL J0222.6+4301}
 3fgl_j0238.0+5237:
   selection: {target: 3FGL J0238.0+5237}
+3fgl_j0319.8+4130:
+  selection: {target: 3FGL J0319.8+4130}
 3fgl_j0322.5-3721:
   selection: {target: 3FGL J0322.5-3721}
 3fgl_j0425.8+5600:
   selection: {target: 3FGL J0425.8+5600}
-3fgl_j0426.3+3510:
-  selection: {target: 3FGL J0426.3+3510}
-3fgl_j0431.7+3503:
-  selection: {target: 3FGL J0431.7+3503}
+3fgl_j0428.6-3756:
+  selection: {target: 3FGL J0428.6-3756}
 3fgl_j0456.2-6924:
   selection: {target: 3FGL J0456.2-6924}
+3fgl_j0457.0-2324:
+  selection: {target: 3FGL J0457.0-2324}
 3fgl_j0524.5-6937:
   selection: {target: 3FGL J0524.5-6937}
 3fgl_j0525.2-6614:
   selection: {target: 3FGL J0525.2-6614}
-3fgl_j0526.6-6825e:
-  selection: {target: 3FGL J0526.6-6825e}
-3fgl_j0534.5+2201:
-  selection: {target: 3FGL J0534.5+2201}
 3fgl_j0534.5+2201i:
   selection: {target: 3FGL J0534.5+2201i}
+3fgl_j0538.8-4405:
+  selection: {target: 3FGL J0538.8-4405}
+3fgl_j0614.1-3329:
+  selection: {target: 3FGL J0614.1-3329}
 3fgl_j0630.2-0929c:
   selection: {target: 3FGL J0630.2-0929c}
+3fgl_j0721.9+7120:
+  selection: {target: 3FGL J0721.9+7120}
 3fgl_j0725.8-0054:
   selection: {target: 3FGL J0725.8-0054}
 3fgl_j0737.2-3233:
@@ -50,60 +46,44 @@
   selection: {target: 3FGL J0850.0+4855}
 3fgl_j0855.2-0718:
   selection: {target: 3FGL J0855.2-0718}
-3fgl_j0928.7+7300:
-  selection: {target: 3FGL J0928.7+7300}
 3fgl_j0940.7-6102:
   selection: {target: 3FGL J0940.7-6102}
-3fgl_j1002.0-2837:
-  selection: {target: 3FGL J1002.0-2837}
 3fgl_j1051.5-6517:
   selection: {target: 3FGL J1051.5-6517}
+3fgl_j1057.9-5227:
+  selection: {target: 3FGL J1057.9-5227}
 3fgl_j1104.4+3812:
   selection: {target: 3FGL J1104.4+3812}
 3fgl_j1113.1-4515:
   selection: {target: 3FGL J1113.1-4515}
 3fgl_j1128.6-5434:
   selection: {target: 3FGL J1128.6-5434}
-3fgl_j1132.8+1015:
-  selection: {target: 3FGL J1132.8+1015}
 3fgl_j1209.1-5224:
   selection: {target: 3FGL J1209.1-5224}
-3fgl_j1236.6-7050:
-  selection: {target: 3FGL J1236.6-7050}
+3fgl_j1256.1-0547:
+  selection: {target: 3FGL J1256.1-0547}
 3fgl_j1323.2-3901:
   selection: {target: 3FGL J1323.2-3901}
-3fgl_j1324.0-4330e:
-  selection: {target: 3FGL J1324.0-4330e}
 3fgl_j1330.0-3818:
   selection: {target: 3FGL J1330.0-3818}
-3fgl_j1334.3-4152:
-  selection: {target: 3FGL J1334.3-4152}
-3fgl_j1335.2-4056:
-  selection: {target: 3FGL J1335.2-4056}
+3fgl_j1427.9-4206:
+  selection: {target: 3FGL J1427.9-4206}
 3fgl_j1503.7-6426:
   selection: {target: 3FGL J1503.7-6426}
+3fgl_j1504.4+1029:
+  selection: {target: 3FGL J1504.4+1029}
 3fgl_j1512.8-0906:
   selection: {target: 3FGL J1512.8-0906}
-3fgl_j1621.1-2331:
-  selection: {target: 3FGL J1621.1-2331}
-3fgl_j1626.2-2428c:
-  selection: {target: 3FGL J1626.2-2428c}
-3fgl_j1628.2-2431c:
-  selection: {target: 3FGL J1628.2-2431c}
+3fgl_j1555.7+1111:
+  selection: {target: 3FGL J1555.7+1111}
 3fgl_j1645.9-5420:
   selection: {target: 3FGL J1645.9-5420}
 3fgl_j1653.9+3945:
   selection: {target: 3FGL J1653.9+3945}
 3fgl_j1714.0+0748:
   selection: {target: 3FGL J1714.0+0748}
-3fgl_j1720.3-0428:
-  selection: {target: 3FGL J1720.3-0428}
-3fgl_j1722.7-0415:
-  selection: {target: 3FGL J1722.7-0415}
 3fgl_j1725.0-0513:
   selection: {target: 3FGL J1725.0-0513}
-3fgl_j1729.0+6049:
-  selection: {target: 3FGL J1729.0+6049}
 3fgl_j1744.8-1557:
   selection: {target: 3FGL J1744.8-1557}
 3fgl_j1748.5-3912:
@@ -114,14 +94,10 @@
   selection: {target: 3FGL J1818.6+0903}
 3fgl_j1820.4-3217:
   selection: {target: 3FGL J1820.4-3217}
-3fgl_j1822.1-7051:
-  selection: {target: 3FGL J1822.1-7051}
+3fgl_j1836.2+5925:
+  selection: {target: 3FGL J1836.2+5925}
 3fgl_j1845.5-2524:
   selection: {target: 3FGL J1845.5-2524}
-3fgl_j1857.9+5549:
-  selection: {target: 3FGL J1857.9+5549}
-3fgl_j1948.1-7059:
-  selection: {target: 3FGL J1948.1-7059}
 3fgl_j1949.7-8109:
   selection: {target: 3FGL J1949.7-8109}
 3fgl_j1953.3+3847:
@@ -134,27 +110,21 @@
   selection: {target: 3FGL J2035.6+3146}
 3fgl_j2035.8+4902:
   selection: {target: 3FGL J2035.8+4902}
-3fgl_j2051.0+3040e:
-  selection: {target: 3FGL J2051.0+3040e}
 3fgl_j2103.9-6233:
   selection: {target: 3FGL J2103.9-6233}
 3fgl_j2125.8+5832:
   selection: {target: 3FGL J2125.8+5832}
 3fgl_j2142.2-2546:
   selection: {target: 3FGL J2142.2-2546}
-3fgl_j2206.5+6451:
-  selection: {target: 3FGL J2206.5+6451}
-3fgl_j2209.0+3652:
-  selection: {target: 3FGL J2209.0+3652}
-3fgl_j2210.2+6509:
-  selection: {target: 3FGL J2210.2+6509}
+3fgl_j2158.8-3013:
+  selection: {target: 3FGL J2158.8-3013}
 3fgl_j2224.6-1122:
   selection: {target: 3FGL J2224.6-1122}
+3fgl_j2254.0+1608:
+  selection: {target: 3FGL J2254.0+1608}
 3fgl_j2309.0+5428:
   selection: {target: 3FGL J2309.0+5428}
 3fgl_j2318.6+1912:
   selection: {target: 3FGL J2318.6+1912}
-3fgl_j2355.4+6939:
-  selection: {target: 3FGL J2355.4+6939}
-3fgl_j2356.9+6812:
-  selection: {target: 3FGL J2356.9+6812}
+3fhl_j0537.9-6909:
+  selection: {target: 3fhl_j0537.9-6909}
