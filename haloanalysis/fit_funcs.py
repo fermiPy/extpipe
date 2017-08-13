@@ -33,9 +33,10 @@ def fit_region(gta,modelname,src_name,loge_bounds=None, **kwargs):
     
     gta.free_sources(False)
     gta.free_sources(skydir=skydir,distance=1.5, pars='norm')
-    gta.free_sources(skydir=skydir,distance=1.0, pars='shape')
+    gta.free_sources(skydir=skydir,distance=1.0, pars='shape', exclude=diff_sources)
     gta.free_source(src_name)
-    gta.fit(reoptimize=True)
+    gta.fit()
+    gta.update_source(src_name,reoptimize=True)
     gta.write_roi(modelname + '_roi', make_plots=True)
 
     gta.print_roi()
@@ -102,7 +103,8 @@ def fit_region(gta,modelname,src_name,loge_bounds=None, **kwargs):
                   psf_scale_fn=psf_fnhi)
 
     gta.free_source(src_name)
-    gta.fit(reoptimize=True)
+    gta.fit()
+    gta.update_source(src_name,reoptimize=True)
     gta.print_roi()
     gta.print_params()
     
@@ -127,7 +129,7 @@ def fit_region(gta,modelname,src_name,loge_bounds=None, **kwargs):
     
     gta.extension(src_name, outfile=modelname + '_ext_disk_ext',
                   prefix=modelname + '_disk',
-                  fit_position=True,  free_background=True,
+                  fit_position=True, free_background=True,
                   make_plots=True, update=True, **kw)
 
     gta.extension(src_name, outfile=modelname + '_ext_disk_ext_psflo',
