@@ -14,6 +14,30 @@ from fermipy.gtanalysis import GTAnalysis
 from fermipy.catalog import Catalog3FGL
 from haloanalysis.fit_funcs import fit_region, fit_halo
 
+def localize(gta, spatial_models, prefix, skip_loc, src_name):
+
+    for s in sorted(gta.roi.sources, key=lambda t: t['ts'],reverse=True):
+
+        if not s['SpatialModel'] in spatial_models:
+            continue
+
+        if s['offset_roi_edge'] > -0.1:
+            continue
+
+        if s.name in skip_loc:
+            continue
+        
+        o = gta.localize(s.name,nstep=5,
+                         dtheta_max=max(0.5,s['SpatialWidth']),
+                         update=True,
+                         prefix=prefix, make_plots=True)
+
+        if s.name == src_name and ((not o['fit_success']) or (not o['fit_inbounds'])):
+            gta.localize(s.name,nstep=5,
+                         dtheta_max=max(1.0,s['SpatialWidth']),
+                         update=True,
+                         prefix=prefix, make_plots=True)
+
 def optimize_source(gta, name):
     """Optimize and individual source while keeping all other
     sources in the model fixed."""
@@ -153,29 +177,8 @@ def main():
     gta.print_roi()
     
     # Localize all point sources
-    for s in sorted(gta.roi.sources, key=lambda t: t['ts'],reverse=True):
-#    for s in gta.roi.sources:
-
-        if not s['SpatialModel'] in ['PointSource','RadialGaussian','RadialDisk']:
-            continue
-
-        if s['offset_roi_edge'] > -0.1:
-            continue
-
-        if s.name in skip_loc:
-            continue
-        
-        o = gta.localize(s.name,nstep=5,
-                         dtheta_max=max(0.5,s['SpatialWidth']),
-                         update=True,
-                         prefix='base0', make_plots=True)
-
-        if s.name == src_name and ((not o['fit_success']) or (not o['fit_inbounds'])):
-            gta.localize(s.name,nstep=5,
-                         dtheta_max=max(1.0,s['SpatialWidth']),
-                         update=True,
-                         prefix='base0', make_plots=True)
-
+    localize(gta, ['PointSource'], 'base0', skip_loc, src_name)
+    
     gta.write_roi('base0_roi')            
     gta.tsmap('base0',model=model1, make_plots=True)
     gta.tsmap('base0_nosource',model=model1, exclude=[src_name], make_plots=True)
@@ -196,6 +199,8 @@ def main():
                      sqrt_ts_threshold=sqrt_ts_threshold,
                      search_minmax_radius=[args.radius,None])
     update_to_lp(gta,100., names=[src.name for src in o['sources']])
+
+    localize(gta, ['RadialGaussian','RadialDisk'], 'base1', skip_loc, src_name)
     
     gta.print_roi()
 
