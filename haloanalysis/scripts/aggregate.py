@@ -170,9 +170,9 @@ def extract_halo_sed(halo_data,halo_scan_shape):
     return o
 
 
-def extract_ext_data(row_dict, prefix, src_name, ext_data, ext_roi, ext_data_psfhi, ext_data_psflo):
+def extract_ext_data(row_dict, prefix, src_name, ext_data, tab_roi, ext_data_psfhi, ext_data_psflo):
 
-    for i, (ext,ext_roi) in enumerate(zip(ext_data,ext_roi)):
+    for i, (ext,ext_roi) in enumerate(zip(ext_data,tab_roi)):
 
         row_dict['fitn_%s_ts_ext'%prefix][i] = max(ext['ts_ext'],0)
         row_dict['fitn_%s_r68'%prefix][i] = ext['ext']
@@ -198,7 +198,8 @@ def extract_ext_data(row_dict, prefix, src_name, ext_data, ext_roi, ext_data_psf
                                                             ext['ext_ul95'],
                                                             ext_data_psflo[i]['ext_ul95'])
         
-        src = ext_roi['sources'][src_name]
+        #src = ext_roi['sources'][src_name]
+        src = ext_roi[ext_roi['name'] == src_name][0]
 
         for x in ['','100','1000','10000']:
             row_dict['fitn_%s_flux%s'%(prefix,x)][i] = src['flux%s'%x]
@@ -207,11 +208,16 @@ def extract_ext_data(row_dict, prefix, src_name, ext_data, ext_roi, ext_data_psf
             row_dict['fitn_%s_eflux%s_err'%(prefix,x)][i] = src['eflux%s_err'%x]
         row_dict['fitn_%s_ts'%prefix][i] = src['ts']
         row_dict['fitn_%s_npred'%prefix][i] = src['npred']
+
+        sp_vals = src['param_values']
+        sp_errs = src['param_errors']
+        sp_names = src['param_names']
+        idx = np.where(sp_names == 'Index')[0]
+
+        if idx:
+            row_dict['fitn_%s_index'%prefix][i] = sp_vals[idx[0]]
+            row_dict['fitn_%s_index_err'%prefix][i] = sp_errs[idx[0]]
         
-        sp = src['spectral_pars']
-        if 'Index' in sp:
-            row_dict['fitn_%s_index'%prefix][i] = sp['Index']['value']
-            row_dict['fitn_%s_index_err'%prefix][i] = sp['Index']['error']   
         
 
 def extract_halo_data(halo_data, halo_scan_shape):
@@ -505,15 +511,26 @@ def load_npy_files(dirname, suffix, wildcard=False):
                 o += [data]
     return o
 
+def table_to_dict(tab):
 
-def load_tables(dirname, suffix):
+    o = {}
+    for c in tab.columns:
+        o[c] = tab[c][0]
+
+    return o
+        
+def load_tables(dirname, suffix, todict=False):
 
     o = []
     for i in range(5):
         infile = os.path.join(dirname,'fit%i%s.fits'%(i,suffix))
         if not os.path.isfile(infile):
             continue
-        o += [Table.read(infile)]
+
+        tab = Table.read(infile)
+        if todict:
+            tab = table_to_dict(tab)
+        o += [tab]
         
     return o
     
@@ -647,14 +664,15 @@ def aggregate(dirs,output,suffix=''):
         tab_new_src_data = [Table()] + load_tables(d,'%s_new_source_data'%(suffix))
         
         halo_data = load_npy_files(d,'%s_%s_data'%(suffix,halo_name))
-        ext_gauss_data = load_npy_files(d,'%s_ext_gauss_ext'%suffix)
-        ext_gauss_data_psfhi = load_npy_files(d,'%s_ext_gauss_ext_psfhi'%suffix)
-        ext_gauss_data_psflo = load_npy_files(d,'%s_ext_gauss_ext_psflo'%suffix)
-        ext_gauss_roi = load_npy_files(d,'%s_ext_gauss_roi'%suffix)
-        ext_disk_data = load_npy_files(d,'%s_ext_disk_ext'%suffix)
-        ext_disk_data_psfhi = load_npy_files(d,'%s_ext_disk_ext_psfhi'%suffix)
-        ext_disk_data_psflo = load_npy_files(d,'%s_ext_disk_ext_psflo'%suffix)
-        ext_disk_roi = load_npy_files(d,'%s_ext_disk_roi'%suffix)
+        #ext_gauss_data = load_npy_files(d,'%s_ext_gauss_ext'%suffix)
+        ext_gauss_data = load_tables(d,'%s_ext_gauss_ext'%suffix, True)
+        ext_gauss_data_psfhi = load_tables(d,'%s_ext_gauss_ext_psfhi'%suffix, True)
+        ext_gauss_data_psflo = load_tables(d,'%s_ext_gauss_ext_psflo'%suffix, True)
+        ext_gauss_roi = load_tables(d,'%s_ext_gauss_roi'%suffix)
+        ext_disk_data = load_tables(d,'%s_ext_disk_ext'%suffix, True)
+        ext_disk_data_psfhi = load_tables(d,'%s_ext_disk_ext_psfhi'%suffix, True)
+        ext_disk_data_psflo = load_tables(d,'%s_ext_disk_ext_psflo'%suffix, True)
+        ext_disk_roi = load_tables(d,'%s_ext_disk_roi'%suffix)
         sed_data = load_npy_files(d,'%s_sed'%suffix)
         halo_data_sed = load_npy_files(d,'_cov05_*_halo_radialgaussian_sed',wildcard=True)
         
