@@ -14,6 +14,12 @@ fhes_j0007.1+7303e:
     sources:
     - {Index: 2.3911544693886975, SpatialModel: RadialGaussian, SpatialWidth: 0.6905943594282983,
       SpectrumType: PowerLaw, dec: 73.04989624023438, name: FHES J0007.1+7303e, ra: 1.7655999660491941}
+    - {SpatialModel: PointSource, 
+       beta: {value: 0.248, scale : 1.0, min : 0.0, max : 5.0 }, 
+       alpha: 1.877, 
+       Eb: 1000.0, 
+       norm : {scale : !!float 1E-12, value : 1.5097, free : false },
+       SpectrumType: LogParabola, dec: 73.46061952, name: PS J0019.7+7328, ra: 4.929254956}
   selection: {target: FHES J0007.1+7303e}
 
 # 3FGL J0042.5+4117 (M31)
