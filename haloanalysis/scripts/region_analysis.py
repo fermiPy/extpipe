@@ -241,16 +241,19 @@ def main():
         srcs += srcs_fit['sources']
         if (not src_name in skip_loc and
             gta.roi[src_name]['SpatialModel'] in ['PointSource','RadialGaussian','RadialDisk']):
-            gta.localize(src_name,nstep=5,
+            gta.localize(src_name,nstep=7,
                          dtheta_max=max(0.4,gta.roi[src_name]['SpatialWidth']),
                          update=True,prefix='fit%i'%i,
                          free_radius=max(0.5,gta.roi[src_name]['SpatialWidth']),
                          make_plots=True)
 
         # Relocalize new sources
-        for s in sorted(srcs, key=lambda t: t['ts'],reverse=True):        
-            gta.localize(s.name,nstep=5,dtheta_max=0.4,
-                         update=True,prefix='fit%i'%i,
+        for src in sorted(srcs, key=lambda t: t['ts'],reverse=True):
+
+            gta.localize(src.name,nstep=7,dtheta_max=0.4,
+                         update=True,
+                         fix_shape=False if src['ts'] >= 25.0 else True,
+                         prefix='fit%i'%i,
                          free_radius=0.5, make_plots=True)
 
         fit_region(gta,'fit%i'%i,src_name)
