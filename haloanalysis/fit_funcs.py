@@ -26,7 +26,7 @@ def fit_region(gta,modelname,src_name,loge_bounds=None, **kwargs):
     model4 = { 'SpatialModel' : 'RadialDisk', 'Index' : 2.0,
                'SpatialWidth' : 0.1 * 0.8246211251235321 }
     
-    gta.optimize(skip=skip_opt)
+    gta.optimize(skip=skip_opt, shape_ts_threshold=9.0)
 
     diff_sources = [s.name for s in gta.roi.sources if s.diffuse]
     skydir = gta.roi[src_name].skydir
