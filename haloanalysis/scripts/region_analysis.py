@@ -16,25 +16,27 @@ from haloanalysis.fit_funcs import fit_region, fit_halo
 
 def localize(gta, spatial_models, prefix, skip_loc, src_name):
 
-    for s in sorted(gta.roi.sources, key=lambda t: t['ts'],reverse=True):
+    for src in sorted(gta.roi.sources, key=lambda t: t['ts'],reverse=True):
 
-        if not s['SpatialModel'] in spatial_models:
+        if not src['SpatialModel'] in spatial_models:
             continue
 
-        if s['offset_roi_edge'] > -0.1:
+        if src['offset_roi_edge'] > -0.1:
             continue
 
-        if s.name in skip_loc:
+        if src.name in skip_loc:
             continue
         
-        o = gta.localize(s.name,nstep=5,
-                         dtheta_max=max(0.5,s['SpatialWidth']),
+        o = gta.localize(src.name,nstep=5,
+                         dtheta_max=max(0.5,src['SpatialWidth']),
+                         fix_shape=False if src['ts'] >= 25.0 else True,
                          update=True,
                          prefix=prefix, make_plots=True)
 
-        if s.name == src_name and ((not o['fit_success']) or (not o['fit_inbounds'])):
-            gta.localize(s.name,nstep=5,
-                         dtheta_max=max(1.0,s['SpatialWidth']),
+        if src.name == src_name and ((not o['fit_success']) or (not o['fit_inbounds'])):
+            gta.localize(src.name,nstep=5,
+                         dtheta_max=max(1.0,src['SpatialWidth']),
+                         fix_shape=False if src['ts'] >= 25.0 else True,
                          update=True,
                          prefix=prefix, make_plots=True)
 
@@ -51,21 +53,26 @@ def optimize_source(gta, name):
     gta.fit()
     gta.set_free_param_vector(free)
 
-def update_to_lp(gta, ts_threshold, names=None):
+def update_to_lp(gta, ts_thresh, names=None, exclude=None):
 
     for src in sorted(gta.roi.sources, key=lambda t: t['ts'],reverse=True):
 
-        if src.diffuse:
-            continue
-
         if names is not None and src.name not in names:
             continue
+
+        if exclude is not None and src.name in exclude:
+            continue
         
-        if src['ts'] > ts_threshold and src['SpectrumType'] == 'PowerLaw':
-            gta.set_source_spectrum(src.name, spectrum_type='LogParabola',
-                                    spectrum_pars={'beta' : {'value' : 0.0, 'scale' : 1.0,
-                                                             'min' : 0.0, 'max' : 1.0}})
-            optimize_source(gta, src.name)
+        if src.diffuse or src['SpectrumType'] != 'PowerLaw':
+            continue
+                
+        if src['ts'] < ts_thresh:
+            continue
+
+        gta.set_source_spectrum(src.name, spectrum_type='LogParabola',
+                                spectrum_pars={'beta' : {'value' : 0.0, 'scale' : 1.0,
+                                                         'min' : 0.0, 'max' : 1.0}})
+        optimize_source(gta, src.name)
 
 def main():
         
@@ -165,7 +172,13 @@ def main():
     
     gta.optimize()
     gta.print_roi()
-    update_to_lp(gta,100.)
+    update_to_lp(gta,100.,exclude=[src_name])
+
+    # Update source of interest to LP if curvature is significant
+    curv = gta.curvature(src_name)
+    if curv.ts_curv > 9.0:
+        update_to_lp(gta,100.,names=[src_name])
+    
     gta.optimize()
 
     gta.free_sources(False)
