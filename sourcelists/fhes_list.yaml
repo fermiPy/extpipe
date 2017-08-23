@@ -152,8 +152,6 @@ fhes_j1741.4-3857e:
       SpectrumType: PowerLaw, glat: -4.5, name: FHES J1741.4-3857e, glon: 351.0 }
   selection: {target: FHES J1741.4-3857e}
 
-
-
 # 3FGL J1820.4-3217
 # Marginal evidence for halo vs. PS
 
@@ -173,13 +171,6 @@ fhes_j2125.8+5833e:
     - {Index: 2.23446246267901, SpatialModel: RadialGaussian, SpatialWidth: 0.8109173832986395,
       SpectrumType: PowerLaw, dec: 58.54899978637695, name: FHES J2125.8+5833e, ra: 321.4612121582031}
   selection: {target: FHES J2125.8+5833e}
-
-fhes_j2131.3+5836e:
-  model:
-    sources:
-    - {Index: 2.3, SpectrumType: PowerLaw, glon: 99.3, name: FHES J2131.3+5836e,
-    glat: 5.24}
-  selection: {target: FHES J2131.3+5836e}
 
 # 3FGL J2206.5+6451 and 3FGL J2210.2+6509
 # Extended Candidate
