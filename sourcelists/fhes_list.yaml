@@ -193,13 +193,6 @@ fhes_j2125.8+5833e:
       SpectrumType: PowerLaw, dec: 58.54899978637695, name: FHES J2125.8+5833e, ra: 321.4612121582031}
   selection: {target: FHES J2125.8+5833e}
 
-fhes_j2131.3+5836e:
-  model:
-    sources:
-    - {Index: 2.3, SpectrumType: PowerLaw, glon: 99.3, name: FHES J2131.3+5836e,
-    glat: 5.24}
-  selection: {target: FHES J2131.3+5836e}
-
 # 3FGL J2206.5+6451 and 3FGL J2210.2+6509
 # Extended Candidate
 
