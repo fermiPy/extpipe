@@ -32,7 +32,7 @@ def main():
                         help='')    
     args = parser.parse_args()
 
-    if args.model is 'all':    
+    if args.model == 'all':    
         models = model_lookup.keys()
     else:
         models = ['stdmodel']
