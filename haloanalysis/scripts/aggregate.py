@@ -4,6 +4,7 @@ import sys
 import os
 import traceback
 import argparse
+import yaml
 from collections import OrderedDict
 
 from scipy.ndimage.interpolation import map_coordinates
@@ -17,18 +18,21 @@ from fermipy.utils import fit_parabola, get_parameter_limits, create_source_name
 from haloanalysis.batch import *
 
 
+src_colnames = ['ts','npred','offset','ra','dec','glon','glat','index','index_err',
+                'pos_err','pos_r68','pos_r95','pos_r99']
+
 ext_colnames = ['ts_ext','sys_ts_ext',
                 'r68', 'r68_err', 'r68_sys_err', 'r68_ul95', 'r68_sys_ul95',
                 'flux','flux_err','eflux','eflux_err',
                 'flux100','flux100_err','eflux100','eflux100_err',
                 'flux1000','flux1000_err','eflux1000','eflux1000_err',
                 'flux10000','flux10000_err','eflux10000','eflux10000_err',
-                'ts','npred',
+                'ts','npred','offset',
                 'loglike','index','index_err',
                 'ra','dec','glon','glat',
-                'ra_err','dec_err','glon_err','glat_err']
+                'ra_err','dec_err','glon_err','glat_err', 'pos_err', 'pos_r68', 'pos_r95', 'pos_r99']
 
-halo_colnames = ['ts','r68','index','r68_err','index_err',
+halo_colnames = ['ts','r68','index','r68_err','index_err', 'loglike',
                  'eflux','eflux_err', 'eflux_ul95', 'flux','flux_err','flux_ul95']
 
 def match_catalog(row_dict, cat, sigma95_fhes, sigma95_cat, skydir_fhes, skydir_cat, cat_name):
@@ -62,7 +66,31 @@ def match_catalog(row_dict, cat, sigma95_fhes, sigma95_cat, skydir_fhes, skydir_
     print('name_%s'%cat_name,row_dict['name_%s'%cat_name])
     print('sep_%s'%cat_name,row_dict['sep_%s'%cat_name])
     print('sep_%s_sigma95'%cat_name,row_dict['sep_%s_sigma95'%cat_name])
-        
+
+
+def extract_index(src, egy=1E3):
+
+    if src['SpectrumType'] == 'PowerLaw':
+        return src['param_values'][1], src['param_errors'][1]
+    elif src['SpectrumType'] == 'LogParabola':
+
+        alpha, alpha_err = src['param_values'][1], src['param_errors'][1]
+        beta, beta_err = src['param_values'][2], src['param_errors'][2]
+        eb = src['param_values'][3]
+        index = -alpha - 2*beta*(np.log(egy) - np.log(eb))
+        index_err = alpha_err + 2*beta_err*np.abs(np.log(egy) - np.log(eb))
+        return index, index_err
+    elif src['SpectrumType'] == 'PLSuperExpCutoff':
+
+        index1, index1_err = src['param_values'][1], src['param_errors'][1]
+        cutoff, cutoff_err = src['param_values'][3], src['param_errors'][3]
+        index2, index2_err = src['param_values'][4], src['param_errors'][4]
+
+        index = index1 - egy/cutoff
+        index_err = index1_err + cutoff_err*(index**2/cutoff*(egy/cutoff)**index2)
+        return index, index_err
+    else:
+        raise Exception
 
 def extract_sources(tab_srcs):
 
@@ -186,6 +214,10 @@ def extract_ext_data(row_dict, prefix, src_name, ext_data, tab_roi, ext_data_psf
         row_dict['fitn_%s_dec_err'%prefix][i] = ext['dec_err']
         row_dict['fitn_%s_glon_err'%prefix][i] = ext['glon_err']
         row_dict['fitn_%s_glat_err'%prefix][i] = ext['glat_err']
+        row_dict['fitn_%s_pos_err'%prefix][i] = ext['pos_err']
+        row_dict['fitn_%s_pos_r68'%prefix][i] = ext['pos_r68']
+        row_dict['fitn_%s_pos_r95'%prefix][i] = ext['pos_r95']
+        row_dict['fitn_%s_pos_r99'%prefix][i] = ext['pos_r99']
                 
         #row_dict['fitn_%s_loglike'%prefix][i] = ext_roi['roi']['loglike']
         row_dict['fitn_%s_loglike'%prefix][i] = ext['loglike_ext']
@@ -209,16 +241,9 @@ def extract_ext_data(row_dict, prefix, src_name, ext_data, tab_roi, ext_data_psf
         row_dict['fitn_%s_ts'%prefix][i] = src['ts']
         row_dict['fitn_%s_npred'%prefix][i] = src['npred']
 
-        sp_vals = src['param_values']
-        sp_errs = src['param_errors']
-        sp_names = src['param_names']
-        idx = np.where(sp_names == 'Index')[0]
-
-        if idx:
-            row_dict['fitn_%s_index'%prefix][i] = sp_vals[idx[0]]
-            row_dict['fitn_%s_index_err'%prefix][i] = sp_errs[idx[0]]
-        
-        
+        index, index_err = extract_index(src)
+        row_dict['fitn_%s_index'%prefix][i] = np.abs(index)
+        row_dict['fitn_%s_index_err'%prefix][i] = np.abs(index_err)
 
 def extract_halo_data(halo_data, halo_scan_shape):
     
@@ -321,6 +346,8 @@ def create_tables(nebins, next_bins, halo_scan_shape, eflux_scan_pts):
 
     nfit = 5
     nscan_pts = 9
+
+    # SED Table
     
     cols_dict_sed = OrderedDict()
     cols_dict_sed['name'] = dict(dtype='S20', format='%s',description='Source Name')
@@ -336,6 +363,7 @@ def create_tables(nebins, next_bins, halo_scan_shape, eflux_scan_pts):
     cols_dict_sed['norm_scan'] = dict(dtype='f8', format='%.3f',shape=(nebins,nscan_pts))
     cols_dict_sed['dloglike_scan'] = dict(dtype='f8', format='%.3f',shape=(nebins,nscan_pts))
 
+    # LNL Table
     
     cols_dict_lnl = OrderedDict()
     cols_dict_lnl['name'] = dict(dtype='S20', format='%s',description='Source Name')
@@ -354,6 +382,8 @@ def create_tables(nebins, next_bins, halo_scan_shape, eflux_scan_pts):
                                                    shape=(nebins,nscan_pts))
     cols_dict_lnl['fit_src_sed_scan_eflux'] = dict(dtype='f8', format='%.4g',
                                                    shape=(nebins,nscan_pts))
+
+    # CATALOG Table
     
     cols_dict = OrderedDict()
     cols_dict['name'] = dict(dtype='S32', format='%s',description='Source Name')
@@ -379,34 +409,20 @@ def create_tables(nebins, next_bins, halo_scan_shape, eflux_scan_pts):
     cols_dict['assoc_3fhl_sep_sigma95'] = dict(dtype='f8', format='%s',shape=(5,))
     cols_dict['assoc_3fhl_num'] = dict(dtype='i8')
 
-    
     cols_dict['class'] = dict(dtype='S32', format='%s')
     cols_dict['class_optical'] = dict(dtype='S32', format='%s')
     cols_dict['class_sed'] = dict(dtype='S32', format='%s')
     cols_dict['nupeak'] = dict(dtype='f8')
-    cols_dict['ra'] = dict(dtype='f8', format='%.3f',unit='deg')
-    cols_dict['dec'] = dict(dtype='f8', format='%.3f',unit='deg')
-    cols_dict['glon'] = dict(dtype='f8', format='%.3f',unit='deg')
-    cols_dict['glat'] = dict(dtype='f8', format='%.3f',unit='deg')
-    cols_dict['ts'] = dict(dtype='f8', format='%.2f')
-    cols_dict['npred'] = dict(dtype='f8', format='%.2f')
     cols_dict['sep_3fgl'] = dict(dtype='f8', format='%.2f')
     cols_dict['sep_3fgl_sigma95'] = dict(dtype='f8', format='%.2f')
     cols_dict['sep_3fhl'] = dict(dtype='f8', format='%.2f')
     cols_dict['sep_3fhl_sigma95'] = dict(dtype='f8', format='%.2f')
+
+    for k in src_colnames:
+        cols_dict[k] = dict(dtype='f8', format='%.3f')
+        cols_dict['fitn_%s'%k] = dict(dtype='f8', format='%.2f',shape=(nfit,))
+        cols_dict['fit_%s'%k] = dict(dtype='f8', format='%.2f')
     
-    cols_dict['fitn_ts'] = dict(dtype='f8', format='%.2f',shape=(nfit,))
-    cols_dict['fit_ts'] = dict(dtype='f8', format='%.2f')
-    cols_dict['fitn_offset'] = dict(dtype='f8', format='%.2f',shape=(nfit,))
-    cols_dict['fit_offset'] = dict(dtype='f8', format='%.2f')
-    cols_dict['fitn_ra'] = dict(dtype='f8', format='%.2f',shape=(nfit,))
-    cols_dict['fitn_dec'] = dict(dtype='f8', format='%.2f',shape=(nfit,))
-    cols_dict['fitn_glon'] = dict(dtype='f8', format='%.2f',shape=(nfit,))
-    cols_dict['fitn_glat'] = dict(dtype='f8', format='%.2f',shape=(nfit,))
-    cols_dict['fit_ra'] = dict(dtype='f8', format='%.2f')
-    cols_dict['fit_dec'] = dict(dtype='f8', format='%.2f')
-    cols_dict['fit_glon'] = dict(dtype='f8', format='%.2f')
-    cols_dict['fit_glat'] = dict(dtype='f8', format='%.2f')
     cols_dict['spatial_model'] = dict(dtype='S32', format='%s')
     cols_dict['fit_ext_model'] = dict(dtype='S32', format='%s')
     
@@ -519,7 +535,7 @@ def table_to_dict(tab):
 
     return o
         
-def load_tables(dirname, suffix, todict=False):
+def load_tables(dirname, suffix, todict=False, hdu=None):
 
     o = []
     for i in range(5):
@@ -527,7 +543,7 @@ def load_tables(dirname, suffix, todict=False):
         if not os.path.isfile(infile):
             continue
 
-        tab = Table.read(infile)
+        tab = Table.read(infile,hdu)
         if todict:
             tab = table_to_dict(tab)
         o += [tab]
@@ -545,9 +561,9 @@ def count_free_params(tab):
 
         # for spatial parameters
         nfree += 2
-
+        
         # for spectral parameters
-        if row['beta'] == 0.0:
+        if row['SpectrumType'] == 'PowerLaw':
             nfree += 2
         else:
             nfree += 3
@@ -555,7 +571,7 @@ def count_free_params(tab):
     return nfree
 
 
-def find_best_model(row, model_name, par_name):
+def find_best_model(row, model_name, par_name, daic_threshold=0.0):
 
     idx = 0
     
@@ -570,7 +586,7 @@ def find_best_model(row, model_name, par_name):
         delta_ts = row['fitn_%s_%s'%(model_name,par_name)][i+1] - row['fitn_%s_%s'%(model_name,par_name)][i]
         #print(i,row['fitn_daic_ps_%s'%model_name][i],delta_ts)        
         
-        if row['fitn_daic_ps_%s'%model_name][i] < 0.0 and delta_ts < -1.0:
+        if row['fitn_daic_ps_%s'%model_name][i] < daic_threshold and delta_ts < -1.0:
             idx = i
             break
 
@@ -658,13 +674,13 @@ def aggregate(dirs,output,suffix=''):
             continue
 
         new_src_data = np.load(os.path.join(d,'new_source_data.npy'))
-        fit_data = load_npy_files(d,'%s_roi'%suffix)
+        fit_data = load_tables(d,'%s_roi'%suffix)
+        roi_data = load_tables(d,'%s_roi'%suffix, hdu='ROI')
 
         tab_halo_data = load_tables(d,'%s_%s_data'%(suffix,halo_name))
         tab_new_src_data = [Table()] + load_tables(d,'%s_new_source_data'%(suffix))
         
         halo_data = load_npy_files(d,'%s_%s_data'%(suffix,halo_name))
-        #ext_gauss_data = load_npy_files(d,'%s_ext_gauss_ext'%suffix)
         ext_gauss_data = load_tables(d,'%s_ext_gauss_ext'%suffix, True)
         ext_gauss_data_psfhi = load_tables(d,'%s_ext_gauss_ext_psfhi'%suffix, True)
         ext_gauss_data_psflo = load_tables(d,'%s_ext_gauss_ext_psflo'%suffix, True)
@@ -680,22 +696,22 @@ def aggregate(dirs,output,suffix=''):
             print 'skipping'
             continue
 
-        src_name = fit_data[0]['config']['selection']['target']
-        nebins = len(fit_data[0]['roi']['log_energies'])-1
-        src = fit_data[0]['sources'][src_name]
+        config = yaml.load(fit_data[0].meta['CONFIG'])        
+        src_name = config['selection']['target']
+        nebins = len(roi_data[0][0]['model_counts'])
+        
         src_data = []
-        new_srcs = []
-        
-        for i, fd in enumerate(fit_data):
-            src_data += [fd['sources'][src_name]]
-
-        
+        new_srcs = []        
+        for i, fd in enumerate(fit_data):            
+            src_data += [fd[fd['name'] == src_name][0]]
+        src = src_data[0]
+            
         if tab is None:
-            tab, tab_lnl, tab_sed = create_tables(len(src_data[0]['model_counts']),
+            tab, tab_lnl, tab_sed = create_tables(nebins,
                                                   len(ext_gauss_data[0]['width']),
                                                   halo_scan_shape,
                                                   eflux_scan_pts)
-
+            
         row_dict = {}
         for c in tab.columns:
             
@@ -740,26 +756,29 @@ def aggregate(dirs,output,suffix=''):
             halo_scan_flux_ul95 = np.array(tab_halo_data[i]['flux_ul95']).reshape(halo_scan_shape)
             halo_scan_idx = np.argmax(halo_scan_ts)
             halo_scan_max_ts = halo_scan_ts.flat[halo_scan_idx]
+            halo_scan_max_loglike = halo_scan_loglike.flat[halo_scan_idx]
             halo_scan_max_eflux = halo_scan_eflux.flat[halo_scan_idx]
             halo_scan_max_eflux_ul95 = halo_scan_eflux_ul95.flat[halo_scan_idx]
             halo_scan_max_flux = halo_scan_flux.flat[halo_scan_idx]
             halo_scan_max_flux_ul95 = halo_scan_flux_ul95.flat[halo_scan_idx]
             halo_scan_max_r68 = tab_halo_data[0]['halo_width'].flat[halo_scan_idx]
             halo_scan_max_index = tab_halo_data[0]['halo_index'].flat[halo_scan_idx] 
-
+            
             if halo_scan_max_ts > 2.0:
                 
                 ix, iy = np.unravel_index(np.argmax(halo_scan_ts),halo_scan_ts.shape)
                 o = fit_parabola(halo_scan_ts,ix,iy,dpix=2)
-                halo_fit_ts = map_coordinates(halo_scan_ts,np.array([[o['x0']],[o['y0']]]))
-                halo_fit_eflux = map_coordinates(halo_scan_eflux,np.array([[o['x0']],[o['y0']]]))
-                halo_fit_eflux_err = map_coordinates(halo_scan_eflux_err,np.array([[o['x0']],[o['y0']]]))
-                halo_fit_eflux_ul95 = map_coordinates(halo_scan_eflux_ul95,np.array([[o['x0']],[o['y0']]]))
-                halo_fit_flux = map_coordinates(halo_scan_flux,np.array([[o['x0']],[o['y0']]]))
-                halo_fit_flux_err = map_coordinates(halo_scan_flux_err,np.array([[o['x0']],[o['y0']]]))
-                halo_fit_flux_ul95 = map_coordinates(halo_scan_flux_ul95,np.array([[o['x0']],[o['y0']]]))
-                halo_fit_r68 = map_coordinates(halo_scan_r68,np.array([[o['x0']],[o['y0']]]))
-                halo_fit_index = map_coordinates(halo_scan_index,np.array([[o['x0']],[o['y0']]]))
+                pix = np.array([[o['x0']],[o['y0']]])
+                halo_fit_ts = map_coordinates(halo_scan_ts, pix, mode='nearest')
+                halo_fit_loglike = map_coordinates(halo_scan_loglike, pix, mode='nearest')
+                halo_fit_eflux = map_coordinates(halo_scan_eflux, pix, mode='nearest')
+                halo_fit_eflux_err = map_coordinates(halo_scan_eflux_err,pix, mode='nearest')
+                halo_fit_eflux_ul95 = map_coordinates(halo_scan_eflux_ul95,pix, mode='nearest')
+                halo_fit_flux = map_coordinates(halo_scan_flux,pix, mode='nearest')
+                halo_fit_flux_err = map_coordinates(halo_scan_flux_err,pix, mode='nearest')
+                halo_fit_flux_ul95 = map_coordinates(halo_scan_flux_ul95,pix, mode='nearest')
+                halo_fit_r68 = map_coordinates(halo_scan_r68,pix, mode='nearest')
+                halo_fit_index = map_coordinates(halo_scan_index, pix, mode='nearest')
 
                 # Interpolation
                 x = np.linspace(0,halo_scan_shape[0]-1,halo_scan_shape[0])
@@ -770,8 +789,9 @@ def aggregate(dirs,output,suffix=''):
                 halo_index_lims = get_parameter_limits(halo_scan_index[ix,:], 0.5*interp_ts_y)
                 halo_fit_r68_err = halo_r68_lims['err']
                 halo_fit_index_err = halo_index_lims['err']
-
+                
                 row_dict['fitn_halo_ts'][i] = halo_fit_ts
+                row_dict['fitn_halo_loglike'][i] = halo_fit_loglike
                 row_dict['fitn_halo_eflux'][i] = halo_fit_eflux
                 row_dict['fitn_halo_eflux_err'][i] = halo_fit_eflux_err
                 row_dict['fitn_halo_eflux_ul95'][i] = halo_fit_eflux_ul95
@@ -783,78 +803,45 @@ def aggregate(dirs,output,suffix=''):
                 row_dict['fitn_halo_index'][i] = halo_fit_index
                 row_dict['fitn_halo_index_err'][i] = halo_fit_index_err
             else:
+                
                 row_dict['fitn_halo_ts'][i] = halo_scan_max_ts
+                row_dict['fitn_halo_loglike'][i] = halo_scan_max_loglike
                 row_dict['fitn_halo_eflux'][i] = halo_scan_max_eflux
                 row_dict['fitn_halo_eflux_ul95'][i] = halo_scan_max_eflux_ul95
                 row_dict['fitn_halo_flux'][i] = halo_scan_max_flux
                 row_dict['fitn_halo_flux_ul95'][i] = halo_scan_max_flux_ul95
                 row_dict['fitn_halo_r68'][i] = halo_scan_max_r68
-                row_dict['fitn_halo_index'][i] = halo_scan_max_index
+                row_dict['fitn_halo_index'][i] = halo_scan_max_index            
 
-            continue
-                
-            print(halo_fit_ts,halo_fit_eflux,halo_fit_r68,halo_fit_index)
-            print(halo_scan_max_ts,halo_scan_max_eflux,halo_scan_max_r68,halo_scan_max_index)
-            print(halo_fit_r68_err,halo_fit_index_err)
-            import pprint
-            pprint.pprint(halo_r68_lims)
-            pprint.pprint(halo_index_lims)
-            
-            import matplotlib.pyplot as plt
-
-            plt.figure()
-            plt.imshow(halo_scan_ts.T,origin='lower')
-            plt.plot(ix,iy,marker='o')
-            plt.plot(o['x0'],o['y0'],marker='x')
-            
-            plt.figure()
-
-            plt.plot(halo_scan_r68[:,iy],interp_ts_x-halo_fit_ts,color='g')            
-            plt.axvline(halo_fit_r68,linestyle='--',color='k')
-            plt.axvline(halo_fit_r68+halo_fit_r68_err,color='k')
-            plt.axvline(halo_fit_r68-halo_fit_r68_err,color='k')
-            
-            plt.axhline(-1.0)
-            
-            plt.figure()
-            plt.plot(halo_scan_index[ix,:],interp_ts_y-halo_fit_ts,color='g')
-
-            plt.axvline(halo_fit_index,linestyle='--',color='k')
-            plt.axvline(halo_fit_index+halo_fit_index_err,color='k')
-            plt.axvline(halo_fit_index-halo_fit_index_err,color='k')
-            
-            plt.axhline(-1.0)
-            
-            
-            
         for i in range(len(src_data)):
             row_dict['fitn_ts'][i] = src_data[i]['ts']
+            row_dict['fitn_npred'][i] = src_data[i]['npred']
             row_dict['fitn_offset'][i] = src_data[i]['offset']
             row_dict['fitn_ra'][i] = src_data[i]['ra']
             row_dict['fitn_dec'][i] = src_data[i]['dec']
             row_dict['fitn_glon'][i] = src_data[i]['glon']
             row_dict['fitn_glat'][i] = src_data[i]['glat']
-            
-        row_dict['fit_ts'] = src_data[-1]['ts']
-        row_dict['fit_offset'] = src_data[-1]['offset']
-        row_dict['fit_ra'] = src_data[-1]['ra']
-        row_dict['fit_dec'] = src_data[-1]['dec']
-        row_dict['fit_glon'] = src_data[-1]['glon']
-        row_dict['fit_glat'] = src_data[-1]['glat']
+            row_dict['fitn_pos_err'][i] = src_data[i]['pos_err']
+            row_dict['fitn_pos_r68'][i] = src_data[i]['pos_r68']
+            row_dict['fitn_pos_r95'][i] = src_data[i]['pos_r95']
+            row_dict['fitn_pos_r99'][i] = src_data[i]['pos_r99']
+            index, index_err = extract_index(src_data[i], 1E3)
+            row_dict['fitn_index'][i] = np.abs(index)
+            row_dict['fitn_index_err'][i] = np.abs(index_err)
 
+        idx = len(src_data)-1
+        for colname in src_colnames:
+            row_dict['fit_%s'%colname] = row_dict['fitn_%s'%colname][idx]
         
-        # AIC = 2k - 2lnL
-        
+        # AIC = 2k - 2lnL        
 
         for i in range(len(fit_data)):
 
-            loglike = fit_data[i]['roi']['loglike']
-            loglike1 = fit_data[0]['roi']['loglike']
+            loglike = roi_data[i][0]['loglike']
+            loglike1 = roi_data[0][0]['loglike']            
             loglike_ext_gauss = row_dict['fitn_ext_gauss_loglike'][i]
             loglike_ext_disk = row_dict['fitn_ext_disk_loglike'][i]
-            loglike_halo = loglike+row_dict['fitn_halo_ts'][i]/2.
-
-            #print(i,loglike_ext_gauss,row_dict['fitn_ext_gauss_loglike'][i])
+            loglike_halo = row_dict['fitn_halo_loglike'][i] #loglike+row_dict['fitn_halo_ts'][i]/2.
             
             row_dict['fitn_dlike1'][i] = loglike - loglike1
             row_dict['fitn_dlike1_ext_gauss'][i] = loglike_ext_gauss - loglike1
@@ -864,10 +851,10 @@ def aggregate(dirs,output,suffix=''):
             row_dict['fitn_nparam_halo'][i] = row_dict['fitn_nparam_ps'][i] + 3
             row_dict['fitn_nparam_ext_gauss'][i] = row_dict['fitn_nparam_ps'][i] + 1
             row_dict['fitn_nparam_ext_disk'][i] = row_dict['fitn_nparam_ps'][i] + 1
-            row_dict['fitn_aic_ps'][i] = -(row_dict['fitn_nparam_ps'][i] - row_dict['fitn_dlike1'][i])
-            row_dict['fitn_aic_halo'][i] = -(row_dict['fitn_nparam_halo'][i] - row_dict['fitn_dlike1_halo'][i])
-            row_dict['fitn_aic_ext_gauss'][i] = -(row_dict['fitn_nparam_ext_gauss'][i] - row_dict['fitn_dlike1_ext_gauss'][i])
-            row_dict['fitn_aic_ext_disk'][i] = -(row_dict['fitn_nparam_ext_disk'][i] - row_dict['fitn_dlike1_ext_disk'][i])
+            row_dict['fitn_aic_ps'][i] = -2.0*(row_dict['fitn_nparam_ps'][i] - row_dict['fitn_dlike1'][i])
+            row_dict['fitn_aic_halo'][i] = -2.0*(row_dict['fitn_nparam_halo'][i] - row_dict['fitn_dlike1_halo'][i])
+            row_dict['fitn_aic_ext_gauss'][i] = -2.0*(row_dict['fitn_nparam_ext_gauss'][i] - row_dict['fitn_dlike1_ext_gauss'][i])
+            row_dict['fitn_aic_ext_disk'][i] = -2.0*(row_dict['fitn_nparam_ext_disk'][i] - row_dict['fitn_dlike1_ext_disk'][i])
             
         # PS+1 : x0, y0, norm0, index0, x1, y1, norm1, index1
         # Ext: R68, x0, y0, norm0, index0
@@ -893,25 +880,28 @@ def aggregate(dirs,output,suffix=''):
 
         
         print '-'*80
-        print('%4s %10s %10s %10s %10s %10s %10s'%('iter','dlike1','dlike1_ext','dlike','TS/2','dAIC','dlnL'))
+        print('%4s %10s %10s %10s %10s %10s %10s %4s'%('iter','dlike1','dlike1_ext','dlike','TS/2','dAIC','dlnL','N'))
         for i in range(len(fit_data)):
-            print '%4i %10.2f %10.2f %10.2f %10.2f %10.2f %10.2f'%(i,
+            print '%4i %10.2f %10.2f %10.2f %10.2f %10.2f %10.2f %4i %8.2f'%(i,
                                                              row_dict['fitn_dlike1'][i],
                                                              row_dict['fitn_dlike1_ext_gauss'][i],
                                                              row_dict['fitn_dlike'][i],
                                                              0.5*row_dict['fitn_ext_gauss_ts_ext'][i],
                                                              row_dict['fitn_daic_ps_ext_gauss'][i],
-                                                             row_dict['fitn_dlike_ps_ext_gauss'][i])
+                                                             row_dict['fitn_dlike_ps_ext_gauss'][i],
+                                                                   row_dict['fitn_nparam_ext_gauss'][i],
+                                                                             row_dict['fitn_ext_gauss_r68'][i])
 
         print '+'*80
         for i in range(len(fit_data)):
-            print '%4i %10.2f %10.2f %10.2f %10.2f %10.2f %10.2f'%(i,
+            print '%4i %10.2f %10.2f %10.2f %10.2f %10.2f %10.2f %4i'%(i,
                                                              row_dict['fitn_dlike1'][i],
                                                              row_dict['fitn_dlike1_ext_disk'][i],
                                                              row_dict['fitn_dlike'][i],
                                                              0.5*row_dict['fitn_ext_disk_ts_ext'][i],
                                                              row_dict['fitn_daic_ps_ext_disk'][i],
-                                                             row_dict['fitn_dlike_ps_ext_disk'][i])
+                                                             row_dict['fitn_dlike_ps_ext_disk'][i],
+                                                                       row_dict['fitn_nparam_ext_disk'][i])
             
         print '+'*80
         for i in range(len(fit_data)):            
@@ -947,23 +937,52 @@ def aggregate(dirs,output,suffix=''):
             row_dict['fit_%s_ext_disk'%k] = row_dict['fitn_%s_ext_disk'%k][fit_idx_ext_disk]
 
 
-        if max(row_dict['fit_ext_disk_ts_ext'],row_dict['fit_ext_disk_ts_ext']) < 16.:
+        if row_dict['fit_ext_gauss_ts_ext'] > 16.:
+
+            if fit_idx_ext_disk != fit_idx_ext_gauss:
+                if fit_idx_ext_disk < fit_idx_ext_gauss:
+                    fit_ext_model = 'ext_disk'
+                    row_dict['fit_ext_model'] = 'disk'
+                else:
+                    fit_ext_model = 'ext_gauss'
+                    row_dict['fit_ext_model'] = 'gauss'                
+            elif row_dict['fit_aic_ext_disk'] < row_dict['fit_aic_ext_gauss']:
+                fit_ext_model = 'ext_gauss'
+                row_dict['fit_ext_model'] = 'gauss'
+            else:
+                fit_ext_model = 'ext_disk'
+                row_dict['fit_ext_model'] = 'disk'            
+        else:
             fit_ext_model = 'ext_gauss'
             row_dict['fit_ext_model'] = 'gauss'
-        elif fit_idx_ext_disk != fit_idx_ext_gauss:
-            if fit_idx_ext_disk < fit_idx_ext_gauss:
-                fit_ext_model = 'ext_disk'
-                row_dict['fit_ext_model'] = 'disk'
-            else:
-                fit_ext_model = 'ext_gauss'
-                row_dict['fit_ext_model'] = 'gauss'
-        else:
-            if row_dict['fit_aic_ext_disk'] > row_dict['fit_aic_ext_gauss']:
-                fit_ext_model = 'ext_disk'
-                row_dict['fit_ext_model'] = 'disk'
-            else:
-                fit_ext_model = 'ext_gauss'
-                row_dict['fit_ext_model'] = 'gauss'
+                        
+        #if ((row_dict['fit_ext_gauss_ts_ext'] < 16.) or
+        #    (fit_idx_ext_disk != fit_idx_ext_gauss and fit_idx_ext_disk > fit_idx_ext_gauss) or
+        #    (row_dict['fit_aic_ext_disk'] < row_dict['fit_aic_ext_gauss'])):
+        #    fit_ext_model = 'ext_gauss'
+        #    row_dict['fit_ext_model'] = 'gauss'
+        #else:
+        #    fit_ext_model = 'ext_disk'
+        #    row_dict['fit_ext_model'] = 'disk'
+            
+            
+        #if max(row_dict['fit_ext_disk_ts_ext'],row_dict['fit_ext_disk_ts_ext']) < 16.:
+        #    fit_ext_model = 'ext_gauss'
+        #    row_dict['fit_ext_model'] = 'gauss'
+        #elif fit_idx_ext_disk != fit_idx_ext_gauss:
+        #    if fit_idx_ext_disk < fit_idx_ext_gauss:
+        #        fit_ext_model = 'ext_disk'
+        #        row_dict['fit_ext_model'] = 'disk'
+        #    else:
+        #        fit_ext_model = 'ext_gauss'
+        #        row_dict['fit_ext_model'] = 'gauss'
+        #else:
+        #    if row_dict['fit_aic_ext_disk'] > row_dict['fit_aic_ext_gauss']:
+        #        fit_ext_model = 'ext_disk'
+        #        row_dict['fit_ext_model'] = 'disk'
+        #    else:
+        #        fit_ext_model = 'ext_gauss'
+        #        row_dict['fit_ext_model'] = 'gauss'
 
         for k in ext_colnames:
             row_dict['fit_ext_%s'%k] = row_dict['fit_%s_%s'%(fit_ext_model, k)]
@@ -975,7 +994,10 @@ def aggregate(dirs,output,suffix=''):
         print('best ext gauss', fit_idx_ext_gauss)
         print('best ext disk', fit_idx_ext_disk)
         print('best ext model', fit_ext_model)
+        print('AIC gauss',row_dict['fit_aic_ext_gauss'])
+        print('AIC disk',row_dict['fit_aic_ext_disk'])
 
+        
         print(row_dict['assoc'])
         
         x = [src_data[-1]['offset_glon']]
@@ -1011,9 +1033,10 @@ def aggregate(dirs,output,suffix=''):
         if row_dict['fit_%s_ts_ext'%fit_ext_model] < 16.:
             c = SkyCoord(fitn_ra[fit_idx],
                          fitn_dec[fit_idx],unit='deg')
-            row_dict['ts'] = src_data[fit_idx]['ts']
-            row_dict['npred'] = src_data[fit_idx]['npred']
 
+            for k in src_colnames:
+                row_dict[k] = row_dict['fit_%s'%k]
+            
             for x in ['','100','1000','10000']:
                 row_dict['eflux%s'%x] = src_data[fit_idx]['eflux%s'%x]
                 row_dict['eflux%s_err'%x] = src_data[fit_idx]['eflux%s_err'%x]
@@ -1026,9 +1049,10 @@ def aggregate(dirs,output,suffix=''):
             c = SkyCoord(row_dict['fit_%s_ra'%fit_ext_model],
                          row_dict['fit_%s_dec'%fit_ext_model],
                          unit='deg')
-            row_dict['ts'] = row_dict['fit_%s_ts'%fit_ext_model]
-            row_dict['npred'] = row_dict['fit_%s_npred'%fit_ext_model]
 
+            for k in src_colnames:
+                row_dict[k] = row_dict['fit_%s_%s'%(fit_ext_model,k)]
+                        
             for x in ['','100','1000','10000']:
                 row_dict['eflux%s'%x] = row_dict['fit_%s_eflux%s'%(fit_ext_model,x)]
                 row_dict['eflux%s_err'%x] = row_dict['fit_%s_eflux%s_err'%(fit_ext_model,x)]
@@ -1086,17 +1110,8 @@ def aggregate(dirs,output,suffix=''):
             row_dict['class'] = ''
             row_dict['redshift'] = np.nan
             row_dict['nupeak'] = np.nan
-                        
-        row_dict['ra'] = c.ra.deg
-        row_dict['dec'] = c.dec.deg
-        row_dict['glon'] = c.galactic.l.deg
-        row_dict['glat'] = c.galactic.b.deg
-            
-        row_dict['dnde1000_index'] = src_data[0]['dnde1000_index']
-        #row_dict['dnde1000_index_err'] = src_data[0]['dnde1000_index_err']
-        row_dict['spectrum_type'] = src_data[0]['SpectrumType']
-
-            
+                                    
+        row_dict['spectrum_type'] = src_data[0]['SpectrumType']            
         row_dict['fit_mean_sep'] = fit_mean_sep
         row_dict['fit_min_sep'] = fit_min_sep
         row_dict['fit_idx'] = fit_idx
