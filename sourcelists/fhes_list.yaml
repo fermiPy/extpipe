@@ -57,6 +57,13 @@ fhes_j0737.1-3231e:
       SpectrumType: PowerLaw, dec: -32.52002764186093, name: FHES J0737.1-3231e, ra: 114.29071509710451}
   selection: {target: FHES J0737.1-3231e}
 
+fhes_j0737.1-3231:
+  model:
+    sources:
+    - {Index: 1.838391375825494, SpatialModel: PointSource,
+      SpectrumType: PowerLaw, glon: 246.44, name: FHES J0737.1-3231, glat: -5.30 }
+  selection: {target: FHES J0737.1-3231}
+
 # 3FGL J0850.0+4855
 # Halo
 
