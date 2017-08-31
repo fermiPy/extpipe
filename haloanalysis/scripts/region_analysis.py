@@ -93,13 +93,12 @@ def main():
     else:
         src_name = args.source
 
-    if 'FHES' in src_name or src_name in ['3FGL J0007.0+7302','3FGL J1725.0-0513']:
-        args.radius = 1.5
-    elif src_name in ['3FGL J0425.8+5600','3FGL J2125.8+5832']:
-        args.radius = 2.0
 
-    if src_name == 'FHES J0042.5+4117e':
-        gta.delete_source('3FGL J0042.5+4117')
+    max_iter = 5
+    if src_name in ['3FGL J0425.8+5600','3FGL J2125.8+5832','FHES J1741.4-3857e']:
+        args.radius = 2.0        
+    elif 'FHES' in src_name or src_name in ['3FGL J0007.0+7302','3FGL J1725.0-0513']:
+        args.radius = 1.5
         
     cat = Catalog3FGL('/u/gl/mdwood/fermi/catalogs/gll_psc_v16_ext.fit')
 
@@ -225,7 +224,14 @@ def main():
     # -------------------------------------
     # Pass 1 - Source at Localized Position
     # -------------------------------------
-
+    if (not src_name in skip_loc and
+        gta.roi[src_name]['SpatialModel'] in ['PointSource','RadialGaussian','RadialDisk']):
+        gta.localize(src_name,nstep=7,
+                     dtheta_max=max(0.4,gta.roi[src_name]['SpatialWidth']),
+                     update=True,prefix='fit0',
+                     free_radius=max(0.5,gta.roi[src_name]['SpatialWidth']),
+                     make_plots=True)
+    
     fit_region(gta,'fit0',src_name)
     #gta.load_roi('fit0_roi')
 
@@ -235,8 +241,8 @@ def main():
 
     srcs = []
 
-    # Fit up to 4 sources
-    for i in range(1,5):
+    # Fit up to 4 additional sources
+    for i in range(1,max_iter):
 
         srcs_fit = gta.find_sources('fit%i'%i,
                                     model=newsrc_model,
