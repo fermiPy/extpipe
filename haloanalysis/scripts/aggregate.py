@@ -390,6 +390,10 @@ def create_tables(nebins, next_bins, halo_scan_shape, eflux_scan_pts):
     cols_dict['codename'] = dict(dtype='S32', format='%s')
     cols_dict['linkname'] = dict(dtype='S32', format='%s')
     cols_dict['assoc'] = dict(dtype='S32', format='%s')
+    cols_dict['roi_ra'] = dict(dtype='f8')
+    cols_dict['roi_dec'] = dict(dtype='f8')
+    cols_dict['roi_glon'] = dict(dtype='f8')
+    cols_dict['roi_glat'] = dict(dtype='f8')    
     cols_dict['redshift'] = dict(dtype='f8')
     cols_dict['var_index'] = dict(dtype='f8')
     cols_dict['3lac_radio_flux'] = dict(dtype='f8')
@@ -584,9 +588,10 @@ def find_best_model(row, model_name, par_name, daic_threshold=0.0):
             break
             
         delta_ts = row['fitn_%s_%s'%(model_name,par_name)][i+1] - row['fitn_%s_%s'%(model_name,par_name)][i]
-        #print(i,row['fitn_daic_ps_%s'%model_name][i],delta_ts)        
+        delta_aic = row['fitn_aic_%s'%(model_name)][i+1] - row['fitn_aic_%s'%(model_name)][i]
+        print(i,model_name, par_name, delta_ts,delta_aic)        
         
-        if row['fitn_daic_ps_%s'%model_name][i] < daic_threshold and delta_ts < -1.0:
+        if row['fitn_daic_ps_%s'%model_name][i] < daic_threshold and delta_ts < -1.0 and delta_aic < 9.0:
             idx = i
             break
 
@@ -691,6 +696,13 @@ def aggregate(dirs,output,suffix=''):
         ext_disk_roi = load_tables(d,'%s_ext_disk_roi'%suffix)
         sed_data = load_npy_files(d,'%s_sed'%suffix)
         halo_data_sed = load_npy_files(d,'_cov05_*_halo_radialgaussian_sed',wildcard=True)
+
+        h = fits.open(os.path.join(d,'ccube_00.fits'))
+        roi_glon = h[0].header['CRVAL1']
+        roi_glat = h[0].header['CRVAL2']        
+        roi_skydir = SkyCoord(roi_glon, roi_glat, unit='deg', frame='galactic')
+        roi_ra = roi_skydir.transform_to('icrs').ra.deg
+        roi_dec = roi_skydir.transform_to('icrs').dec.deg
         
         if len(fit_data) == 0:
             print 'skipping'
@@ -698,6 +710,7 @@ def aggregate(dirs,output,suffix=''):
 
         config = yaml.load(fit_data[0].meta['CONFIG'])        
         src_name = config['selection']['target']
+        codename = os.path.basename(d)
         nebins = len(roi_data[0][0]['model_counts'])
         
         src_data = []
@@ -726,7 +739,12 @@ def aggregate(dirs,output,suffix=''):
                 row_dict[c] = np.zeros(tab.columns[c].shape[1:])
             else:
                 row_dict[c] = np.ones(tab.columns[c].shape[1:])*np.nan
-        
+
+        row_dict['roi_glon'] = roi_glon
+        row_dict['roi_glat'] = roi_glat
+        row_dict['roi_ra'] = roi_ra
+        row_dict['roi_dec'] = roi_dec
+                
         halo_seds = []
         for hd in halo_data_sed:
             halo_seds += [extract_halo_sed(hd,halo_scan_shape)]
@@ -936,7 +954,11 @@ def aggregate(dirs,output,suffix=''):
             row_dict['fit_%s_ext_gauss'%k] = row_dict['fitn_%s_ext_gauss'%k][fit_idx_ext_gauss]
             row_dict['fit_%s_ext_disk'%k] = row_dict['fitn_%s_ext_disk'%k][fit_idx_ext_disk]
 
+        #if codename == 'fhes_j0737.1-3231e':
+        #    fit_ext_model = 'ext_disk'
+        #    row_dict['fit_ext_model'] = 'disk'
 
+        
         if row_dict['fit_ext_gauss_ts_ext'] > 16.:
 
             if fit_idx_ext_disk != fit_idx_ext_gauss:
@@ -1066,7 +1088,6 @@ def aggregate(dirs,output,suffix=''):
         match_catalog(row_dict, cat_3fhl, sigma95, sigma95_3fhl, c, skydir_3fhl, '3fhl')
         
         row_dict['name'] = create_source_name(c,prefix='FHES')
-        codename = os.path.basename(d)
         linkname = '{%s}'%codename.replace('+','p').replace('.','_')
         
         row_dict['codename'] = codename
