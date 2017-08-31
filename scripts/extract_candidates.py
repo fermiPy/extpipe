@@ -57,6 +57,7 @@ def dump_source(tab, name):
     print 'model:     {:20s}'.format(row['fit_ext_model'])
     print 'ts:        {:8.1f}'.format(row['fit_ext_ts'])
     print 'ts_ext:    {:8.1f}'.format(row['fit_ext_ts_ext'])
+    print 'ext_flux:  {:8.4g}'.format(row['fit_ext_flux'])
     print 'ext_index: {:8.2f} +/- {:8.2f}'.format(np.abs(row['fit_ext_index']),np.abs(row['fit_ext_index_err']))
     print 'ext_r68:   {:8.2f} +/- {:8.2f}'.format(row['fit_ext_r68'],row['fit_ext_r68_err'])
     print 'ext_idx: {:4d} gauss_idx: {:4d} disk_idx: {:4d} halo_idx: {:4d}'.format(row['fit_idx_ext'],
@@ -64,9 +65,9 @@ def dump_source(tab, name):
                                                                                    row['fit_idx_ext_disk'],
                                                                                    row['fit_idx_halo'])
     
-    row_str = '{iter:>4s} {loglike:>10s} {glon:>8s} {glat:>8s} {ts:>8s} {ts_ext:>8s} {r68:>8s} {r68_err:>8s} {daic:>8s}'
+    row_str = '{iter:>4s} {loglike:>10s} {aic_ext:>10s} {aic_ps:>10s} {glon:>8s} {glat:>8s} {ts:>8s} {ts_ext:>8s} {r68:>8s} {r68_err:>8s} {index:>8s} {daic:>8s}'
     header = row_str.format(iter='iter', loglike='loglike', glon='glon', glat='glat', ts='ts',
-                            r68='r68', r68_err='r68_err', ts_ext='ts_ext', daic='daic')
+                            r68='r68', r68_err='r68_err', ts_ext='ts_ext', daic='daic', index='index',aic_ext='aic_ext',aic_ps='aic_ps')
 
     print '-'*80
     print header
@@ -75,11 +76,14 @@ def dump_source(tab, name):
         print row_str.format(
             iter='{:d}'.format(i),
             loglike='{:10.1f}'.format(row['fitn_ext_gauss_loglike'][i]),
+            aic_ext='{:10.1f}'.format(row['fitn_aic_ext_gauss'][i]),
+            aic_ps='{:10.1f}'.format(row['fitn_aic_ps'][i]),
             glon='{:8.2f}'.format(row['fitn_ext_gauss_glon'][i]),
             glat='{:8.2f}'.format(row['fitn_ext_gauss_glat'][i]),
             ts='{:8.1f}'.format(row['fitn_ext_gauss_ts'][i]),
             r68='{:8.2f}'.format(row['fitn_ext_gauss_r68'][i]),
             r68_err='{:8.2f}'.format(row['fitn_ext_gauss_r68_err'][i]),
+            index='{:8.2f}'.format(row['fitn_ext_gauss_index'][i]),
             daic='{:8.1f}'.format(row['fitn_daic_ps_ext_gauss'][i]),
             ts_ext='{:8.1f}'.format(row['fitn_ext_gauss_ts_ext'][i]))
 
@@ -90,11 +94,14 @@ def dump_source(tab, name):
         print row_str.format(
             iter='{:d}'.format(i),
             loglike='{:10.1f}'.format(row['fitn_ext_disk_loglike'][i]),
+            aic_ext='{:10.1f}'.format(row['fitn_aic_ext_disk'][i]),
+            aic_ps='{:10.1f}'.format(row['fitn_aic_ps'][i]),
             glon='{:8.2f}'.format(row['fitn_ext_disk_glon'][i]),
             glat='{:8.2f}'.format(row['fitn_ext_disk_glat'][i]),
             ts='{:8.1f}'.format(row['fitn_ext_disk_ts'][i]),
             r68='{:8.2f}'.format(row['fitn_ext_disk_r68'][i]),
             r68_err='{:8.2f}'.format(row['fitn_ext_disk_r68_err'][i]),
+            index='{:8.2f}'.format(row['fitn_ext_disk_index'][i]),
             daic='{:8.1f}'.format(row['fitn_daic_ps_ext_disk'][i]),
             ts_ext='{:8.1f}'.format(row['fitn_ext_disk_ts_ext'][i]))
 
@@ -105,11 +112,14 @@ def dump_source(tab, name):
         print row_str.format(
             iter='{:d}'.format(i),
             loglike='{:10.1f}'.format(row['fitn_dlike1_halo'][i]),
+            aic_ext='---',
+            aic_ps='---',
             glon='---',
             glat='---',
             ts='{:8.1f}'.format(row['fitn_halo_ts'][i]),
             r68='---',
             r68_err='---',
+            index='---',
             daic='{:8.1f}'.format(row['fitn_daic_ps_halo'][i]),
             ts_ext='---')
         
