@@ -131,6 +131,8 @@ def main():
         
         gta.delete_source(s.name)
 
+    if '3FGL J0534.5+2201s' in gta.roi:
+        gta.delete_source('3FGL J0534.5+2201s')
         
     gta.setup(overwrite=True)
     
@@ -141,8 +143,8 @@ def main():
         gta.set_parameter('3FGL J0534.5+2201','Scale',635.5911255,scale=1.0,true_value=False)
         gta.lock_source('3FGL J0534.5+2201')
 
-    if '3FGL J0534.5+2201s' in gta.roi:
-        gta.lock_source('3FGL J0534.5+2201s')
+    #if '3FGL J0534.5+2201s' in gta.roi:
+    #    gta.lock_source('3FGL J0534.5+2201s')
         
     gta.print_roi()
     
@@ -157,7 +159,7 @@ def main():
 #                     'beta' : {'value' : 0.0, 'min' : 0.0, 'max' : 1.0} }
 
     skip_loc = ['3FGL J0534.5+2201s']
-
+    
     for s in gta.roi.sources:
         if s['SpectrumType'] == 'LogParabola':
             gta.set_parameter_bounds(s.name, 'beta', [0.0,1.0])
@@ -173,9 +175,9 @@ def main():
     gta.print_roi()
     update_to_lp(gta,100.,exclude=[src_name])
 
-    # Update source of interest to LP if curvature is significant
+    # Update source of interest to LP if curvature is significant or TS > 1000
     curv = gta.curvature(src_name)
-    if curv.ts_curv > 9.0:
+    if curv.ts_curv > 9.0 or gta.roi[src_name]['ts'] > 1000.:
         update_to_lp(gta,100.,names=[src_name])
     
     gta.optimize()
