@@ -62,32 +62,29 @@ def fit_region(gta,modelname,src_name,loge_bounds=None, **kwargs):
     #                                 loge_bounds=loge_bounds, make_plots=True)    
     gta.residmap(modelname, model=model3,
                  loge_bounds=loge_bounds, make_plots=True)
-    
-    # Make zoom plots
-    gta.plotter.make_tsmap_plots(maps_model_pl20, gta.roi,
-                                 zoom=2,suffix='tsmap_zoom')
-    gta.plotter.make_tsmap_plots(maps_model_pl20_nosource, gta.roi,
-                                 zoom=2,suffix='tsmap_zoom')
-                                                                    
+                                                                        
     # SED Analysis
     gta.sed(src_name, outfile=modelname + '_sed_fixed',
             prefix=modelname + '_fixed',
-            optimizer={'optimizer' : 'MINUIT'},
             make_plots=True)
     
     gta.sed(src_name, outfile=modelname + '_sed',
             prefix=modelname,
-            optimizer={'optimizer' : 'MINUIT'},
             free_radius=1.0, make_plots=True)    
 
+    gta.sed(src_name,outfile=modelname + '_sed_bin4',
+            prefix=modelname + '_bin4', loge_bins=gta.log_energies[::2],
+            free_radius=1.0, make_plots=True)
+    
     psf_syst_scale = np.array([0.05,0.05,0.2])
     psf_fnlo = ([3.0,4.0,5.5],list(-1.0*psf_syst_scale))
     psf_fnhi = ([3.0,4.0,5.5],list(1.0*psf_syst_scale))
-    
+
+    # -----------------------------------------------------------------
     # Gaussian Analysis
+    # -----------------------------------------------------------------
     kw = dict(spatial_model='RadialGaussian',
-#              optimizer={'optimizer' : 'NEWTON'},
-              free_radius=1.0, fit_ebin=True)
+              free_radius=1.0, make_tsmap=False)
     
     gta.extension(src_name, outfile=modelname + '_ext_gauss_ext',
                   prefix=modelname + '_gauss',
@@ -96,11 +93,11 @@ def fit_region(gta,modelname,src_name,loge_bounds=None, **kwargs):
 
     gta.extension(src_name, outfile=modelname + '_ext_gauss_ext_psflo',
                   prefix=modelname + '_gauss_psflo',
-                  psf_scale_fn=psf_fnlo)
+                  psf_scale_fn=psf_fnlo, **kw)
 
     gta.extension(src_name, outfile=modelname + '_ext_gauss_ext_psfhi',
                   prefix=modelname + '_gauss_psfhi',
-                  psf_scale_fn=psf_fnhi)
+                  psf_scale_fn=psf_fnhi, **kw)
 
     gta.free_source(src_name)
     gta.fit()
@@ -110,7 +107,9 @@ def fit_region(gta,modelname,src_name,loge_bounds=None, **kwargs):
     
     gta.sed(src_name,outfile=modelname + '_ext_gauss_sed',
             prefix=modelname + '_gauss',
-            optimizer={'optimizer' : 'MINUIT'},
+            free_radius=1.0, make_plots=True)
+    gta.sed(src_name,outfile=modelname + '_ext_gauss_sed_bin4',
+            prefix=modelname + '_gauss_bin4', loge_bins=gta.log_energies[::2],
             free_radius=1.0, make_plots=True)
     gta.write_roi(modelname + '_ext_gauss_roi')
 
@@ -118,14 +117,15 @@ def fit_region(gta,modelname,src_name,loge_bounds=None, **kwargs):
               loge_bounds=loge_bounds, make_plots=True)
     gta.tsmap(modelname + '_ext_gauss', model=model_pl27,
               loge_bounds=loge_bounds, make_plots=True)
-    
+
+    # -----------------------------------------------------------------
     # Disk Analysis
+    # -----------------------------------------------------------------
     gta.load_roi(modelname + '_roi')
     gta.reload_source(src_name)
 
     kw = dict(spatial_model='RadialDisk',
-#              optimizer={'optimizer' : 'NEWTON'},
-              free_radius=1.0, fit_ebin=True)
+              free_radius=1.0, make_tsmap=False)
     
     gta.extension(src_name, outfile=modelname + '_ext_disk_ext',
                   prefix=modelname + '_disk',
@@ -134,20 +134,23 @@ def fit_region(gta,modelname,src_name,loge_bounds=None, **kwargs):
 
     gta.extension(src_name, outfile=modelname + '_ext_disk_ext_psflo',
                   prefix=modelname + '_disk_psflo',
-                  psf_scale_fn=psf_fnlo)
+                  psf_scale_fn=psf_fnlo, **kw)
 
     gta.extension(src_name, outfile=modelname + '_ext_disk_ext_psfhi',
                   prefix=modelname + '_disk_psfhi',
-                  psf_scale_fn=psf_fnhi)
+                  psf_scale_fn=psf_fnhi, **kw)
  
     gta.free_source(src_name)
-    gta.fit(reoptimize=True)
+    gta.fit()
+    gta.update_source(src_name,reoptimize=True)
     gta.print_roi()
     gta.print_params()
     
     gta.sed(src_name,outfile=modelname + '_ext_disk_sed',
             prefix=modelname + '_disk',
-            optimizer={'optimizer' : 'MINUIT'},
+            free_radius=1.0, make_plots=True)
+    gta.sed(src_name,outfile=modelname + '_ext_disk_sed_bin4',
+            prefix=modelname + '_disk_bin4', loge_bins=gta.log_energies[::2],
             free_radius=1.0, make_plots=True)
     gta.write_roi(modelname + '_ext_disk_roi')
     
