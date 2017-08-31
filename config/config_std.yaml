@@ -55,10 +55,10 @@ model:
 
   # List of catalogs to be used in the model.
   catalogs : 
-    - '/u/gl/mdwood/fermi/catalogs/gll_psc_v16_ext.fit'
+    - '/u/gl/mdwood/fermi/catalogs/gll_psc_v17_3fhl.fit'
     - 'lmc_psc_v0.fit'
 
-  extdir : '/u/gl/mdwood/fermi/catalogs/Extended_archive_v16'
+  extdir : '/u/gl/mdwood/fermi/catalogs/Extended_archive_v17'
 
 components: null
 
