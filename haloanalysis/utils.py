@@ -1,8 +1,11 @@
 import copy
+import re
+import glob
 import numpy as np
 from numpy.core import defchararray
 from scipy.interpolate import RegularGridInterpolator
-import re
+from astropy.io import fits
+from astropy.table import Table, Column
 
 
 def stack_files(files, outfile, new_cols=None):
