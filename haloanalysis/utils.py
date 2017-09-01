@@ -5,6 +5,48 @@ from scipy.interpolate import RegularGridInterpolator
 import re
 
 
+def stack_files(files, outfile, new_cols=None):
+
+    h = fits.open(files[0])
+
+    tables = []
+    for hdu in h:
+        if isinstance(hdu,fits.BinTableHDU):
+            tables += [stack_tables(files,hdu.name,new_cols=new_cols)]
+
+    hdus = [fits.PrimaryHDU()]
+    hdus += [fits.table_to_hdu(t) for t in tables]
+    hdulist = fits.HDUList(hdus)
+    hdulist.writeto(outfile,overwrite=True)
+    
+
+def stack_tables(files, hdu=None, new_cols=None):
+    
+    tables = []
+    for f in sorted(files):
+        tables += [Table.read(f,hdu=hdu)]
+
+    cols = []
+    for c in tables[0].colnames:
+
+        col = tables[0][c]
+        cols += [Column(name=col.name, unit=col.unit, shape=col.shape,
+                        dtype=col.dtype)]
+
+    tab = Table(cols,meta=tables[0].meta)
+
+    for t in tables:
+        row = [ t[c] for c in tables[0].colnames ]
+        tab.add_row(row)
+
+    if new_cols is not None:
+
+        for col in new_cols:
+            tab.add_column(col)
+                    
+    return tab
+
+
 def load_source_rows(tab, names, key='assoc'):
     """Load the rows from a table that match a source name.
 
