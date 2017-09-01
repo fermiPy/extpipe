@@ -5,6 +5,7 @@ import itertools
 import logging
 
 import numpy as np
+from .utils import stack_files
 from fermipy.utils import get_parameter_limits
     
 def fit_region(gta,modelname,src_name,loge_bounds=None, **kwargs):
@@ -219,7 +220,7 @@ def fit_halo_scan(gta, modelname, src_name, halo_width,
     halo_source_name = 'halo_' + spatial_model
     halo_source_dict = {
         'SpectrumType' : 'PowerLaw', 
-        'Index' : { 'value' : 2.0, 'scale' : -1.0, 'min' : 1.0, 'max' : 4.5 }, 
+        'Index' : { 'value' : 2.0, 'scale' : -1.0, 'min' : 0.5, 'max' : 4.5 }, 
         'Scale' : 1000,
         'Prefactor' : { 'value' : 1E-5, 'scale' : 1e-13,
                         'min' : 1E-5, 'max' : 1E4 },
@@ -245,6 +246,7 @@ def fit_halo_scan(gta, modelname, src_name, halo_width,
     gta.write_xml(modelname + '_base')
 
     halo_tab = gta.roi.create_table([])
+    halo_tab_idx_free = gta.roi.create_table([])
     halo_data = []
     halo_data_idx_free = []
         
@@ -261,7 +263,14 @@ def fit_halo_scan(gta, modelname, src_name, halo_width,
         gta.free_norm(halo_source_name)
         gta.fit(optimizer=optimizer)
         gta.sed(halo_source_name, prefix='%s_cov05_%02i'%(modelname,i),
+                outfile='%s_cov05_%02i_sed'%(outprefix,i),
                 free_radius=1.0, cov_scale=5.0,
+                optimizer={'optimizer' : 'MINUIT'},
+                make_plots=False)
+
+        gta.sed(halo_source_name, prefix='%s_cov10_%02i'%(modelname,i),
+                outfile='%s_cov10_%02i_sed'%(outprefix,i),
+                free_radius=1.0, cov_scale=10.0,
                 optimizer={'optimizer' : 'MINUIT'},
                 make_plots=False)
         
@@ -272,6 +281,7 @@ def fit_halo_scan(gta, modelname, src_name, halo_width,
                           optimizer={'optimizer' : optimizer})
 
         halo_data_idx_free += [copy.deepcopy(gta.roi[halo_source_name].data)]
+        gta.roi[halo_source_name].add_to_table(halo_tab_idx_free)
         gta.write_roi('%s_%02i'%(outprefix,i),make_plots=False)
 
         gta.print_params(loglevel=logging.DEBUG)
@@ -319,8 +329,20 @@ def fit_halo_scan(gta, modelname, src_name, halo_width,
     tab_halo_width, tab_halo_index = np.meshgrid(halo_width,halo_index,indexing='ij')
     halo_tab['halo_width'] = np.ravel(tab_halo_width)
     halo_tab['halo_index'] = np.ravel(tab_halo_index)
+    halo_tab_idx_free['halo_width'] = halo_width
+
+    stack_files(glob.glob('%s*cov05*fits'%outprefix),
+                os.path.join(gta.workdir,'%s_cov05_sed.fits'%outprefix),
+                new_cols=[Column(name='halo_width',data=halo_width, unit='deg')])
+
+    stack_files(glob.glob('%s*cov10*fits'%outprefix),
+                os.path.join(gta.workdir,'%s_cov10_sed.fits'%outprefix),
+                new_cols=[Column(name='halo_width',data=halo_width, unit='deg')])
     
-    halo_tab.write(os.path.join(gta.workdir,'%s_data.fits'%outprefix),overwrite=True)
+    halo_tab.write(os.path.join(gta.workdir,'%s_data.fits'%outprefix),
+                   overwrite=True)
+    halo_tab_idx_free.write(os.path.join(gta.workdir,'%s_data_idx_free.fits'%outprefix),
+                            overwrite=True)
     gta.logger.info('Finished Halo Scan %s'%(modelname))
     
     

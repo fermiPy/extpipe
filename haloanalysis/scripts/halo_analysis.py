@@ -34,7 +34,7 @@ def main():
     gta.setup()
 
     halo_width = np.logspace(-1.5,0.25,15)
-    halo_index = np.array([1.5,1.75,2.0,2.25,2.5,2.75,3.0,3.25,3.5])
+    halo_index = np.array([1.0,1.25,1.5,1.75,2.0,2.25,2.5,2.75,3.0,3.25,3.5,3.75,4.0])
     src_name = gta.roi.sources[0].name
 
     for i in range(0,5):
