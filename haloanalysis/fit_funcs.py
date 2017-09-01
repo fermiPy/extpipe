@@ -1,4 +1,5 @@
 import os
+import glob
 import sys
 import copy
 import itertools
@@ -331,11 +332,11 @@ def fit_halo_scan(gta, modelname, src_name, halo_width,
     halo_tab['halo_index'] = np.ravel(tab_halo_index)
     halo_tab_idx_free['halo_width'] = halo_width
 
-    stack_files(glob.glob('%s*cov05*fits'%outprefix),
+    stack_files(sorted(glob.glob('%s*cov05*fits'%outprefix)),
                 os.path.join(gta.workdir,'%s_cov05_sed.fits'%outprefix),
                 new_cols=[Column(name='halo_width',data=halo_width, unit='deg')])
 
-    stack_files(glob.glob('%s*cov10*fits'%outprefix),
+    stack_files(sorted(glob.glob('%s*cov10*fits'%outprefix)),
                 os.path.join(gta.workdir,'%s_cov10_sed.fits'%outprefix),
                 new_cols=[Column(name='halo_width',data=halo_width, unit='deg')])
     
