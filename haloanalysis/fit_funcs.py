@@ -7,7 +7,9 @@ import logging
 
 import numpy as np
 from .utils import stack_files
+from astropy.table import Column
 from fermipy.utils import get_parameter_limits
+
     
 def fit_region(gta,modelname,src_name,loge_bounds=None, **kwargs):
 
