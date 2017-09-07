@@ -49,11 +49,11 @@ def main():
     
     gta.load_roi('fit%i_ext_%s_roi'%(idx,ext_model),reload_sources=True)
     
-    gta.tsmap('fit%i_ext_nosource'%idx, outfile='fit%i_ext_nosource'%idx,
+    gta.tsmap('fit_ext_nosource', outfile='fit_ext_nosource_tsmap',
               model=model, exclude=[src_name],
               make_plots=True)
 
-    gta.tsmap('fit%i_ext'%idx, outfile='fit%i_ext'%idx,
+    gta.tsmap('fit_ext', outfile='fit_ext_tsmap',
               model=model, 
               make_plots=True)
 
