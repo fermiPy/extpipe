@@ -12,6 +12,7 @@ init_matplotlib_backend()
 from fermipy.batch import check_log
 from fermipy.gtanalysis import GTAnalysis
 from haloanalysis.fit_funcs import fit_halo_scan
+from astropy.table import Table
     
 def main():
         
@@ -32,8 +33,6 @@ def main():
         sys.exit(1)
         
     gta.setup()
-
-
     tab = Table.read('/u/gl/mdwood/fermi/ext_analysis/v20/std_psf0123_joint2a_stdmodel/table_std_psf0123_joint2a_stdmodel_cat.fits')
 
     src_name = gta.config['selection']['target']
@@ -52,7 +51,7 @@ def main():
     
     gta.tsmap('fit%i_ext_nosource'%idx, outfile='fit%i_ext_nosource'%idx,
               model=model, exclude=[src_name],
-              loge_bounds=loge_bounds, make_plots=True)
+              make_plots=True)
 
     gta.tsmap('fit%i_ext'%idx, outfile='fit%i_ext'%idx,
               model=model, 
