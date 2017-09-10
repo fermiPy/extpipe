@@ -35,8 +35,8 @@ def main():
     gta.setup()
     tab = Table.read('/u/gl/mdwood/fermi/ext_analysis/v20/std_psf0123_joint2a_stdmodel/table_std_psf0123_joint2a_stdmodel_cat.fits')
     src_name = gta.config['selection']['target']
-    codename = src_name.lower().replace(' ','_').replace('_off','')
-    row = tab[tab['codename'] == codename][0]
+    #codename = src_name.lower().replace(' ','_').replace('_off','')
+    row = tab[tab['name_roi'] == src_name][0]
 
     if row['fit_ext_ts_ext'] < 9.0:
         print('Source not extended.  Exiting.')
