@@ -8,7 +8,15 @@ Create directories manually:
 
 .. code-block:: bash
 
-   $ fermipy-clone-config --source_list=source_list.yaml --script=run-region-analysis --basedir=v0 config.yaml
+   $ fermipy-clone-configs --source_list=source_list.yaml --script=run-region-analysis --basedir=v0 config.yaml
+
+If it's not working, make sure you ran 
+
+.. code-block:: bash
+
+   $ python setup.py develop 
+
+in the haloanalysis directory. 
 
 Create directories for standard analysis:
 
