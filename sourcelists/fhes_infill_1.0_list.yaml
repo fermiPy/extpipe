@@ -1,0 +1,107 @@
+3fgl_j0425.8+5600:
+  model: {galdiff: $FERMI_DIFFUSE_DIR/v5r0/interp/3fgl_j0425.8+5600_gll_iem_ext_v06_infill_1.0.fits}
+  selection: {target: 3FGL J0425.8+5600}
+3fgl_j0534.5+2201i:
+  model: {galdiff: $FERMI_DIFFUSE_DIR/v5r0/interp/3fgl_j0534.5+2201i_gll_iem_ext_v06_infill_1.0.fits}
+  selection: {target: 3FGL J0534.5+2201i}
+3fgl_j1645.9-5420:
+  model: {galdiff: $FERMI_DIFFUSE_DIR/v5r0/interp/3fgl_j1645.9-5420_gll_iem_ext_v06_infill_1.0.fits}
+  selection: {target: 3FGL J1645.9-5420}
+3fgl_j1725.0-0513:
+  model: {galdiff: $FERMI_DIFFUSE_DIR/v5r0/interp/3fgl_j1725.0-0513_gll_iem_ext_v06_infill_1.0.fits}
+  selection: {target: 3FGL J1725.0-0513}
+3fgl_j2125.8+5832:
+  model: {galdiff: $FERMI_DIFFUSE_DIR/v5r0/interp/3fgl_j2125.8+5832_gll_iem_ext_v06_infill_1.0.fits}
+  selection: {target: 3FGL J2125.8+5832}
+fhes_j0001.3+6841:
+  model:
+    galdiff: $FERMI_DIFFUSE_DIR/v5r0/interp/fhes_j0001.3+6841_gll_iem_ext_v06_infill_1.0.fits
+    sources:
+    - {Index: 2.0, SpectrumType: PowerLaw, dec: 68.68311174744284, name: FHES J0001.3+6841,
+      ra: 0.3365549973070442}
+  selection: {target: FHES J0001.3+6841}
+fhes_j0238.0+5238e:
+  model:
+    galdiff: $FERMI_DIFFUSE_DIR/v5r0/interp/fhes_j0238.0+5238e_gll_iem_ext_v06_infill_1.0.fits
+    sources:
+    - {Index: 1.880980798131578, SpatialModel: RadialGaussian, SpatialWidth: 1.0681275069709593,
+      SpectrumType: PowerLaw, dec: 52.6255989074707, name: FHES J0238.0+5238e, ra: 39.50490188598633}
+  selection: {target: FHES J0238.0+5238e}
+fhes_j0429.3+3529:
+  model:
+    galdiff: $FERMI_DIFFUSE_DIR/v5r0/interp/fhes_j0429.3+3529_gll_iem_ext_v06_infill_1.0.fits
+    sources:
+    - {Index: 2.0, SpectrumType: PowerLaw, dec: 35.475047644615685, name: FHES J0429.3+3529,
+      ra: 67.32888933084136}
+  selection: {target: FHES J0429.3+3529}
+fhes_j0940.8-6103e:
+  model:
+    galdiff: $FERMI_DIFFUSE_DIR/v5r0/interp/fhes_j0940.8-6103e_gll_iem_ext_v06_infill_1.0.fits
+    sources:
+    - {Index: 2.7360159157751243, SpatialModel: RadialGaussian, SpatialWidth: 1.1728857314053132,
+      SpectrumType: PowerLaw, dec: -61.04660034179688, name: FHES J0940.8-6103e, ra: 145.1876983642578}
+  selection: {target: FHES J0940.8-6103e}
+fhes_j1323.2-3901e:
+  model:
+    galdiff: $FERMI_DIFFUSE_DIR/v5r0/interp/fhes_j1323.2-3901e_gll_iem_ext_v06_infill_1.0.fits
+    sources:
+    - {Index: 2.11, SpatialModel: RadialGaussian, SpatialWidth: 1.01, SpectrumType: PowerLaw,
+      dec: -39.0247, name: FHES J1323.2-3901e, ra: 200.81}
+  selection: {target: FHES J1323.2-3901e}
+fhes_j1334.8-4124:
+  model:
+    galdiff: $FERMI_DIFFUSE_DIR/v5r0/interp/fhes_j1334.8-4124_gll_iem_ext_v06_infill_1.0.fits
+    sources:
+    - {Index: 2.0, SpectrumType: PowerLaw, dec: -41.40200178043244, name: FHES J1334.8-4124,
+      ra: 203.69869217961318}
+  selection: {target: FHES J1334.8-4124}
+fhes_j1503.7-6427e:
+  model:
+    galdiff: $FERMI_DIFFUSE_DIR/v5r0/interp/fhes_j1503.7-6427e_gll_iem_ext_v06_infill_1.0.fits
+    sources:
+    - {Index: 2.5629681653696865, SpatialModel: RadialGaussian, SpatialWidth: 0.7026096588928962,
+      SpectrumType: PowerLaw, dec: -64.44930267333984, name: FHES J1503.7-6427e, ra: 225.92869567871094}
+  selection: {target: FHES J1503.7-6427e}
+fhes_j1627.3-2430:
+  model:
+    galdiff: $FERMI_DIFFUSE_DIR/v5r0/interp/fhes_j1627.3-2430_gll_iem_ext_v06_infill_1.0.fits
+    sources:
+    - {Index: 2.0, SpectrumType: PowerLaw, dec: -24.497653295647346, name: FHES J1627.3-2430,
+      ra: 246.82058780423844}
+  selection: {target: FHES J1627.3-2430}
+fhes_j1741.4-3857e:
+  model:
+    galdiff: $FERMI_DIFFUSE_DIR/v5r0/interp/fhes_j1741.4-3857e_gll_iem_ext_v06_infill_1.0.fits
+    sources:
+    - {Index: 2.0, SpatialModel: RadialDisk, SpatialWidth: 1.0, SpectrumType: PowerLaw,
+      glat: -4.5, glon: 351.0, name: FHES J1741.4-3857e}
+  selection: {target: FHES J1741.4-3857e}
+fhes_j1744.9-1558e:
+  model:
+    galdiff: $FERMI_DIFFUSE_DIR/v5r0/interp/fhes_j1744.9-1558e_gll_iem_ext_v06_infill_1.0.fits
+    sources:
+    - {Index: 2.1380626635267763, SpatialModel: RadialGaussian, SpatialWidth: 0.8822703682143711,
+      SpectrumType: PowerLaw, dec: -15.958800315856939, name: FHES J1744.9-1558e,
+      ra: 266.215087890625}
+  selection: {target: FHES J1744.9-1558e}
+fhes_j2125.8+5833e:
+  model:
+    galdiff: $FERMI_DIFFUSE_DIR/v5r0/interp/fhes_j2125.8+5833e_gll_iem_ext_v06_infill_1.0.fits
+    sources:
+    - {Index: 2.23446246267901, SpatialModel: RadialGaussian, SpatialWidth: 0.8109173832986395,
+      SpectrumType: PowerLaw, dec: 58.54899978637695, name: FHES J2125.8+5833e, ra: 321.4612121582031}
+  selection: {target: FHES J2125.8+5833e}
+fhes_j2208.4+6501:
+  model:
+    galdiff: $FERMI_DIFFUSE_DIR/v5r0/interp/fhes_j2208.4+6501_gll_iem_ext_v06_infill_1.0.fits
+    sources:
+    - {Index: 2.0, SpectrumType: PowerLaw, dec: 65.01081100577576, name: FHES J2208.4+6501,
+      ra: 332.08825398002693}
+  selection: {target: FHES J2208.4+6501}
+fhes_j2309.0+5429e:
+  model:
+    galdiff: $FERMI_DIFFUSE_DIR/v5r0/interp/fhes_j2309.0+5429e_gll_iem_ext_v06_infill_1.0.fits
+    sources:
+    - {Index: 2.0671239481582515, SpatialModel: RadialGaussian, SpatialWidth: 1.083030764702497,
+      SpectrumType: PowerLaw, dec: 54.475898742675774, name: FHES J2309.0+5429e, ra: 347.25201416015625}
+  selection: {target: FHES J2309.0+5429e}
