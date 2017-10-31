@@ -1,8 +1,53 @@
 import copy
+import re
+import glob
 import numpy as np
 from numpy.core import defchararray
 from scipy.interpolate import RegularGridInterpolator
-import re
+from astropy.io import fits
+from astropy.table import Table, Column
+
+
+def stack_files(files, outfile, new_cols=None):
+
+    h = fits.open(files[0])
+
+    tables = []
+    for hdu in h:
+        if isinstance(hdu,fits.BinTableHDU):
+            tables += [stack_tables(files,hdu.name,new_cols=new_cols)]
+
+    hdus = [fits.PrimaryHDU()]
+    hdus += [fits.table_to_hdu(t) for t in tables]
+    hdulist = fits.HDUList(hdus)
+    hdulist.writeto(outfile,overwrite=True)
+    
+
+def stack_tables(files, hdu=None, new_cols=None):
+    
+    tables = []
+    for f in sorted(files):
+        tables += [Table.read(f,hdu=hdu)]
+
+    cols = []
+    for c in tables[0].colnames:
+
+        col = tables[0][c]
+        cols += [Column(name=col.name, unit=col.unit, shape=col.shape,
+                        dtype=col.dtype)]
+
+    tab = Table(cols,meta=tables[0].meta)
+
+    for t in tables:
+        row = [ t[c] for c in tables[0].colnames ]
+        tab.add_row(row)
+
+    if new_cols is not None:
+
+        for col in new_cols:
+            tab.add_column(col)
+                    
+    return tab
 
 
 def load_source_rows(tab, names, key='assoc'):
@@ -63,18 +108,20 @@ def create_mask(tab, target_def):
             m &= m0
 
         elif isinstance(v,str):
-	    p = re.compile('([a-zA-Z_2-9][^<>=&|!\d+()\s*.]+\d*)') 
+	    p = re.compile('([a-zA-Z_2-9][^"<>=&|!()\s*.]+)') 
 	# regular expression should capture all column names 
 	# that consist of a-z, A-Z, '_', and numbers at the end
 	# it should not capture pure numbers and numbers like '1e10'
 	    replaced = [] # check what already has been replaced
 	    for cname in p.findall(v):
+                print(cname)
+                
 		if not cname in replaced:
 		    if tab.columns.has_key(cname):
 			tab[cname]
 			v = v.replace(cname, "tab['{0:s}']".format(cname))
-		    else:
-			v = v.replace(cname, "'{0:s}'".format(cname))
+		    #else:
+	#		v = v.replace(cname, "'{0:s}'".format(cname))
 		    replaced.append(cname)
 	    # all of the above in one line but does not work if column name starts with a number
 	    # or if expression is not a number

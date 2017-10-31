@@ -6,7 +6,7 @@ from fermipy.utils import *
 
 
 
-tab0 = Table.read('/u/gl/mdwood/fermi/catalogs/gll_psch_v11.fit.gz')
+tab0 = Table.read('/u/gl/mdwood/fermi/catalogs/gll_psch_v12.fit.gz')
 cat_3fgl = Table.read('/u/gl/mdwood/fermi/catalogs/gll_psc_v16_ext.fit')
 
 skydir_3fgl = SkyCoord(cat_3fgl['RAJ2000'],cat_3fgl['DEJ2000'],unit='deg')
@@ -21,6 +21,8 @@ m1 = np.abs(tab0['GLAT']) > 5.0
 tab0 = tab0[m1 & ~m0]
 
 #3FHL J0531.8-6639e
+
+skip_srcs = ['3FHL J0537.9-6909']
 
 config = {
     'selection' : {},
@@ -43,7 +45,7 @@ for row in tab0:
     
     name = row['Source_Name'].strip()
 
-    if min_sep/sigma95 < 2.0:
+    if min_sep/sigma95 < 2.0 or name in skip_srcs:
         print('skipping',name,min_sep,sigma95,min_sep/sigma95)    
         continue
     

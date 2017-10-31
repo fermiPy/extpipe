@@ -24,6 +24,7 @@ setup(name='haloanalysis',
       entry_points={'console_scripts': [
           'run-region-analysis = haloanalysis.scripts.region_analysis:main',
           'run-halo-analysis = haloanalysis.scripts.halo_analysis:main',
+          'run-tsmap = haloanalysis.scripts.tsmap:main',
           'haloanalysis-aggregate = haloanalysis.scripts.aggregate:main',
           'haloanalysis-stack = haloanalysis.scripts.stack:main',
           'haloanalysis-fit-igmf = haloanalysis.scripts.fit_igmf:main',

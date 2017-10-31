@@ -1,2 +1,16 @@
 *.py[cod]
 *~
+
+# Distribution / packaging
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+*.egg-info/
+
+# package specific
+haloanalysis/_version.py
+.ipynb_checkpoints

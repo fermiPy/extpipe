@@ -12,6 +12,7 @@ init_matplotlib_backend()
 from fermipy.batch import check_log
 from fermipy.gtanalysis import GTAnalysis
 from haloanalysis.fit_funcs import fit_halo_scan
+from astropy.table import Table
     
 def main():
         
@@ -32,21 +33,28 @@ def main():
         sys.exit(1)
         
     gta.setup()
+    tab = Table.read('/u/gl/mdwood/fermi/ext_analysis/v20/std_psf0123_joint2a_stdmodel/table_std_psf0123_joint2a_stdmodel_cat.fits')
+    src_name = gta.config['selection']['target']
+    #codename = src_name.lower().replace(' ','_').replace('_off','')
+    row = tab[tab['name_roi'] == src_name][0]
 
-    halo_width = np.logspace(-1.5,0.25,15)
-    halo_index = np.array([1.0,1.25,1.5,1.75,2.0,2.25,2.5,2.75,3.0,3.25,3.5,3.75,4.0])
-    src_name = gta.roi.sources[0].name
+    if row['fit_ext_ts_ext'] < 9.0:
+        print('Source not extended.  Exiting.')
+        sys.exit(0)
 
-    for i in range(0,5):
+    ext_model = row['fit_ext_model']
+    idx = row['fit_idx_ext']
+    model = { 'SpatialModel' : 'PointSource', 'Index' : min(np.abs(row['fit_ext_index']),4.0) }
+    
+    gta.load_roi('fit%i_ext_%s_roi'%(idx,ext_model),reload_sources=True)
+    
+    gta.tsmap('fit_ext_nosource', outfile='fit_ext_nosource_tsmap',
+              model=model, exclude=[src_name],
+              make_plots=True)
 
-        npy_file = os.path.join(gta.workdir,'fit%i_roi.npy'%i)
-
-        if not os.path.isfile(npy_file):
-            continue
-
-        gta.load_roi('fit%i_roi'%i,reload_sources=True)
-        fit_halo_scan(gta,'fit%i'%i,src_name,
-                      halo_width,halo_index,optimizer='NEWTON')
+    gta.tsmap('fit_ext', outfile='fit_ext_tsmap',
+              model=model, 
+              make_plots=True)
 
 if __name__ == '__main__':
 

@@ -1,5 +1,6 @@
 import os
 import sys
+import argparse
 
 configdir='haloanalysis/config'
 
@@ -17,42 +18,61 @@ model_lookup = {
 }
     
 
-#models = model_lookup.keys()
-models = ['stdmodel']
+def main():
 
-script=sys.argv[1]
-#sourcelist=sys.argv[2]
-basedir=sys.argv[2]
-
-#sourcelist = 'haloanalysis/diffuse_syst_list.yaml'
-#sourcelist = 'galactic_list.yaml'
-#sourcelist = 'haloanalysis/ext_candidates_list.yaml'
-#sourcelist = 'haloanalysis/fhes_list.yaml'
-
-sourcelist = ['haloanalysis/fhes_list.yaml',
-              'haloanalysis/ext_candidates_list.yaml',
-              'haloanalysis/cta1_list.yaml']
-
-#configs = ['config_std.yaml','config_90mo.yaml','config_bigroi.yaml']
-configs = ['config_std.yaml','config_psf0123_joint2a.yaml']
-#configs = ['config_std.yaml']
+    usage = "usage: %(prog)s"
+    description = "Aggregate analysis output."
+    parser = argparse.ArgumentParser(usage=usage,description=description)
 
 
-for m in models:
+    parser.add_argument('--config', default = None, required=True)
+    parser.add_argument('--script', default = None, required=True)
+    parser.add_argument('--model', default = 'stdmodel')
+    parser.add_argument('sourcelists', nargs='+', default = None,
+                        help='')    
+    args = parser.parse_args()
 
-    cmd = 'fermipy-clone-configs --script=%s'%(script)
-    cmd += ' --basedir=%s_%s '%(basedir,m)
+    if args.model == 'all':    
+        models = model_lookup.keys()
+    else:
+        models = ['stdmodel']
 
-    for s in sourcelist:
-        cmd += ' --source_list=%s '%s
+    #sourcelist = 'haloanalysis/diffuse_syst_list.yaml'
+    #sourcelist = 'galactic_list.yaml'
+    #sourcelist = 'haloanalysis/ext_candidates_list.yaml'
+    #sourcelist = 'haloanalysis/fhes_list.yaml'
+
+    #sourcelists = [
+        #'haloanalysis/sourcelists/fhes_infill_list.yaml',]
+    #    'haloanalysis/sourcelists/fhes_list.yaml',
+    #    'haloanalysis/sourcelists/ext_candidates_list.yaml',
+    #    'haloanalysis/sourcelists/cta1_list.yaml',]
+        #'haloanalysis/sourcelists/3fgl_srcs_list_glat050.yaml',
+        #'haloanalysis/sourcelists/3fhl_srcs_list_glat050.yaml']
+
+    if args.config == 'std_all':
+        configs = ['config_std.yaml']
+    elif args.config == 'std_psf0123_joint2a':
+        configs = ['config_std.yaml','config_psf0123_joint2a.yaml']
+    else:
+        raise ValueError
+        
+    for m in models:
+
+        cmd = 'fermipy-clone-configs --script=%s'%(args.script)
+        cmd += ' --basedir=%s_%s '%(args.config,m)
+
+        for s in args.sourcelists:
+            cmd += ' --source_list=%s '%s
     
-    #if script == 'run-region-analysis' and ('fhes' in sourcelist or 'cta1' in sourcelist):
-    #    cmd += ' --args="--radius=1.5" '    
-    #cmd += '  --basedir=bigroi_all_galactic_scan_%s'%m
-    for c in configs:
-        cmd += ' %s '%(os.path.join(configdir,c))
-    if model_lookup[m] is not None:
-        cmd += ' %s '%(os.path.join(configdir,'config_%s.yaml'%(model_lookup[m])))
-    print cmd
-    os.system(cmd)
+        #cmd += '  --basedir=bigroi_all_galactic_scan_%s'%m
+        for c in configs:
+            cmd += ' %s '%(os.path.join(configdir,c))
+        if model_lookup[m] is not None:
+            cmd += ' %s '%(os.path.join(configdir,'config_%s.yaml'%(model_lookup[m])))
+        print cmd
+        os.system(cmd)
     
+if __name__ == '__main__':
+
+    main()
