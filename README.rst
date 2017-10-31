@@ -4,6 +4,12 @@ Extension Pipeline
 Creating Analysis Directories
 -----------------------------
 
+Create directories manually:
+
+.. code-block:: bash
+
+   $ fermipy-clone-config --source_list=source_list.yaml --script=run-region-analysis --basedir=v0 config.yaml
+
 Create directories for standard analysis:
 
 .. code-block:: bash
