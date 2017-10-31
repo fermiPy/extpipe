@@ -18,6 +18,12 @@ If it's not working, make sure you ran
 
 in the haloanalysis directory. 
 
+To send things to the batch farm, do 
+
+.. code-block:: bash
+
+   $ fermipy-dispatch --runscript=run-region-analysis.sh 
+
 Create directories for standard analysis:
 
 .. code-block:: bash
