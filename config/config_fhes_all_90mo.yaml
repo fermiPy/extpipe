@@ -1,0 +1,67 @@
+data:
+  evfile : /u/gl/mdwood/ki20/mdwood/fermi/data/P8_SOURCE_V6_HE/P8_SOURCE_V6_239557414_476239414_z100_r180_ft1.lst
+  scfile : /nfs/slac/g/ki/ki20/cta/mdwood/fermi/data/P8_P302_BASE/P8_P302_SOURCE_239557414_476239414_ft2.fits
+  ltcube : /nfs/slac/g/ki/ki20/cta/mdwood/fermi/data/P8_SOURCE_V6_HE/P8_SOURCE_V6_239557414_476239414_z100_r180_gti_ft1_gtltcube_z100.fits
+
+binning:
+  roiwidth   : 6.0
+  npix       : null
+  binsz      : 0.05 # spatial bin size in deg
+  binsperdec : 8   # nb energy bins per decade
+  coordsys   : 'GAL'
+  
+selection:
+  logemin    : 3.0
+  logemax    : 6.0
+  zmax    : 100
+  evclass : 128
+  evtype  : 3
+  tmin    : 239557414
+  tmax    : 476239414 # 7.5 years
+
+fileio : 
+  usescratch : True
+
+gtlike:
+  edisp : True
+  irfs : 'P8R2_SOURCE_V6'
+  edisp_disable : ['isodiff','galdiff']
+  llscan_npts : 9
+
+model:
+  src_radius  : null
+  src_roiwidth : 10.0
+  galdiff  : '$FERMI_DIFFUSE_DIR/v5r0/gll_iem_ext_v06.fits'
+  isodiff  : '$FERMI_DIFFUSE_DIR/v5r0/iso_P8R2_SOURCE_V6_v06_ext.txt'
+  limbdiff : null
+  catalogs : 
+    - '/u/gl/mdwood/fermi/catalogs/gll_psc_v16_3fhl.fit'
+    - 'lmc_psc_v0.fit'
+  extdir : '/u/gl/mdwood/fermi/catalogs/Extended_archive_v18'
+
+components: null
+
+extension:
+  width_min : 0.00316227766
+  width_max : 1.99526231
+  width_nstep : 29
+  spatial_model : 'RadialGaussian'
+
+plotting:
+  loge_bounds: [[3.5,5.5],[4.0,5.5]]
+  graticule_radii: [0.5,1.0,2.0]
+  cmap: 'magma'
+  catalogs: ['/u/gl/mdwood/ki20/mdwood/fermi//catalogs/P302_7years_uw982_assoc_v7r1.fits']
+
+localize:
+  dtheta_max : 0.40
+  nstep : 5
+
+roiopt:
+  shape_ts_threshold : 25.0
+
+optimizer:
+  optimizer : 'MINUIT'
+
+tsmap:
+  max_kernel_radius : 1.0
