@@ -3,7 +3,6 @@ components:
   - { selection : { evtype : 32 } }
 
 binning:
-
   # Binning
   roiwidth   : 6.0
   npix       : null
@@ -12,5 +11,4 @@ binning:
   coordsys   : 'GAL'
   
 tsmap:
-
   max_kernel_radius : 1.0
