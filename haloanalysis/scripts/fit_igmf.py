@@ -105,6 +105,7 @@ def main():
 
     for name in src_names:
 
+	print '{0:s}\n========================'.format(name)
         rows_sed_tev = load_source_rows(tab_sed_tev, [name], key=args.key)
         #cat_names = [ '3FGL %s'%row['3FGL_NAME'] for row in rows_sed_tev ]
         cat_names = [ row['3FGL_NAME'] for row in rows_sed_tev ]
