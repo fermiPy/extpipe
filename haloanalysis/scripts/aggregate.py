@@ -35,37 +35,42 @@ ext_colnames = ['ts_ext','sys_ts_ext',
 halo_colnames = ['ts','r68','index','r68_err','index_err', 'loglike',
                  'eflux','eflux_err', 'eflux_ul95', 'flux','flux_err','flux_ul95']
 
-def match_catalog(row_dict, cat, sigma95_fhes, sigma95_cat, skydir_fhes, skydir_cat, cat_name):
+def match_catalog(row_dict, cat, sigma95_cat, skydir_fhes, skydir_cat, cat_name):
 
-    sigma95 = np.sqrt(sigma95_fhes**2 + sigma95_cat**2)
-
+    
+    sigma95 = np.sqrt(row_dict['pos_r95']**2 + sigma95_cat**2)
     sep = skydir_cat.separation(skydir_fhes).deg
     sep_sigma95 = sep/sigma95
-    m = (sep < 1.5*sigma95) & np.isfinite(sigma95) 
+    m = (sep < 1.0) & np.isfinite(sigma95) 
     
     assoc = np.array(cat['Source_Name'][m])
     assoc = assoc[np.argsort(sep[m])]
     assoc_sep_sigma95 = sep_sigma95[m][np.argsort(sep[m])]
     assoc_sep = np.sort(sep[m])            
     nassoc = min(5,len(assoc))
-    row_dict['assoc_%s_num'%cat_name] = nassoc
-    row_dict['assoc_%s'%cat_name][:nassoc] = assoc[:nassoc]
-    row_dict['assoc_%s_sep'%cat_name][:nassoc] = assoc_sep[:nassoc]
-    row_dict['assoc_%s_sep_sigma95'%cat_name][:nassoc] = assoc_sep_sigma95[:nassoc]
-    if len(assoc):
+    
+    row_dict['%s_num'%cat_name] = nassoc
+    row_dict['%s_names'%cat_name][:nassoc] = assoc[:nassoc]
+    row_dict['%s_sep'%cat_name][:nassoc] = assoc_sep[:nassoc]
+    row_dict['%s_sep_sigma95'%cat_name][:nassoc] = assoc_sep_sigma95[:nassoc]
+
+    if row_dict['spatial_model'] != 'PointSource':
+        return
+    
+    if len(assoc) and assoc_sep_sigma95[0] < 1.5:
         row_dict['name_%s'%cat_name] = assoc[0]
         row_dict['sep_%s'%cat_name] = assoc_sep[0]
         row_dict['sep_%s_sigma95'%cat_name] = assoc_sep_sigma95[0]
 
-    print('nassoc',nassoc)
-    print('sigma95_fhes',sigma95_fhes)
-    print('sigma95_cat',sigma95_cat[m])
-    print('assoc_%s'%cat_name,row_dict['assoc_%s'%cat_name])
-    print('assoc_%s_sep'%cat_name,row_dict['assoc_%s_sep'%cat_name])
-    print('assoc_%s_sep_sigma95'%cat_name,row_dict['assoc_%s_sep_sigma95'%cat_name])
-    print('name_%s'%cat_name,row_dict['name_%s'%cat_name])
-    print('sep_%s'%cat_name,row_dict['sep_%s'%cat_name])
-    print('sep_%s_sigma95'%cat_name,row_dict['sep_%s_sigma95'%cat_name])
+    #print('nassoc',nassoc)
+    #print('sigma95_fhes',sigma95_fhes)
+    #print('sigma95_cat',sigma95_cat[m])
+    #print('assoc_%s'%cat_name,row_dict['assoc_%s'%cat_name])
+    #print('assoc_%s_sep'%cat_name,row_dict['assoc_%s_sep'%cat_name])
+    #print('assoc_%s_sep_sigma95'%cat_name,row_dict['assoc_%s_sep_sigma95'%cat_name])
+    #print('name_%s'%cat_name,row_dict['name_%s'%cat_name])
+    #print('sep_%s'%cat_name,row_dict['sep_%s'%cat_name])
+    #print('sep_%s_sigma95'%cat_name,row_dict['sep_%s_sigma95'%cat_name])
 
 
 def extract_index(src, egy=1E3):
@@ -86,8 +91,13 @@ def extract_index(src, egy=1E3):
         cutoff, cutoff_err = src['param_values'][3], src['param_errors'][3]
         index2, index2_err = src['param_values'][4], src['param_errors'][4]
 
-        index = index1 - egy/cutoff
-        index_err = index1_err + cutoff_err*(index**2/cutoff*(egy/cutoff)**index2)
+        index = index1 - index2*(egy/cutoff)**index2
+        #index_err = index1_err + cutoff_err*(index**2/cutoff*(egy/cutoff)**index2)
+
+        x = (egy/cutoff)**index2        
+        index_err = (index1_err**2 +
+                     #(x*(1+np.log(x)))**2.0*index2_err**2 +
+                     (x*index2**2/cutoff)**2*cutoff_err**2)**0.5
         return index, index_err
     else:
         raise Exception
@@ -174,7 +184,7 @@ def extract_sources(tab_srcs):
     for row in srcs:
         tab_srcs.add_row([row[k] for k in cols_dict_srcs.keys()])
 
-def extract_halo_sed(halo_data,halo_scan_shape):
+def extract_halo_sed2(halo_data,halo_scan_shape):
 
     o = dict(dlnl = [], loglike = [],
              dlnl_eflux = [])
@@ -197,12 +207,35 @@ def extract_halo_sed(halo_data,halo_scan_shape):
     o['dlnl_eflux'] = np.stack(o['dlnl_eflux'])        
     return o
 
+def extract_halo_sed(halo_data,halo_scan_shape):
 
-def extract_ext_data(row_dict, prefix, src_name, ext_data, tab_roi, ext_data_psfhi, ext_data_psflo):
+    o = dict(dlnl = [], loglike = [],
+             dlnl_eflux = [])
+
+    if len(halo_data) == 0:
+        return {}
+    
+    eflux_scan = halo_data['norm_scan'].data*halo_data['ref_eflux'].data[...,None]
+    o['loglike'] = halo_data['dloglike_scan'].data + halo_data['loglike'].data[...,None]
+    o['dlnl_eflux'] = eflux_scan
+    o['dlnl'] = o['loglike'] - o['loglike'][:,:,0][:,:,None]
+    return o
+
+
+def extract_ext_data(row_dict, prefix, src_name, ext_data, tab_roi, ext_data_psfhi, ext_data_psflo,
+                     is_extended=False):
 
     for i, (ext,ext_roi) in enumerate(zip(ext_data,tab_roi)):
 
-        row_dict['fitn_%s_ts_ext'%prefix][i] = max(ext['ts_ext'],0)
+        if is_extended:
+            ts_ext = ext['ts_ext']
+        else:
+            ts_ext = min(2.0*(ext['loglike_ext'] - ext['loglike_base']),ext['ts_ext'])
+            
+        ts_ext = max(0,ts_ext)
+        #print('ts_ext',i,ts_ext,ext['ts_ext'],ext['loglike_ptsrc']-ext['loglike_base'])
+        
+        row_dict['fitn_%s_ts_ext'%prefix][i] = ts_ext
         row_dict['fitn_%s_r68'%prefix][i] = ext['ext']
         row_dict['fitn_%s_r68_err'%prefix][i] = ext['ext_err']
         row_dict['fitn_%s_r68_ul95'%prefix][i] = ext['ext_ul95']            
@@ -387,9 +420,14 @@ def create_tables(nebins, next_bins, halo_scan_shape, eflux_scan_pts):
     
     cols_dict = OrderedDict()
     cols_dict['name'] = dict(dtype='S32', format='%s',description='Source Name')
+    cols_dict['name_roi'] = dict(dtype='S32', format='%s')
+    cols_dict['name_3fhl'] = dict(dtype='S32', format='%s')
+    cols_dict['name_3fgl'] = dict(dtype='S32', format='%s')    
     cols_dict['codename'] = dict(dtype='S32', format='%s')
     cols_dict['linkname'] = dict(dtype='S32', format='%s')
     cols_dict['assoc'] = dict(dtype='S32', format='%s')
+    cols_dict['assoc_3fgl'] = dict(dtype='S32', format='%s')
+    cols_dict['assoc_3fhl'] = dict(dtype='S32', format='%s')
     cols_dict['roi_ra'] = dict(dtype='f8')
     cols_dict['roi_dec'] = dict(dtype='f8')
     cols_dict['roi_glon'] = dict(dtype='f8')
@@ -401,17 +439,15 @@ def create_tables(nebins, next_bins, halo_scan_shape, eflux_scan_pts):
     cols_dict['3lac_radio_nufnu'] = dict(dtype='f8')
     cols_dict['3lac_xray_flux'] = dict(dtype='f8')
     cols_dict['3lac_fx_fr'] = dict(dtype='f8')
-    cols_dict['name_3fgl'] = dict(dtype='S32', format='%s')
-    cols_dict['assoc_3fgl'] = dict(dtype='S20', format='%s',description='Source Name',shape=(5,))
-    cols_dict['assoc_3fgl_sep'] = dict(dtype='f8', format='%s',shape=(5,))
-    cols_dict['assoc_3fgl_sep_sigma95'] = dict(dtype='f8', format='%s',shape=(5,))
-    cols_dict['assoc_3fgl_num'] = dict(dtype='i8')
     
-    cols_dict['name_3fhl'] = dict(dtype='S32', format='%s')
-    cols_dict['assoc_3fhl'] = dict(dtype='S20', format='%s',description='Source Name',shape=(5,))
-    cols_dict['assoc_3fhl_sep'] = dict(dtype='f8', format='%s',shape=(5,))
-    cols_dict['assoc_3fhl_sep_sigma95'] = dict(dtype='f8', format='%s',shape=(5,))
-    cols_dict['assoc_3fhl_num'] = dict(dtype='i8')
+    cols_dict['3fgl_names'] = dict(dtype='S20', format='%s',description='Source Name',shape=(5,))
+    cols_dict['3fgl_sep'] = dict(dtype='f8', format='%s',shape=(5,))
+    cols_dict['3fgl_sep_sigma95'] = dict(dtype='f8', format='%s',shape=(5,))
+    cols_dict['3fgl_num'] = dict(dtype='i8')
+    cols_dict['3fhl_names'] = dict(dtype='S20', format='%s',description='Source Name',shape=(5,))
+    cols_dict['3fhl_sep'] = dict(dtype='f8', format='%s',shape=(5,))
+    cols_dict['3fhl_sep_sigma95'] = dict(dtype='f8', format='%s',shape=(5,))
+    cols_dict['3fhl_num'] = dict(dtype='i8')
 
     cols_dict['class'] = dict(dtype='S32', format='%s')
     cols_dict['class_optical'] = dict(dtype='S32', format='%s')
@@ -605,7 +641,7 @@ def aggregate(dirs,output,suffix=''):
     nscan_pts = 9
     nebins = 20
     next_bins = 30
-    halo_scan_shape = (15,9)
+    halo_scan_shape = (15,13)
     eflux_scan_pts = np.logspace(-10,-4,61)
     
     row_dict = {}
@@ -684,8 +720,9 @@ def aggregate(dirs,output,suffix=''):
 
         tab_halo_data = load_tables(d,'%s_%s_data'%(suffix,halo_name))
         tab_new_src_data = [Table()] + load_tables(d,'%s_new_source_data'%(suffix))
+        tab_sed_data = load_tables(d,'%s_sed'%suffix)
+        tab_halo_data_sed = load_tables(d,'_%s_cov05_sed'%halo_name)
         
-        halo_data = load_npy_files(d,'%s_%s_data'%(suffix,halo_name))
         ext_gauss_data = load_tables(d,'%s_ext_gauss_ext'%suffix, True)
         ext_gauss_data_psfhi = load_tables(d,'%s_ext_gauss_ext_psfhi'%suffix, True)
         ext_gauss_data_psflo = load_tables(d,'%s_ext_gauss_ext_psflo'%suffix, True)
@@ -695,7 +732,7 @@ def aggregate(dirs,output,suffix=''):
         ext_disk_data_psflo = load_tables(d,'%s_ext_disk_ext_psflo'%suffix, True)
         ext_disk_roi = load_tables(d,'%s_ext_disk_roi'%suffix)
         sed_data = load_npy_files(d,'%s_sed'%suffix)
-        halo_data_sed = load_npy_files(d,'_cov05_*_halo_radialgaussian_sed',wildcard=True)
+        #halo_data_sed = load_npy_files(d,'_halo_RadialGaussian_cov05*sed',wildcard=True)
 
         h = fits.open(os.path.join(d,'ccube_00.fits'))
         roi_glon = h[0].header['CRVAL1']
@@ -703,6 +740,7 @@ def aggregate(dirs,output,suffix=''):
         roi_skydir = SkyCoord(roi_glon, roi_glat, unit='deg', frame='galactic')
         roi_ra = roi_skydir.transform_to('icrs').ra.deg
         roi_dec = roi_skydir.transform_to('icrs').dec.deg
+
         
         if len(fit_data) == 0:
             print 'skipping'
@@ -718,7 +756,8 @@ def aggregate(dirs,output,suffix=''):
         for i, fd in enumerate(fit_data):            
             src_data += [fd[fd['name'] == src_name][0]]
         src = src_data[0]
-            
+        is_extended = src['SpatialModel'] != 'PointSource'
+        
         if tab is None:
             tab, tab_lnl, tab_sed = create_tables(nebins,
                                                   len(ext_gauss_data[0]['width']),
@@ -745,19 +784,25 @@ def aggregate(dirs,output,suffix=''):
         row_dict['roi_ra'] = roi_ra
         row_dict['roi_dec'] = roi_dec
                 
-        halo_seds = []
-        for hd in halo_data_sed:
-            halo_seds += [extract_halo_sed(hd,halo_scan_shape)]
+        #halo_seds = []
+        #for hd in halo_data_sed:
+        #    halo_seds += [extract_halo_sed(hd,halo_scan_shape)]
 
+        halo_seds = []
+        for hd in tab_halo_data_sed:
+            halo_seds += [extract_halo_sed(hd,halo_scan_shape)]
+            
         ext_r68 = []
         for i, (ext,ext_roi) in enumerate(zip(ext_gauss_data,ext_gauss_roi)):
             ext_r68 += [ext['width']]
 
         extract_ext_data(row_dict, 'ext_gauss', src_name,
-                         ext_gauss_data, ext_gauss_roi, ext_gauss_data_psfhi, ext_gauss_data_psflo)
+                         ext_gauss_data, ext_gauss_roi, ext_gauss_data_psfhi, ext_gauss_data_psflo,
+                         is_extended=is_extended)
 
         extract_ext_data(row_dict, 'ext_disk', src_name,
-                         ext_disk_data, ext_disk_roi, ext_disk_data_psfhi, ext_disk_data_psflo)
+                         ext_disk_data, ext_disk_roi, ext_disk_data_psfhi, ext_disk_data_psflo,
+                         is_extended=is_extended)
                     
         halo_scan_r68 = np.array(tab_halo_data[0]['halo_width']).reshape(halo_scan_shape)
         halo_scan_index = np.array(tab_halo_data[0]['halo_index']).reshape(halo_scan_shape)
@@ -801,8 +846,8 @@ def aggregate(dirs,output,suffix=''):
                 # Interpolation
                 x = np.linspace(0,halo_scan_shape[0]-1,halo_scan_shape[0])
                 y = np.linspace(0,halo_scan_shape[1]-1,halo_scan_shape[1])
-                interp_ts_x = map_coordinates(halo_scan_ts,np.array([x,o['y0']*np.ones_like(x)]))
-                interp_ts_y = map_coordinates(halo_scan_ts,np.array([o['x0']*np.ones_like(y),y]))
+                interp_ts_x = map_coordinates(halo_scan_ts,np.array([x,o['y0']*np.ones_like(x)]), mode='nearest')
+                interp_ts_y = map_coordinates(halo_scan_ts,np.array([o['x0']*np.ones_like(y),y]), mode='nearest')
                 halo_r68_lims = get_parameter_limits(halo_scan_r68[:,iy], 0.5*interp_ts_x)
                 halo_index_lims = get_parameter_limits(halo_scan_index[ix,:], 0.5*interp_ts_y)
                 halo_fit_r68_err = halo_r68_lims['err']
@@ -820,6 +865,7 @@ def aggregate(dirs,output,suffix=''):
                 row_dict['fitn_halo_r68_err'][i] = halo_fit_r68_err
                 row_dict['fitn_halo_index'][i] = halo_fit_index
                 row_dict['fitn_halo_index_err'][i] = halo_fit_index_err
+
             else:
                 
                 row_dict['fitn_halo_ts'][i] = halo_scan_max_ts
@@ -953,11 +999,6 @@ def aggregate(dirs,output,suffix=''):
         for k in ['dlike_ps','dlike1','dlike','daic_ps', 'aic']:
             row_dict['fit_%s_ext_gauss'%k] = row_dict['fitn_%s_ext_gauss'%k][fit_idx_ext_gauss]
             row_dict['fit_%s_ext_disk'%k] = row_dict['fitn_%s_ext_disk'%k][fit_idx_ext_disk]
-
-        #if codename == 'fhes_j0737.1-3231e':
-        #    fit_ext_model = 'ext_disk'
-        #    row_dict['fit_ext_model'] = 'disk'
-
         
         if row_dict['fit_ext_gauss_ts_ext'] > 16.:
 
@@ -1019,9 +1060,6 @@ def aggregate(dirs,output,suffix=''):
         print('AIC gauss',row_dict['fit_aic_ext_gauss'])
         print('AIC disk',row_dict['fit_aic_ext_disk'])
 
-        
-        print(row_dict['assoc'])
-        
         x = [src_data[-1]['offset_glon']]
         y = [src_data[-1]['offset_glat']]
 
@@ -1048,11 +1086,7 @@ def aggregate(dirs,output,suffix=''):
         fitn_ra[:len(src_data)] = np.array([sd['ra'] for sd in src_data])
         fitn_dec[:len(src_data)] = np.array([sd['dec'] for sd in src_data])
 
-        #for k, v in src_data[0].items():
-        #    if k in tab.columns:
-        #        row_dict[k] = v
-
-        if row_dict['fit_%s_ts_ext'%fit_ext_model] < 16.:
+        if row_dict['fit_ext_ts_ext'] < 16. and row_dict['codename'] != '3fgl_j0042.5+4117':
             c = SkyCoord(fitn_ra[fit_idx],
                          fitn_dec[fit_idx],unit='deg')
 
@@ -1066,7 +1100,6 @@ def aggregate(dirs,output,suffix=''):
                 row_dict['flux%s_err'%x] = src_data[fit_idx]['flux%s_err'%x]
                 
             row_dict['spatial_model'] = src_data[0]['SpatialModel']
-            sigma95 = src_data[fit_idx]['pos_r95']
         else:
             c = SkyCoord(row_dict['fit_%s_ra'%fit_ext_model],
                          row_dict['fit_%s_dec'%fit_ext_model],
@@ -1082,18 +1115,30 @@ def aggregate(dirs,output,suffix=''):
                 row_dict['flux%s_err'%x] = row_dict['fit_%s_flux%s_err'%(fit_ext_model,x)]
             
             row_dict['spatial_model'] = 'RadialGaussian' if fit_ext_model == 'ext_gauss' else 'RadialDisk'
-            sigma95 = row_dict['fit_%s_r68'%fit_ext_model]
 
-        match_catalog(row_dict, cat_3fgl, sigma95, sigma95_3fgl, c, skydir_3fgl, '3fgl')
-        match_catalog(row_dict, cat_3fhl, sigma95, sigma95_3fhl, c, skydir_3fhl, '3fhl')
+        match_catalog(row_dict, cat_3fgl, sigma95_3fgl, c, skydir_3fgl, '3fgl')
+        match_catalog(row_dict, cat_3fhl, sigma95_3fhl, c, skydir_3fhl, '3fhl')
         
         row_dict['name'] = create_source_name(c,prefix='FHES')
         linkname = '{%s}'%codename.replace('+','p').replace('.','_')
         
         row_dict['codename'] = codename
+        row_dict['name_roi'] = src_name
         row_dict['linkname'] = linkname
+        row_dict['assoc'] = ''
+        row_dict['class'] = ''
+        row_dict['redshift'] = np.nan
+        row_dict['nupeak'] = np.nan
 
-        if row_dict['assoc_3fgl_num'] > 0:
+        if row_dict['name_3fgl'] != '':
+            m = (cat_3fgl['Source_Name'] == row_dict['name_3fgl'])
+            row_dict['assoc_3fgl'] = cat_3fgl[m]['ASSOC1'][0]
+
+        if row_dict['name_3fhl'] != '':
+            m = (cat_3fhl['Source_Name'] == row_dict['name_3fhl'])
+            row_dict['assoc_3fhl'] = cat_3fhl[m]['ASSOC1'][0]
+        
+        if row_dict['name_3fgl'] != '':
             m = (cat_3fgl['Source_Name'] == row_dict['name_3fgl'])
             row_3fgl = cat_3fgl[m][0]
             row_dict['assoc'] = row_3fgl['ASSOC1']
@@ -1114,7 +1159,7 @@ def aggregate(dirs,output,suffix=''):
             row_dict['3lac_radio_nufnu'] = row_3fgl['radio_flux']
             row_dict['3lac_fx_fr'] = row_3fgl['FX_FR']
                 
-        elif row_dict['assoc_3fhl_num'] > 0:
+        elif row_dict['name_3fhl'] != '':
             m = (cat_3fhl['Source_Name'] == row_dict['name_3fhl'])
             row_dict['assoc'] = cat_3fhl[m]['ASSOC1'][0]
             row_dict['class'] = cat_3fhl[m]['CLASS'][0]
@@ -1126,11 +1171,8 @@ def aggregate(dirs,output,suffix=''):
                 row_dict['class_sed'] = 'HSP'
             elif np.log10(row_dict['nupeak']) > 14 or np.log10(row_dict['nupeak']) < 15:
                 row_dict['class_sed'] = 'ISP'                
-        else:
-            row_dict['assoc'] = ''
-            row_dict['class'] = ''
-            row_dict['redshift'] = np.nan
-            row_dict['nupeak'] = np.nan
+
+        
                                     
         row_dict['spectrum_type'] = src_data[0]['SpectrumType']            
         row_dict['fit_mean_sep'] = fit_mean_sep
