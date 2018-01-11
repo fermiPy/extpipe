@@ -52,7 +52,7 @@ def main():
             m &= ~create_mask(tables['CATALOG'],cuts['exclusive']) 
 
     if args.ts_threshold is not None:
-        m &= ((cat['fitn_ts'][:,0] > args.ts_threshold))
+        m &= (cat['ts'] > args.ts_threshold)
     
     tab_hdus = []
     for t in hdu_names[1:]:
