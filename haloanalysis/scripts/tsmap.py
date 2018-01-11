@@ -22,6 +22,7 @@ def main():
 
     parser.add_argument('--config', default = 'sample_config.yaml')
     parser.add_argument('--source', default = None)
+    parser.add_argument('--catalog', default = None)
 
     args = parser.parse_args()
     gta = GTAnalysis(args.config,logging={'verbosity' : 3},
@@ -33,7 +34,8 @@ def main():
         sys.exit(1)
         
     gta.setup()
-    tab = Table.read('/u/gl/mdwood/fermi/ext_analysis/v20/std_psf0123_joint2a_stdmodel/table_std_psf0123_joint2a_stdmodel_cat.fits')
+    #tab = Table.read('/u/gl/mdwood/fermi/ext_analysis/v20/std_psf0123_joint2a_stdmodel/table_std_psf0123_joint2a_stdmodel_cat.fits')
+    tab = Table.read(args.catalog)
     src_name = gta.config['selection']['target']
     #codename = src_name.lower().replace(' ','_').replace('_off','')
     row = tab[tab['name_roi'] == src_name][0]
