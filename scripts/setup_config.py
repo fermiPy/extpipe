@@ -7,6 +7,7 @@ configdir='haloanalysis/config'
 model_lookup = {
     'stdmodel' : None,
     'altmodel' : 'altmodel',
+    'p8iem' : 'p8iem',
     'model0' : 'Lorimer_z4_Ts100000_v5',
     'model1' : 'Lorimer_z4_Ts150_v5',
     'model2' : 'Lorimer_z10_Ts100000_v5',
@@ -27,6 +28,7 @@ def main():
 
     parser.add_argument('--config', default = None, required=True)
     parser.add_argument('--script', default = None, required=True)
+    parser.add_argument('--args', default = None)
     parser.add_argument('--model', default = 'stdmodel')
     parser.add_argument('sourcelists', nargs='+', default = None,
                         help='')    
@@ -35,7 +37,7 @@ def main():
     if args.model == 'all':    
         models = model_lookup.keys()
     else:
-        models = ['stdmodel']
+        models = [args.model]
 
     #sourcelist = 'haloanalysis/diffuse_syst_list.yaml'
     #sourcelist = 'galactic_list.yaml'
@@ -64,11 +66,14 @@ def main():
 
         for s in args.sourcelists:
             cmd += ' --source_list=%s '%s
-    
+
+        if args.args:
+            cmd += ' --args=%s '%args.args
+            
         #cmd += '  --basedir=bigroi_all_galactic_scan_%s'%m
         for c in configs:
             cmd += ' %s '%(os.path.join(configdir,c))
-        if model_lookup[m] is not None:
+        if model_lookup.get(m) is not None:
             cmd += ' %s '%(os.path.join(configdir,'config_%s.yaml'%(model_lookup[m])))
         print cmd
         os.system(cmd)
