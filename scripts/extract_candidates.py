@@ -60,6 +60,8 @@ def dump_source(tab, name):
     print 'ext_flux:  {:8.4g}'.format(row['fit_ext_flux'])
     print 'ext_index: {:8.2f} +/- {:8.2f}'.format(np.abs(row['fit_ext_index']),np.abs(row['fit_ext_index_err']))
     print 'ext_r68:   {:8.2f} +/- {:8.2f}'.format(row['fit_ext_r68'],row['fit_ext_r68_err'])
+    print 'halo_index:{:8.2f} +/- {:8.2f}'.format(np.abs(row['fit_halo_index']),np.abs(row['fit_halo_index_err']))
+    print 'halo_r68:  {:8.2f} +/- {:8.2f}'.format(row['fit_halo_r68'],row['fit_halo_r68_err'])
     print 'ext_idx: {:4d} gauss_idx: {:4d} disk_idx: {:4d} halo_idx: {:4d}'.format(row['fit_idx_ext'],
                                                                                    row['fit_idx_ext_gauss'],
                                                                                    row['fit_idx_ext_disk'],
