@@ -11,12 +11,12 @@ from astropy.table import Table, join
 
 from fermipy.spectrum import *
 
-from haloanalysis.utils import create_mask, load_source_rows
-from haloanalysis.model import CascModel, CascLike, LogParabolaExpCutoff
-from haloanalysis.model import scan_igmf_likelihood
+from extpipe.utils import create_mask, load_source_rows
+from extpipe.model import CascModel, CascLike, LogParabolaExpCutoff
+from extpipe.model import scan_igmf_likelihood
 
 import argparse
-from haloanalysis.batchfarm import utils,lsf
+from extpipe.batchfarm import utils,lsf
 
 if __name__ == '__main__':
     usage = "usage: %(prog)s"

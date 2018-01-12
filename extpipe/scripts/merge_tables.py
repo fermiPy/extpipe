@@ -4,7 +4,7 @@ import numpy as np
 from astropy.table import Table, vstack
 from astropy.io import fits
 import argparse
-from haloanalysis.utils import create_mask
+from ..utils import create_mask
 
 def main():
 

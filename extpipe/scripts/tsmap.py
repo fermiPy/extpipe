@@ -11,7 +11,7 @@ init_matplotlib_backend()
 
 from fermipy.batch import check_log
 from fermipy.gtanalysis import GTAnalysis
-from haloanalysis.fit_funcs import fit_halo_scan
+from extpipe.fit_funcs import fit_halo_scan
 from astropy.table import Table
     
 def main():
