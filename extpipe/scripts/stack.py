@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 
 import fermipy.utils as utils
-from haloanalysis.utils import create_mask
+from ..utils import create_mask
 
 def extract_halo_prop(halo_scan_ts, halo_scan_eflux, halo_scan_eflux_err,
                       halo_scan_eflux_ul95, halo_scan_r68, halo_scan_index):

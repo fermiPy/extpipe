@@ -12,5 +12,5 @@ eggs/
 *.egg-info/
 
 # package specific
-haloanalysis/_version.py
+extpipe/_version.py
 .ipynb_checkpoints

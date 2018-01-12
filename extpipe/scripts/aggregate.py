@@ -15,7 +15,7 @@ from astropy.table import Table, Column
 from fermipy.catalog import *
 from fermipy.utils import collect_dirs
 from fermipy.utils import fit_parabola, get_parameter_limits, create_source_name
-from haloanalysis.batch import *
+from ..batch import *
 
 
 src_colnames = ['ts','npred','offset','ra','dec','glon','glat','index','index_err',

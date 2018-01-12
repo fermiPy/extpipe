@@ -2,7 +2,7 @@ import numpy as np
 
 import astropy.units as u
 
-from haloanalysis.utils import Axis, MapND
+from .utils import Axis, MapND
 
 
 def create_lnl_from_errors(norm, norm_err):
