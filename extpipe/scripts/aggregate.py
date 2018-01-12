@@ -1332,14 +1332,33 @@ def main():
 
     parser.add_argument('--output', default = 'test.fits')
     parser.add_argument('--suffix', default = '')
-
-
+    parser.add_argument('--batch', action='store_true', default=False)
     parser.add_argument('dirs', nargs='+', default = None,
                         help='Run analyses in all subdirectories of this '
                         'directory.')    
     args = parser.parse_args()
-    print(args.dirs)
-    aggregate(args.dirs,args.output,args.suffix)
+
+    if args.batch:
+
+        files []
+        for d in dirs:
+            files += sorted(glob.glob(os.path.join(d,'*')))
+        files = [f for f in files if os.path.isdir(f)]
+        files_per_job = 100
+        njob = len(files)/files_per_job+1
+
+        for i in range(njob):
+            job_files = ' '.join(files[i*files_per_job:(i+1)*files_per_job])
+
+            outfile = os.path.join(prefix,'table_%s_%02i.fits'%(prefix,i))
+            outlog = os.path.splitext(outfile)[0] + '.log'
+
+            cmd = 'bsub -W 500 -R "bullet,kiso,hequ" '
+            cmd += '-oo %s extpipe-aggregate %s --output=%s'%(outlog, job_files,
+                                                               outfile)
+            os.system(cmd)         
+    else:    
+        aggregate(args.dirs,args.output,args.suffix)
     
 
 if __name__ == '__main__':
