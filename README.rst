@@ -5,11 +5,15 @@ The extension pipeline consists of two analysis scripts:
 
  * run-region-analysis : Tests a given source for extension while
    iteratively adding up to 5 point sources to the inner ROI.  The
-   output of this step are the extension analysis results and a
+   outputs of this step are the extension analysis results and a
    sequence of up to 5 PS models.
  * run-halo-analysis : Using the PS models derived in
    run-region-analysis test the target source for an extended
    component that is superimposed on the source.
+
+After running these you will need to aggregate the analysis results using the extpipe-aggregate script.
+
+
 
 Creating Analysis Directories
 -----------------------------
@@ -78,3 +82,26 @@ For testing purposes you can also run the following instead of install:
 
    $ python setup.py develop 
 
+
+
+Aggregating Analysis Results
+----------------------------
+
+After the analysis has completed you need to run the aggregation
+script to merge the results for each target into a single catalog
+file.  This step of the analysis also selects the best-fit model for
+each source.
+
+.. code-block:: bash
+
+   $ extpipe-aggregate <basedir> --batch
+
+
+where ``<basedir>`` is the root analysis directory.  After this step
+completes you can build a single catalog file by running
+``extpipe-build-catalog``:
+
+.. code-block:: bash
+
+   $ extpipe-build-catalog std_psf0123_joint2a_stdmodel/*_cat.fits --output=catalog.fits --ts_threshold=16
+   $ extpipe-build-catalog std_psf0123_joint2a_stdmodel/*_lnl.fits --output=catalog_lnl.fits --ts_threshold=16
