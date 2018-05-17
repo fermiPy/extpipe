@@ -4,9 +4,9 @@ from setuptools import setup, find_packages
 import os
 import sys
 
-from haloanalysis.version import get_git_version
+from extpipe.version import get_git_version
 
-setup(name='haloanalysis',
+setup(name='extpipe',
       version=get_git_version(),
       license='BSD',
       packages=find_packages(exclude='tests'),
@@ -22,14 +22,15 @@ setup(name='haloanalysis',
           'Development Status :: 4 - Beta',
       ],
       entry_points={'console_scripts': [
-          'run-region-analysis = haloanalysis.scripts.region_analysis:main',
-          'run-halo-analysis = haloanalysis.scripts.halo_analysis:main',
-          'run-tsmap = haloanalysis.scripts.tsmap:main',
-          'haloanalysis-aggregate = haloanalysis.scripts.aggregate:main',
-          'haloanalysis-stack = haloanalysis.scripts.stack:main',
-          'haloanalysis-fit-igmf = haloanalysis.scripts.fit_igmf:main',
-          'haloanalysis-merge-igmf-models = haloanalysis.scripts.merge_igmf_tables:main',
-          'haloanalysis-make-html-table = haloanalysis.scripts.make_html_table:main',
+          'run-region-analysis = extpipe.scripts.region_analysis:main',
+          'run-halo-analysis = extpipe.scripts.halo_analysis:main',
+          'run-tsmap = extpipe.scripts.tsmap:main',
+          'extpipe-aggregate = extpipe.scripts.aggregate:main',
+          'extpipe-build-catalog = extpipe.scripts.merge_tables:main',
+          'extpipe-stack = extpipe.scripts.stack:main',
+          'extpipe-fit-igmf = extpipe.scripts.fit_igmf:main',
+          'extpipe-merge-igmf-models = extpipe.scripts.merge_igmf_tables:main',
+          'extpipe-make-html-table = extpipe.scripts.make_html_table:main',
             ]},
       install_requires=['numpy >= 1.6.1',
                         'matplotlib >= 1.4.0',

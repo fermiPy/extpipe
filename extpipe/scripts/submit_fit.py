@@ -1,6 +1,6 @@
-from haloanalysis.batchfarm import utils,lsf
-from haloanalysis.batchfarm.lsf import lsfDefaults
-import haloanalysis
+from extpipe.batchfarm import utils,lsf
+from extpipe.batchfarm.lsf import lsfDefaults
+import extpipe
 import yaml
 import argparse
 from astropy.table import Table, vstack
@@ -59,7 +59,7 @@ if __name__ == '__main__':
 	    outfile ))
 
     if len(missing):
-	script = path.join(path.dirname(haloanalysis.__file__), 'scripts/run_fit.py')
+	script = path.join(path.dirname(extpipe.__file__), 'scripts/run_fit.py')
 	lsf.submit_lsf(script,
 	    config,'',njobs, jname = 'th{0[th_jet]:.0f}t{0[tmax]:.0e}'.format(config),
 	       logdir = path.join(config['outdir'],'log/'))

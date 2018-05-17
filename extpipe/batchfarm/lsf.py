@@ -6,8 +6,8 @@ Utility functions for sumbmission to an lsf cluster
 import yaml
 import shlex
 import logging
-import haloanalysis.batchfarm as bf
-from haloanalysis.batchfarm.utils import mkdir
+import extpipe.batchfarm as bf
+from .utils import mkdir
 from subprocess import call,check_call,Popen,PIPE
 from time import sleep
 from os import environ,system,access,R_OK,listdir

@@ -15,11 +15,11 @@ import fermipy.utils as utils
 from fermipy.spectrum import *
 from fermipy.castro import CastroData
 
-from haloanalysis.utils import create_mask, load_source_rows
-from haloanalysis.sed import HaloSED
-from haloanalysis.model import CascModel, CascLike
-from haloanalysis.model import scan_igmf_likelihood
-from haloanalysis.model import LogParabolaExpCutoff
+from ..utils import create_mask, load_source_rows
+from ..sed import HaloSED
+from ..model import CascModel, CascLike
+from ..model import scan_igmf_likelihood
+from ..model import LogParabolaExpCutoff
 from fermipy.spectrum import PLExpCutoff
 
 

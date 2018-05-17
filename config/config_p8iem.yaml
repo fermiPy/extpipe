@@ -1,0 +1,4 @@
+
+model:
+
+  galdiff  : '$FERMI_DIFFUSE_DIR/test_model_InnerGalaxy04_v2.fits'

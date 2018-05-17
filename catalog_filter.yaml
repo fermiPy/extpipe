@@ -1,0 +1,57 @@
+#inclusive:
+#  fit_ts : { min : 16 }
+#  fit_ext_disk_ts : { min : 16 }
+#  fit_ext_gauss_ts : { min : 16 }
+
+
+exclusive: 
+  codename : ['3fgl_j0059.0-7242e', # SMC
+              '3fgl_j1324.0-4330e', # Cen A Lobes
+              '3fgl_j2051.0+3040e', # Cyg Loop
+              '3fgl_j0526.6-6825e', # LMC
+              '3fgl_j0524.5-6937',  # LMC
+              '3fgl_j0525.2-6614',  # LMC
+              '3fgl_j0456.2-6924',  # LMC
+              '3fhl_j0537.9-6909',  # LMC
+              '3fgl_j0534.5+2201',  # Crab Pulsar
+              '3fgl_j0534.5+2201s', # Crab Sync
+              'fhes_j0007.1+7303p',
+              'fhes_j0007.1+7303e',
+              'fhes_j0007.1+7303p_off',
+              '3fgl_j0007.0+7302_off',
+              '3fgl_j0004.2+6757',  # fhes_j0001.3+6841
+              '3fgl_j0008.5+6853',  # fhes_j0001.3+6841
+              '3fgl_j2356.9+6812',  # fhes_j0001.3+6841
+              '3fgl_j2355.4+6939',  # fhes_j0001.3+6841
+              '3fgl_j0431.7+3503',  # FHES J0430.5+3520
+              '3fgl_j0426.3+3510',  # FHES J0430.5+3520
+              '3fgl_j0429.8+3611c', # FHES J0430.5+3520               
+              '3fgl_j1334.3-4152',  # fhes_j1334.8-4124
+              '3fgl_j1335.2-4056',  # fhes_j1334.8-4124
+              '3fgl_j1626.2-2428c', # fhes_j1627.3-2430
+              '3fgl_j1628.2-2431c', # fhes_j1627.3-2430
+              '3fgl_j2206.5+6451',  # fhes_j2208.4+6501
+              '3fgl_j2210.2+6509',  # fhes_j2208.4+6501
+              #'3fgl_j1720.3-0428',  # fhes_j1721.6-0422
+              #'3fgl_j1722.7-0415',  # fhes_j1721.6-0422
+              'fhes_j1721.6-0422',
+              'fhes_j0238.0+5238e', # replaced by fhes_j0238.0+5238
+              'fhes_j0737.1-3231',  # replaced by fhes_j0737.1-3231e
+              'fhes_j0850.0+4855e', # not detected with TS > 25
+              'fhes_j0940.8-6103',  # replaced by fhes_j0940.8-6103e
+              'fhes_j1323.2-3901',  # replaced by fhes_j1323.2-3901e
+              'fhes_j1503.7-6427e', # replaced by fhes_j1503.7-6427
+              'fhes_j1742.2-3938e', # replaced by fhes_j1741.4-3857e
+              'fhes_j1743.6-3912e', # replaced by fhes_j1741.4-3857e
+              'fhes_j1748.5-3912e', # replaced by fhes_j1741.4-3857e
+              'fhes_j1744.9-1558',  # replaced by fhes_j1744.9-1558e
+              'fhes_j2125.8+5833e', # replaced by 3fgl_j2125.8+5832
+              'fhes_j2309.0+5429',  # replaced by fhes_j2309.0+5429e
+              '3fgl_j2206.5+6451',  # fhes_j2208.4+6501
+              '3fgl_j2210.2+6509',  # fhes_j2208.4+6501
+              'lmc_p1',
+              'lmc_p2',
+              'lmc_p3',
+              'lmc_p4']
+
+              

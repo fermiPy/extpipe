@@ -14,10 +14,11 @@ from astropy.convolution import convolve
 from fermipy.spectrum import *
 from fermipy import spectrum
 from fermipy.utils import get_parameter_limits
-from haloanalysis.utils import Axis, MapND
-from haloanalysis.sed import *
+from .utils import Axis, MapND
+from .sed import *
 
 from ebltable.tau_from_model import OptDepth
+
 class LogParabolaExpCutoff(spectrum.SpectralFunction):
     """Class that evaluates a function with the parameterization:
 
@@ -73,7 +74,7 @@ def scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
 
     Parameters
     ----------
-    casc_model : `haloanalysis.model.CascModel`
+    casc_model : `extpipe.model.CascModel`
     		cascade model table
 
     rows_sed_tev : `astropy.table.Table`
@@ -487,16 +488,16 @@ class CascLike(object):
 
         Parameters
         ----------
-        model : `~haloanalysis.model.CascModel`
+        model : `~extpipe.model.CascModel`
            Cascade model object.  This contains precomputed tables for
            the cascade flux and angular size.
 
         fn : `~fermipy.spectrum.SpectralFunction`
 
-        sed_casc : `~haloanalysis.sed.HaloSED`
+        sed_casc : `~extpipe.sed.HaloSED`
            SED for the cascade component.
 
-        sed_prim : `~haloanalysis.sed.SED`
+        sed_prim : `~extpipe.sed.SED`
            SED for the primary component.
         
         """
@@ -631,11 +632,11 @@ class CascModel(object):
         ----------
         axes : list
 
-        casc_flux : `~haloanalysis.utils.MapND`
+        casc_flux : `~extpipe.utils.MapND`
 
-        casc_r68 : `~haloanalysis.utils.MapND`
+        casc_r68 : `~extpipe.utils.MapND`
 
-        prim_flux : `~haloanalysis.utils.MapND`
+        prim_flux : `~extpipe.utils.MapND`
 
 	{options}
 
@@ -698,7 +699,7 @@ class CascModel(object):
            Array of spectral parameters.  If none then the parameters
            of the spectral model will be used.
 
-        axis_eobs : `~haloanalysis.utils.Axis`
+        axis_eobs : `~extpipe.utils.Axis`
            Axis defining the binning in observed energy.
 
         Returns
@@ -779,7 +780,7 @@ class CascModel(object):
            Array of spectral parameters.  If none then the parameters
            of the spectral model will be used.
 
-        axis_eobs : `~haloanalysis.utils.Axis`
+        axis_eobs : `~extpipe.utils.Axis`
            Axis defining the binning in observed energy.
 
         Returns
@@ -826,7 +827,7 @@ class CascModel(object):
            Array of spectral parameters.  If none then the parameters
            of the spectral model will be used.
 
-        axis_eobs : `~haloanalysis.utils.Axis`
+        axis_eobs : `~extpipe.utils.Axis`
            Axis defining the binning in observed energy.
 
         Returns
@@ -904,7 +905,7 @@ class CascModel(object):
            Array of spectral parameters.  If none then the parameters
            of the spectral model will be used.
 
-        axis_eobs : `~haloanalysis.utils.Axis`
+        axis_eobs : `~extpipe.utils.Axis`
            Tuple with lower and upper bin edges in observed energy.
            If none then the internal energy binning will be used.
 

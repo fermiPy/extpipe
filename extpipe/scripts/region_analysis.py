@@ -12,7 +12,7 @@ init_matplotlib_backend()
 
 from fermipy.gtanalysis import GTAnalysis
 from fermipy.catalog import Catalog3FGL
-from haloanalysis.fit_funcs import fit_region, fit_halo
+from ..fit_funcs import fit_region, fit_halo
 
 def localize(gta, spatial_models, prefix, skip_loc, src_name):
 
