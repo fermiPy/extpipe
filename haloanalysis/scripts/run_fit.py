@@ -50,7 +50,8 @@ if __name__ == '__main__':
     cat_tev = utils.copy2scratch(config['cat_tev'], tmpdir)
     tab_sed_tev = Table.read(cat_tev)
 
-    src_name = tab_sed_tev['SOURCE_FULL'][job_id - 1]
+    #src_name = tab_sed_tev['SOURCE_FULL'][job_id - 1]
+    src_name = config['jobsrc'][job_id - 1]
 
 # --- Load the Cascade model ---------------------- #
     basedir = config['basedir']
@@ -75,10 +76,21 @@ if __name__ == '__main__':
 	scale = 1E3            # pivot energy
     elif config['int_spec'] == 'LogParabolaExpCutoff':
 	fint = LogParabolaExpCutoff  # intrinsic spectrum
-	p0 = [1E-13,-1.5,0.,1E7]  # initial parameters
+	p0 = [1E-13,-1.5,config['init_curv'],1E7]  # initial parameters
 	scale = 1E3            # pivot energy
 
-    rows_sed_tev = load_source_rows(tab_sed_tev, [src_name], key='SOURCE_FULL')
+    rows_sed_tev = []
+    if config['combined']:
+	for i,name in enumerate(tab_sed_tev['SOURCE_FULL']):
+	    if name.find(src_name[:7]) >= 0:
+		rows_sed_tev.append(load_source_rows(tab_sed_tev, [name], key='SOURCE_FULL'))
+		print rows_sed_tev[-1]['SOURCE_FULL']
+	    elif src_name == name:
+		rows_sed_tev = [load_source_rows(tab_sed_tev, [name], key='SOURCE_FULL')]
+	    else: 
+		continue
+    else:
+	rows_sed_tev = [load_source_rows(tab_sed_tev, [src_name], key='SOURCE_FULL')]
     #cat_names = [ '3FGL %s'%row['3FGL_NAME'] for row in rows_sed_tev ]
     cat_names = [ row['3FGL_NAME'] for row in rows_sed_tev ]
 		    
@@ -93,12 +105,16 @@ if __name__ == '__main__':
 		    casc_r68_scale = config['casc_r68_scale'],
 		    p0 = p0,
 		    scale = scale,
-		    fint = fint)
+		    fint = fint, tev_scale = config['tev_scale'])
 
     hdulist = fits.HDUList()
     hdulist.append(fits.table_to_hdu(tab))
     hdulist[1].name = 'SCAN_DATA'    
-    outfile = 'fit_igmf_th_jet{0[th_jet]:.0f}_tmax{0[tmax]:.0e}_lp_{0[kind]:s}_{1:04n}.fits'.format(config,job_id)
+
+    if config['tev_scale'] == 1.:
+	outfile = 'fit_igmf_th_jet{0[th_jet]:.0f}_tmax{0[tmax]:.0e}_lp_{0[kind]:s}_com{0[combined]}_{1:04n}.fits'.format(config,job_id)
+    else:
+	outfile = 'fit_igmf_th_jet{0[th_jet]:.0f}_tmax{0[tmax]:.0e}_lp_{0[kind]:s}_com{0[combined]}_ts{0[tev_scale]}_{1:04n}.fits'.format(config,job_id)
     hdulist.writeto(path.join(tmpdir,outfile), clobber=True)
     logging.info("Saved output to {0:s}".format(outfile))
 

@@ -18,6 +18,8 @@ from numpy.random import randint
 lsfDefaults = {
     'queue': 'time',
     'time': '05:59',
+    'n': 0,
+    'span': 'span[ptile=1]', # could also be span[hosts=1]
     'jname': 'lsf',
     'sleep': 10.,
     'lsb_steps': 1,
@@ -154,6 +156,8 @@ def submit_lsf(script,config,option,njobs,**kwargs):
     kwargs
     ------
     queue:		string, queue of lsf cluster (default: long)
+    n:			int, number of processor requested for mpi jobs
+    ptile:		int, number of processors per hosts for mpi jobs 
     lsb_steps:		int, step width for job indeces, only applies if njobs is int (default: 1)
     time:		string, if queue == time then this determines the cpu running time asked for. 
 			Format has to be 'hh:mm'
@@ -173,6 +177,8 @@ def submit_lsf(script,config,option,njobs,**kwargs):
     tmpdir:		string, local directory for temporary storage of bash script
     logdir:		string, local directory for log files
     """
+    mkdir(kwargs['logdir'])
+    mkdir(kwargs['tmpdir'])
     yamlfile = join(kwargs['tmpdir'],'{0[jname]:s}_{1[configname]:s}.yaml'.format(kwargs,config))
     yaml.dump(config, stream = open(yamlfile, 'w'), default_flow_style=False)
     # test yaml file
@@ -224,6 +230,9 @@ def submit_lsf(script,config,option,njobs,**kwargs):
 	    command += """-W {0[time]:s} """.format(kwargs)
 	else:
 	    command += """-q {0[queue]:s} """.format(kwargs)
+
+	if kwargs['n'] > 0:
+	    command += """-n {0[n]:n} -R "{0[span]:s}" """.format(kwargs)
 
 	if not kwargs['dependency'] == None:
 	    command += """-w "ended({0[dependency]:s})" """.format(kwargs)

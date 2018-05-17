@@ -179,7 +179,7 @@ def update_diff(dict1,dict2):
     return dict1,dict2
 
 
-def missing_files(fname,fn, missing = True, minimum = 0, num = 5, split = '.dat.gz'):
+def missing_files(fname,fn, missing = True, minimum = 0, num = 5, split = '.dat.gz', folder = False):
     """
     Check for missing files.
 
@@ -194,13 +194,24 @@ def missing_files(fname,fn, missing = True, minimum = 0, num = 5, split = '.dat.
     missing:	bool, if True, look for missing files, if false, look for present files.
     num:	int, number of digits of file identifier (default: 5)
     split:	str, str used to split file names, default: '.dat.gz'
+    folder: 	bool, if true, numerals with job numbers are given in directory as /some/path/00001/output.file
 
     Returns
     -------
     list with missing file numbers
     """
+    logging.debug(fname)
     files = glob(fname)
-    idxs  = array(map( lambda f: int(basename(f).split(split)[0][-num:]), files))
+    
+    if folder:
+	if split == '':
+	    idxs  = array(map( lambda f: int(dirname(f).split('/')[-1][-num:]), files))
+	else:
+	    idxs  = array(map( lambda f: int(dirname(f).split('/')[-1].split(split)[0][-num:]), files))
+    else:
+	idxs  = array(map( lambda f: int(basename(f).split(split)[0][-num:]), files))
+	if len(files):
+	    logging.debug(basename(files[0]).split(split)[0][-num:])
 
     miss = []
     logging.debug('number of files that should be there: {0:n}'.format(fn))
@@ -225,6 +236,40 @@ def missing_files(fname,fn, missing = True, minimum = 0, num = 5, split = '.dat.
 
     else:
 	return miss
+def parse_logfiles(path2log, string, filenames = 'err.*'):
+    """
+    Parse log files of job array and return list with job numbers
+    where string was found in log file. 
+    It's assumed that the job ids are giving by file endings
+    of log files
+
+    Parameters
+    ----------
+    path2log: str
+	full path to logfiles
+    string: str
+	string to be searched for in log file
+
+    kwargs
+    ------
+    filenames: str
+	wild card for log files, default is "err.*"
+    """
+    logfiles = glob(join(path2log,filenames))
+    logfiles = sorted(logfiles, key = lambda f: int(basename(f).split('.')[-1]))
+    ids = array([int(basename(f).split('.')[-1]) for f in logfiles])
+    logging.info("Found {0:n} log files".format(len(ids)))
+    # list of indices where string was found
+    idx = []
+    # loop through files
+    for i,lf in enumerate(logfiles):
+	for line in open(lf):
+	    if string in line: idx.append(i)
+    logging.info("Found {0:n} log files that contain {1:s} which will be removed from missing files".format(len(idx),string))
+    return ids[idx]
+
+
+
 
 def filesExists(*files):
     """

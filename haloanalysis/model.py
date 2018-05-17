@@ -62,10 +62,11 @@ class LogParabolaExpCutoff(spectrum.SpectralFunction):
 	return (params[0] * (x / scale) **
 	    (params[1] - params[2] * np.log(x / scale))) * np.exp(-x / params[3])
 
+
 def scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
                          rows_casc, tab_pars, tab_ebounds,
                          nstep, casc_scale=1.0, casc_r68_scale=1.0,
-			 p0 = [1E-13,-1.5,1E7], scale = 1E3, 
+			 p0 = [1E-13,-1.5,1E7], scale = 1E3, tev_scale = 1.,
 			 fint = PLExpCutoff):
     """This function uses the primary and cascade SEDs to scan the
     likelihood space in the IGMF parameter (B,L_coh).
@@ -106,6 +107,9 @@ def scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
     scale : float
         pivot energy of initial spectrum
 
+    tev_scale : float
+        scale for TeV energies (default: 1)
+
     fint : `~fermipy.spectrum.Spectrum` or None
         fermipy spectrum function pointer of initial spectrum. 
 	If None, use power law with exponential cut- off.
@@ -131,10 +135,25 @@ def scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
 
     bpars = np.meshgrid(lcoh_scan, igmf_scan, indexing='ij')
 
-    sed_prim0 = SED.create_from_row(rows_sed_tev)
+    sed_prim0, sed_prim0_name = [],[]
+    if type(rows_sed_tev) == list:
+	for r in rows_sed_tev:
+	    sed_prim0.append(SED.create_from_row(r))
+	    sed_prim0_name.append(r['SOURCE_FULL'].data[0])
+    else:
+	sed_prim0.append(SED.create_from_row(rows_sed_tev))
+	sed_prim0_name.append(rows_sed_tev['SOURCE_FULL'])
+
+    # change energy scale of TeV measurements
+    if not tev_scale == 1.:
+	for i,s in enumerate(sed_prim0):
+	    sed_prim0[i].axis._edges += np.log10(tev_scale)
+	    sed_prim0[i].axis._centers += np.log10(tev_scale)
+
     sed_prim1 = SED.create_from_row2(rows_sed_gev, tab_ebounds)
     sed_casc = HaloSED.create_from_fits(rows_casc[0], tab_ebounds, tab_pars)
-    hl = CascLike(casc_model, fn, sed_casc, [sed_prim0, sed_prim1])
+    hl = CascLike(casc_model, fn, sed_casc, sed_prim0 + [sed_prim1])
+    print 'Using TeV spectrum/a', sed_prim0_name
 
     sed_prim0_nbin = 25
     
@@ -146,14 +165,23 @@ def scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
 	def nparam(): return 3
 	fn.nparam = nparam
 
-    model_loglike_comp = np.zeros(bpars[0].shape + (3,))*np.nan
+    model_loglike_comp = np.zeros(bpars[0].shape + (2 + len(sed_prim0),))*np.nan
     model_dloglike = np.zeros(bpars[0].shape)*np.nan
     model_fit_pars = np.zeros(bpars[0].shape + (fn.nparam(),))*np.nan
-    model_prim0_emin = np.zeros((1,1,sed_prim0_nbin))*np.nan
-    model_prim0_ectr = np.zeros((1,1,sed_prim0_nbin))*np.nan
-    model_prim0_emax = np.zeros((1,1,sed_prim0_nbin))*np.nan
-    model_prim0_flux = np.zeros(bpars[0].shape +
-                               (sed_prim0_nbin,))*np.nan
+
+    model_prim0_emin = []
+    model_prim0_ectr = []
+    model_prim0_emax = []
+    model_prim0_flux = []
+
+    for s in sed_prim0:
+
+	model_prim0_emin.append(np.zeros((1,1,sed_prim0_nbin))*np.nan)
+	model_prim0_ectr.append(np.zeros((1,1,sed_prim0_nbin))*np.nan)
+	model_prim0_emax.append(np.zeros((1,1,sed_prim0_nbin))*np.nan)
+	model_prim0_flux.append(np.zeros(bpars[0].shape +
+                               (sed_prim0_nbin,))*np.nan)
+
     model_prim1_flux = np.zeros(bpars[0].shape +
                                (sed_prim1.axis.nbin,))*np.nan
     model_casc_flux = np.zeros(bpars[0].shape +
@@ -205,12 +233,17 @@ def scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
 	model_loglike_comp[idx] = hl._nll_prim + [hl._lnl_casc]
         model_fit_pars[idx][:fn.nparam()] = p1
 
-        sed_prim0_flux = casc_model.prim_flux(fn,p0,p1,
-                                              axis_eobs=sed_prim0.axis)
+	for isp,s in enumerate(sed_prim0):
+	    sed_prim0_flux = casc_model.prim_flux(fn,p0,p1,
+                                              axis_eobs=sed_prim0[isp].axis)
         
-        model_prim0_flux[idx][:len(sed_prim0_flux)] = sed_prim0_flux
+	    model_prim0_flux[isp][idx][:len(sed_prim0_flux)] = sed_prim0_flux
 
-        model_prim1_flux[idx] = casc_model.prim_flux(fn,p0,p1,
+	    model_prim0_emin[isp][0,0][:s.axis.nbin] = 10**s.axis.lo
+	    model_prim0_ectr[isp][0,0][:s.axis.nbin] = 10**s.axis.centers
+	    model_prim0_emax[isp][0,0][:s.axis.nbin] = 10**s.axis.hi
+
+	model_prim1_flux[idx] = casc_model.prim_flux(fn,p0,p1,
                                                      axis_eobs=sed_prim1.axis)
         model_casc_flux[idx] = casc_model.casc_flux(fn,p0,p1,
                                                     axis_eobs=sed_casc.axes[1])
@@ -233,18 +266,16 @@ def scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
         halo_flux_ul[idx] = np.array(flux_ul)
         print(idx, dloglike, p0, p1)
 
-	# find the bin closet to 4. which corresponds to 2sigma ul
-	# use 3.84 for 95% ul
-	#ul_id = np.argmin(np.abs(2. * (lnl - np.min(lnl, axis = 0)) - 2.71), axis = 1 )
+	# find the bin closet to 2.71 which corresponds to 2sigma ul
+	# use 2.71 for 95% ul
+	#ul_id = np.argmin(np.abs(2. * (lnl.T - np.min(lnl, axis = 1)) - 2.71).T, axis = 1 )
 	#m = np.min(np.abs(2. * (lnl - np.min(lnl, axis = 0)) - 2.71), axis = 1) > 0.5
 	# get the flux 
 	#halo_flux_ul[idx] = np.diag(ff[:,ul_id])
 	#halo_flux_ul[idx][m] = np.max(ff, axis = 1)[m]
-        #print bpars, lnl, p1
+        #print np.diag(ff[:,ul_id])
+	#print halo_flux_ul[idx]
 
-    model_prim0_emin[0,0][:sed_prim0.axis.nbin] = 10**sed_prim0.axis.lo
-    model_prim0_ectr[0,0][:sed_prim0.axis.nbin] = 10**sed_prim0.axis.centers
-    model_prim0_emax[0,0][:sed_prim0.axis.nbin] = 10**sed_prim0.axis.hi
         
     cols_dict = OrderedDict()
     cols_dict['name'] = dict(dtype='S32', format='%s', description='name')
@@ -255,14 +286,17 @@ def scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
                                        shape=model_dloglike.shape)
     cols_dict['loglike_comp'] = dict(dtype='f8', format='%.3f',
                                        shape=model_loglike_comp.shape)
-    cols_dict['prim_tev_emin'] = dict(dtype='f8', format='%.3f',
-                                      shape=model_prim0_emin.shape)
-    cols_dict['prim_tev_ectr'] = dict(dtype='f8', format='%.3f',
-                                      shape=model_prim0_ectr.shape)
-    cols_dict['prim_tev_emax'] = dict(dtype='f8', format='%.3f',
-                                      shape=model_prim0_emax.shape)
-    cols_dict['prim_tev_flux'] = dict(dtype='f8', format='%.3f',
-                                      shape=model_prim0_flux.shape)
+    for isp,s in enumerate(sed_prim0_name):
+
+	cols_dict['prim_tev_emin_{0:n}'.format(isp)] = dict(dtype='f8', format='%.3f',
+                                      shape=model_prim0_emin[isp].shape)
+	cols_dict['prim_tev_ectr_{0:n}'.format(isp)] = dict(dtype='f8', format='%.3f',
+                                      shape=model_prim0_ectr[isp].shape)
+	cols_dict['prim_tev_emax_{0:n}'.format(isp)] = dict(dtype='f8', format='%.3f',
+                                      shape=model_prim0_emax[isp].shape)
+	cols_dict['prim_tev_flux_{0:n}'.format(isp)] = dict(dtype='f8', format='%.3f',
+                                      shape=model_prim0_flux[isp].shape)
+
     cols_dict['prim_flux'] = dict(dtype='f8', format='%.3f',
                                   shape=model_prim1_flux.shape)
     cols_dict['casc_flux'] = dict(dtype='f8', format='%.3f',
@@ -289,10 +323,11 @@ def scan_igmf_likelihood(casc_model, rows_sed_tev, rows_sed_gev,
     row_dict['redshift'] = rows_sed_tev[0]['REDSHIFT']
     row_dict['dloglike'] = model_dloglike
     row_dict['loglike_comp'] = model_loglike_comp
-    row_dict['prim_tev_emin'] = model_prim0_emin
-    row_dict['prim_tev_ectr'] = model_prim0_ectr
-    row_dict['prim_tev_emax'] = model_prim0_emax
-    row_dict['prim_tev_flux'] = model_prim0_flux
+    for isp,s in enumerate(sed_prim0_name):
+	row_dict['prim_tev_emin_{0:n}'.format(isp)] = model_prim0_emin[isp]
+	row_dict['prim_tev_ectr_{0:n}'.format(isp)] = model_prim0_ectr[isp]
+	row_dict['prim_tev_emax_{0:n}'.format(isp)] = model_prim0_emax[isp]
+	row_dict['prim_tev_flux_{0:n}'.format(isp)] = model_prim0_flux[isp]
     row_dict['prim_flux'] = model_prim1_flux
     row_dict['casc_flux'] = model_casc_flux
     row_dict['casc_r68'] = model_casc_r68

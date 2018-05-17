@@ -239,6 +239,8 @@ class HaloSED(object):
         
         args = (log_width, ectr, log_eflux)
 
+	#print self._sed.interp(args)
+
 #        print 'log_eflux: ', log_eflux
 #        print 'log_width: ', log_width
 #        print self._sed.interp(args)
